@@ -1,0 +1,14 @@
+*.pro
+*.user
+*/*.pro
+*/*.user
+build/**/*
+Docs/
+Docs/**/*
+execution/
+execution/**/*
+monolayer_m_GUI-build/**/*
+monolayer_m_GUI-768-build/**/*
+/GUI/monolayer_GUI.pro.user
+/GUI/monolayer_GUI.pro
+VBA/**/*
