@@ -777,6 +777,10 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ICdrugBmet1",               0, 0,1,"","IC concentration of drug B metabolite 1"},
     {"ICdrugBmet2",               0, 0,1,"","IC concentration of drug B metabolite 2"},
     {"doublingtime",              1, 0,1,"","Average doubling time"},
+    {"Grate",                     0, 0,1,"","Normalised glycolysis rate"},
+    {"Prate",                     0, 0,1,"","Normalised pyruvate oxidation rate"},
+    {"Arate",                     0, 0,1,"","Normalised ATP production rate"},
+    {"Irate",                     0, 0,1,"","Normalised rate of production of anabolic intermediates"},
 
 /*
 // Profile plots

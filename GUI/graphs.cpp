@@ -236,6 +236,32 @@ GRAPH_SET tsGraphSet[] = {
     "Average doubling time",
     34, true, 0, 0.01, 0, TS_TYPE},
 
+    {"Grate",
+    "Glycolysis rate",
+    "",
+    "Normalised rate of glycolysis",
+    35, false, 0, 0.001, 0, TS_TYPE},
+
+    {"Prate",
+    "Pyruvate oxidation rate",
+    "",
+    "Normalised rate of pyruvate oxidation",
+    36, false, 0, 0.001, 0, TS_TYPE},
+
+    {"Arate",
+    "ATP production rate",
+    "",
+    "Normalised rate of ATP production",
+    37, false, 0, 0.001, 0, TS_TYPE},
+
+    {"Irate",
+    "Intermediates production rate",
+    "",
+    "Normalised rate of production of anabolic intermediates",
+    38, false, 0, 0.001, 0, TS_TYPE},
+
+
+
 //    {"bdryoxygen",
 //    "Blob Boundary Oxygen",
 //    "Concentration",

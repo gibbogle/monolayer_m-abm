@@ -4,6 +4,7 @@ module transfer
 
 use global
 use chemokine
+use metabolism
 use, intrinsic :: iso_c_binding
 
 #include "../src/version.h"
@@ -177,6 +178,8 @@ integer :: Tplate_eff_10
 integer :: ityp, i, im, idrug
 real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES)
 real(REAL_KIND) :: cmedium(MAX_CHEMO)
+type(metabolism_type), pointer :: mp
+integer :: r_G_1000, r_P_1000, r_A_1000, r_I_1000
 
 hour = istep*DELTA_T/3600.
 
@@ -245,13 +248,20 @@ else
     doubling_time_100 = 0
 endif
 
-summaryData(1:35) = [ istep, Ncells, TNanoxia_dead, TNaglucosia_dead, TNdrug_dead(1), TNdrug_dead(2), TNradiation_dead, &
+! Metabolism state variables
+mp => metabolic(1)
+r_G_1000 = 1000*mp%G_rate/r_G_norm
+r_P_1000 = 1000*mp%PO_rate/r_P_norm
+r_A_1000 = 1000*mp%A_rate/r_A_norm
+r_I_1000 = 1000*mp%I_rate/r_I_norm
+
+summaryData(1:39) = [ istep, Ncells, TNanoxia_dead, TNaglucosia_dead, TNdrug_dead(1), TNdrug_dead(2), TNradiation_dead, &
     TNtagged_anoxia, TNtagged_aglucosia, TNtagged_drug(1), TNtagged_drug(2), TNtagged_radiation, &
 	hypoxic_percent_10, clonohypoxic_percent_10, growth_percent_10, Tplate_eff_10, &
 	medium_oxygen_1000, medium_glucose_1000, medium_lactate_1000, medium_drug_1000(1,:), medium_drug_1000(2,:), &
 	IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_drug_1000(1,:), IC_drug_1000(2,:), &
-	doubling_time_100 ]
-write(nfres,'(a,a,2a12,i8,e12.4,22i7,30e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
+	doubling_time_100, r_G_1000, r_P_1000, r_A_1000, r_I_1000 ]
+write(nfres,'(a,a,2a12,i8,e12.4,22i7,34e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), &
     Nanoxia_dead(1:2), Naglucosia_dead(1:2), Ndrug_dead(1,1:2), &
     Ndrug_dead(2,1:2), Nradiation_dead(1:2), &
@@ -260,7 +270,7 @@ write(nfres,'(a,a,2a12,i8,e12.4,22i7,30e12.4)') trim(header),' ',gui_run_version
 	nhypoxic(:)/real(Ncells), nclonohypoxic(:)/real(TNviable), ngrowth(:)/real(Ncells), plate_eff(1:2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
-	doubling_time_100/100.
+	doubling_time_100/100., 100.*r_G_1000, 1000.*r_P_1000, 1000.*r_A_1000, 1000.*r_I_1000
 	
 !call sum_dMdt(GLUCOSE)
 
