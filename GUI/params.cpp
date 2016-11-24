@@ -213,9 +213,13 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Medium diffusion coeff",
  "Constituent diffusion coefficient in the medium"},
 
-{"OXYGEN_CELL_DIFF", 600, 0, 0,
- "Membrane diff constant",
- "Cell membrane diffusion constant Kd"},
+{"OXYGEN_CELL_DIFF_IN", 600, 0, 0,
+ "Cell influx parameter Kin",
+ "Cell membrane diffusion constant Kin"},
+
+{"OXYGEN_CELL_DIFF_OUT", 600, 0, 0,
+ "Cell efflux parameter Kout",
+ "Cell membrane diffusion constant Kout"},
 
 {"OXYGEN_BDRY_CONC", 0.18, 0, 0,
  "Boundary concentration",
@@ -257,9 +261,13 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Medium diffusion coeff",
  "Constituent diffusion coefficient in the medium"},
 
-{"GLUCOSE_CELL_DIFF", 100, 0, 0,
+{"GLUCOSE_CELL_DIFF_IN", 100, 0, 0,
  "Membrane diff constant",
- "Cell membrane diffusion coefficient Kd"},
+ "Cell membrane diffusion coefficient Kin"},
+
+{"GLUCOSE_CELL_DIFF_OUT", 100, 0, 0,
+ "Membrane diff constant",
+ "Cell membrane diffusion coefficient Kout"},
 
 {"GLUCOSE_BDRY_CONC", 5.5, 0, 0,
  "Boundary concentration",
@@ -297,9 +305,13 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Medium diffusion coeff",
      "Constituent diffusion coefficient in the medium"},
 
-    {"LACTATE_CELL_DIFF", 400, 0, 0,
+    {"LACTATE_CELL_DIFF_IN", 400, 0, 0,
      "Membrane diff constant",
-     "Cell membrane diffusion coefficient Kd"},
+     "Cell membrane diffusion coefficient Kin"},
+
+    {"LACTATE_CELL_DIFF_OUT", 400, 0, 0,
+     "Membrane diff constant",
+     "Cell membrane diffusion coefficient Kout"},
 
     {"LACTATE_BDRY_CONC", 0, 0, 0,
      "Boundary concentration",
@@ -329,9 +341,13 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Medium diffusion coeff",
  "Constituent diffusion coefficient in the medium"},
 
-{"TRACER_CELL_DIFF", 20, 0, 0,
+{"TRACER_CELL_DIFF_IN", 20, 0, 0,
  "Membrane diff constant",
- "Cell membrane diffusion coefficient Kd"},
+ "Cell membrane diffusion coefficient Kin"},
+
+{"TRACER_CELL_DIFF_OUT", 20, 0, 0,
+ "Membrane diff constant",
+ "Cell membrane diffusion coefficient Kout"},
 
 {"TRACER_BDRY_CONC", 1.0, 0, 0,
  "Boundary concentration",

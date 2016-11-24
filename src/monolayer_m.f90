@@ -363,6 +363,7 @@ type(cycle_parameters_type),pointer :: ccp
 
 ok = .true.
 chemo(:)%used = .false.
+Vsite_cm3 = 0.2000E-08  ! from spheroid - to retain same scaling 
 
 open(nfcell,file=inputfile,status='old')
 read(nfcell,'(a)') header
@@ -436,9 +437,10 @@ chemo(OXYGEN)%controls_death = (ioxygendeath == 1)
 read(nfcell,*) chemo(OXYGEN)%diff_coef
 read(nfcell,*) chemo(OXYGEN)%medium_diff_coef
 read(nfcell,*) chemo(OXYGEN)%membrane_diff_in
-Vsite_cm3 = 0.2000E-08  ! from spheroid - to retain same scaling 
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
-chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_in
+!chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_in
+read(nfcell,*) chemo(OXYGEN)%membrane_diff_out
+chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
 read(nfcell,*) chemo(OXYGEN)%bdry_conc
 read(nfcell,*) iconstant
 chemo(OXYGEN)%constant = (iconstant == 1)
@@ -455,7 +457,9 @@ read(nfcell,*) chemo(GLUCOSE)%diff_coef
 read(nfcell,*) chemo(GLUCOSE)%medium_diff_coef
 read(nfcell,*) chemo(GLUCOSE)%membrane_diff_in
 chemo(GLUCOSE)%membrane_diff_in = chemo(GLUCOSE)%membrane_diff_in*Vsite_cm3/60	! /min -> /sec
-chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_in
+!chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_in
+read(nfcell,*) chemo(GLUCOSE)%membrane_diff_out
+chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
 read(nfcell,*) chemo(GLUCOSE)%bdry_conc
 read(nfcell,*) iconstant
 chemo(GLUCOSE)%constant = (iconstant == 1)
@@ -471,7 +475,9 @@ read(nfcell,*) chemo(LACTATE)%diff_coef
 read(nfcell,*) chemo(LACTATE)%medium_diff_coef
 read(nfcell,*) chemo(LACTATE)%membrane_diff_in
 chemo(LACTATE)%membrane_diff_in = chemo(LACTATE)%membrane_diff_in*Vsite_cm3/60	! /min -> /sec
-chemo(LACTATE)%membrane_diff_out = 0.1*chemo(LACTATE)%membrane_diff_in
+!chemo(LACTATE)%membrane_diff_out = chemo(LACTATE)%membrane_diff_in
+read(nfcell,*) chemo(LACTATE)%membrane_diff_out
+chemo(LACTATE)%membrane_diff_out = chemo(LACTATE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
 read(nfcell,*) chemo(LACTATE)%bdry_conc
 chemo(LACTATE)%bdry_conc = max(0.001,chemo(LACTATE)%bdry_conc)
 read(nfcell,*) chemo(LACTATE)%max_cell_rate
@@ -484,7 +490,9 @@ read(nfcell,*) chemo(TRACER)%diff_coef
 read(nfcell,*) chemo(TRACER)%medium_diff_coef
 read(nfcell,*) chemo(TRACER)%membrane_diff_in
 chemo(TRACER)%membrane_diff_in = chemo(TRACER)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
-chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_in
+!chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_in
+read(nfcell,*) chemo(TRACER)%membrane_diff_out
+chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
 read(nfcell,*) chemo(TRACER)%bdry_conc
 read(nfcell,*) iconstant
 chemo(TRACER)%constant = (iconstant == 1)
