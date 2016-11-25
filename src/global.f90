@@ -116,6 +116,8 @@ type metabolism_type
 	real(REAL_KIND) :: Itotal	! total of intermediates pool
 	real(REAL_KIND) :: I2Divide	! intermediates total needed to divide
 	real(REAL_KIND) :: GA_rate
+	real(REAL_KIND) :: f_G
+	real(REAL_KIND) :: f_P
 end type
 
 type cell_type

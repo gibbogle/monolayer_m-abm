@@ -74,6 +74,7 @@ end function
 subroutine SetupMetabolism
 real(REAL_KIND) :: f_PO, f_PA
 integer :: ityp
+type(metabolism_type), pointer :: M
 
 Hill_Km_O2 = chemo(OXYGEN)%MM_C0
 Hill_N_O2 = chemo(OXYGEN)%Hill_N
@@ -83,8 +84,11 @@ Hill_Km_P = Hill_Km_G/10	! just because as yet we have no idea
 Hill_N_P = Hill_N_G
 N_PO = 3
 K_Ha = chemo(GLUCOSE)%max_cell_rate	! mumol/cell/s = 3.80e-17*1.0e6
+metabolic%HIF1 = 0
+metabolic%PDK1 = 1
 
-do ityp = 1,2
+do ityp = 1,1
+    M => metabolic(ityp)
 	f_G_norm = N_GI(ityp)
 	f_P_norm = N_PI(ityp)
 	f_PO = N_PO(ityp)
@@ -92,14 +96,16 @@ do ityp = 1,2
 	r_P_norm = f_MM(0.18d0,Hill_Km_O2,int(Hill_N_O2))*chemo(OXYGEN)%max_cell_rate/f_PO
 	r_G_norm = K_Ha*get_glycosis_rate(ityp,0.0d0,5.5d0)
 	r_A_norm = 2*(1-f_G_norm)*r_G_norm + f_PA*(1-f_P_norm)*r_P_norm
+	call new_metab2(ityp,M,0.18d0,5.5d0,1.0d0)  ! nominal "normal" concentrations
+	f_G_norm = M%f_G
+	f_P_norm = M%f_P
+	r_A_norm = 2*(1-f_G_norm)*r_G_norm + f_PA*(1-f_P_norm)*r_P_norm
 	r_I_norm = f_G_norm*r_G_norm + f_P_norm*r_P_norm
 	ATPg(ityp) = f_ATPg(ityp)*r_A_norm
 	ATPs(ityp) = f_ATPs(ityp)*r_A_norm
-	metabolic(ityp)%I_rate_max = f_G_norm*r_G_norm + f_P_norm*r_P_norm
+	metabolic(ityp)%I_rate_max = r_I_norm
 	write(*,'(a,4e12.3)') 'f_G_norm,r_G_norm,f_P_norm,r_P_norm: ',f_G_norm,r_G_norm,f_P_norm,r_P_norm
 enddo
-metabolic%HIF1 = 0
-metabolic%PDK1 = 1
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -156,10 +162,15 @@ end subroutine
 subroutine analyticSetHIF1(ityp, C_O, H, dt)
 integer :: ityp
 real(REAL_KIND) :: C_O, H, dt
-real(REAL_KIND) :: a, b, c, H0
+real(REAL_KIND) :: a, b, c, e, H0
 
+e = K_H1(ityp)*C_O
+if (e > 100) then
+    H = 0
+    return
+endif
 a = K_H2(ityp)
-b = exp(K_H1(ityp)*C_O)
+b = exp(e)
 H0 = H
 c = 1 - b*H0
 H = (1 - c*exp(-a*b*dt))/b
@@ -337,8 +348,8 @@ if (r_G == 0) then
 endif
 fPDK = M%PDK1
 
-f_G_norm = N_GI(ityp)
-f_P_norm = N_PI(ityp)
+!f_G_norm = N_GI(ityp)
+!f_P_norm = N_PI(ityp)
 f_PO = N_PO(ityp)
 f_PA = N_PA(ityp)
 K1 = K_PL(ityp)
@@ -351,7 +362,7 @@ r_GA = r_GP				! rate of production of ATP by glycolysis
 !write(*,'(a,5e12.3)') 'f_G,r_GA: ',f_G,r_GA
 r_P_fac = fPDK*f_MM(C_O2,Km_O2,N_O2)*chemo(OXYGEN)%max_cell_rate/f_PO
 !write(*,'(a,2e12.3)') 'C_O2,f_MM(C_O2,Km_O2,N_O2): ',C_O2,f_MM(C_O2,Km_O2,N_O2)
-!write(*,'(a,5e12.3)') 'r_P_norm,f_MM(C_O2,Km_O2,N_O2),r_Ptemp: ',r_P_norm,f_MM(C_O2,Km_O2,N_O2),r_Ptemp
+!write(*,'(a,5e12.3)') 'fPDK,f_MM(C_O2,Km_O2,N_O2): ',fPDK,f_MM(C_O2,Km_O2,N_O2)
 ! (1-f_P)*(f_PA*r_Ptemp) = (r_A_norm - r_GA) = r_PA
 
 MM_P = 1
@@ -414,9 +425,9 @@ do it = 1,2
 	r_L = V*(K1*C_P - K2*C_L)
 	if (f_P == 0) exit
 enddo
-!write(*,'(a,4e12.3)') 'C_L,C_P,Km_P,MM_P: ',C_L,C_P,Km_P,MM_P
-!write(*,'(a,e12.3,2f8.3)') 'r_G,f_G,f_P: ',r_G,f_G,f_P
-
+!write(*,'(a,2f8.4,2e12.3)') 'K1,K2,r_A_norm,r_P_fac: ',K1,K2,r_A_norm,r_P_fac
+!write(*,'(a,4f8.4)') 'C_L,C_P,Km_P,MM_P: ',C_L,C_P,Km_P,MM_P
+!write(*,'(a,2f8.4,4e12.3)') 'f_G,f_P: ',f_G,f_P,r_P,r_P_norm,r_G,r_G_norm
 if (r_I < 0) stop
 M%A_rate = r_A				! production
 M%I_rate = r_I				! production
@@ -428,6 +439,8 @@ M%GA_rate = r_GA			! production
 !if (M%O_rate < 0.37e-10) write(*,'(a,5e12.3)') 'r_P_fac,MM_P,C_P: ',r_P_fac,MM_P,C_P,r_P,f_PO
 ! Add base rate correction
 M%O_rate = M%O_rate + base_O_rate
+M%f_G = f_G
+M%f_P = f_P
 end subroutine
 
 !--------------------------------------------------------------------------
