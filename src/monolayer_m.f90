@@ -92,10 +92,6 @@ call ArrayInitialisation(ok)
 if (.not.ok) return
 call logger('did ArrayInitialisation')
 
-!call make_lattice_grid_weights
-
-!use_metabolism = chemo(LACTATE)%used
-chemo(LACTATE)%used = use_metabolism
 if (use_metabolism) then
 	use_cell_cycle = .true.
 	chemo(OXYGEN)%controls_growth = .false.
@@ -317,11 +313,6 @@ allocate(cell_list(max_nlist))
 allocate(gaplist(max_ngaps))
 !allocate(Cslice(NX/2,NY/2,NZ/2,MAX_CHEMO))
 !allocate(Cslice(NX,NY,NZ,MAX_CHEMO))
-
-!call make_jumpvec
-
-lastNcells = 0
-!nadd_sites = 0
 
 ok = .true.
 
@@ -604,6 +595,7 @@ chemo(TRACER)%used = (iuse_tracer == 1)
 chemo(OXYGEN)%MM_C0 = chemo(OXYGEN)%MM_C0/1000		! uM -> mM
 chemo(GLUCOSE)%MM_C0 = chemo(GLUCOSE)%MM_C0/1000	! uM -> mM
 chemo(LACTATE)%MM_C0 = chemo(LACTATE)%MM_C0/1000	! uM -> mM
+Hill_Km_P = Hill_Km_P/1000							! uM -> mM
 if (.not.chemo(OXYGEN)%used) then
     chemo(OXYGEN)%controls_growth = .false.
     chemo(OXYGEN)%controls_death = .false.
@@ -635,7 +627,7 @@ t_anoxia_limit = 60*60*anoxia_tag_hours				! hours -> seconds
 anoxia_death_delay = 60*60*anoxia_death_hours		! hours -> seconds
 t_aglucosia_limit = 60*60*aglucosia_tag_hours		! hours -> seconds
 aglucosia_death_delay = 60*60*aglucosia_death_hours	! hours -> seconds
-Vcell_cm3 = 1.0e-9*Vcell_pL									! nominal cell volume in cm3
+Vcell_cm3 = 1.0e-9*Vcell_pL							! nominal cell volume in cm3
 Vdivide0 = Vdivide0*Vcell_cm3
 total_volume = medium_volume0
 
@@ -698,6 +690,7 @@ write(logmsg,'(a,2i6,f6.0)') 'nsteps, NT_CONC, DELTA_T: ',nsteps,NT_CONC,DELTA_T
 call logger(logmsg)
 
 call DetermineKd	! Kd is now set or computed in the GUI 
+ndivided = 0
 ok = .true.
 
 end subroutine
@@ -750,7 +743,6 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine ReadMetabolismParameters(nf)
 integer :: nf
-type (metabolism_type), pointer :: M
 integer :: ityp
 
 do ityp = 1,Ncelltypes
@@ -759,7 +751,6 @@ do ityp = 1,Ncelltypes
 	read(nf,*) N_GI(ityp)
 	read(nf,*) N_PI(ityp)
 	read(nf,*) N_PO(ityp)
-!	read(nf,*) F_PO_BASE(ityp)
 	read(nf,*) K_H1(ityp)
 	read(nf,*) K_H2(ityp)
 	read(nf,*) K_HB(ityp)
@@ -768,9 +759,11 @@ do ityp = 1,Ncelltypes
 	read(nf,*) f_ATPs(ityp)
 	read(nf,*) K_PL(ityp)
 	read(nf,*) K_LP(ityp)
+	read(nf,*) Hill_Km_P(ityp)
+	read(nf,*) Apoptosis_rate(ityp)
 enddo
 PDKmin(:) = 0.3
-
+Hill_N_P = 1
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1195,7 +1188,7 @@ if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume n
 	cp%dVdt = max_growthrate(ityp)
 endif
 !cp%radius(1) = (3*cp%V/(4*PI))**(1./3.)
-!cp%centre(:,1) = rsite
+!cp%centre(:,1) = rsite 
 !cp%site = rsite/DELTA_X + 1
 !cp%d = 0
 !cp%birthtime = 0
@@ -1227,6 +1220,8 @@ cp%Cin(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 cp%Cin(LACTATE) = chemo(LACTATE)%bdry_conc
 cp%CFSE = generate_CFSE(1.d0)
 
+cp%growth_rate_factor = get_growth_rate_factor()
+cp%ATP_rate_factor = get_ATP_rate_factor()
 !cp%ndt = ndt
 end subroutine
 
@@ -1588,7 +1583,7 @@ real(REAL_KIND) :: r(3), rmax, tstart, dt, radiation_dose, diam_um, framp, tnow,
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv
 integer :: nvars, ns
-real(REAL_KIND) :: dxc, ex_conc(120*O2_BY_VOL+1)		! just for testing
+real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
 real(REAL_KIND) :: DELTA_T_save, t_sim_0
 real(REAL_KIND) :: HIF1, PDK1
 type(metabolism_type), pointer :: mp
@@ -1701,8 +1696,8 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
 	write(logmsg,'(a,i6,i4,a,i8,2e12.3)') 'istep, hour: ',istep,istep/nthour,' Ncells, Irate: ',Ncells,mp%I_rate,mp%I_rate_max
 	call logger(logmsg)
-	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%PO_rate,mp%O_rate
-	call logger(logmsg)
+!	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%PO_rate,mp%O_rate
+!	call logger(logmsg)
 !	write(logmsg,'(a,3e12.3)') 'C_O2, C_G, C_L: ',Caverage(1:3)
 !	call logger(logmsg)
 !	write(*,'(a,3f8.4)') 'lactate, HIF1: ',Caverage(LACTATE),Caverage(LACTATE+MAX_CHEMO),HIF1
@@ -1720,23 +1715,23 @@ end subroutine
 subroutine show_metabolism(kcell)
 integer :: kcell
 type(cell_type), pointer :: cp
-type (metabolism_type), pointer :: M
+type (metabolism_type), pointer :: mp
 real(REAL_KIND) :: Cin(MAX_CHEMO)
 !real(REAL_KIND) :: HIF1, G_rate, PP_rate, PO_rate
 !real(REAL_KIND) :: L_rate, A_rate, I_rate, O_rate
 
 cp =>cell_list(kcell)
-M => cp%metab
+mp => cp%metab
 Cin = Caverage(1:MAX_CHEMO)
 !write(*,'(a,3f8.4)') 'O2, glucose, lactate: ',Cin(1:3)
-call get_metab_rates(cp%celltype, M, Cin)
+call get_metab_rates(cp%celltype, mp, Cin)
 return
 
-write(*,'(a,i2,3e12.3)') 'phase, Itotal,I2Divide,V: ',cp%phase,M%Itotal,M%I2Divide,cp%V
-write(*,'(a,3e11.3)') 'G_rate, PP_rate, PO_rate: ',M%G_rate, M%PP_rate, M%PO_rate
-write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate, O_rate: ',M%L_rate, M%A_rate, M%I_rate, M%O_rate
-write(*,'(a,4f8.4)') 'O2, glucose, lactate, H: ',Caverage(OXYGEN),Caverage(GLUCOSE),Caverage(LACTATE),M%HIF1
-if (M%A_rate < ATPg(cp%celltype)) then
+write(*,'(a,i2,3e12.3)') 'phase, Itotal,I2Divide,V: ',cp%phase,mp%Itotal,mp%I2Divide,cp%V
+write(*,'(a,3e11.3)') 'G_rate, PP_rate, PO_rate: ',mp%G_rate, mp%PP_rate, mp%PO_rate
+write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate, O_rate: ',mp%L_rate, mp%A_rate, mp%I_rate, mp%O_rate
+write(*,'(a,4f8.4)') 'O2, glucose, lactate, H: ',Caverage(OXYGEN),Caverage(GLUCOSE),Caverage(LACTATE),mp%HIF1
+if (mp%A_rate < ATPg(cp%celltype)) then
 	write(*,*) 'Not growing'
 endif
 write(*,*)

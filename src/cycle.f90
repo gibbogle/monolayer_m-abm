@@ -138,11 +138,12 @@ elseif (phase == Checkpoint1) then  ! this checkpoint combines the release from 
 !	endif
     if (cp%G1_flag .and. cp%G1S_flag) then
         cp%phase = S_phase
-        if (use_metabolism) then
-	        cp%S_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_S(ityp)
-	    else
+! Note: now %I_rate has been converted into equivalent %dVdt, to simplify code
+!        if (use_metabolism) then
+!	        cp%S_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_S(ityp)
+!	    else
 	        cp%S_time = tnow + (max_growthrate(ityp)/cp%dVdt)*ccp%T_S(ityp)
-	    endif
+!	    endif
     endif
 elseif (phase == S_phase) then
     if (use_volume_based_transition) then
@@ -152,21 +153,23 @@ elseif (phase == S_phase) then
     endif
     if (switch) then
         cp%phase = G2_phase
-        if (use_metabolism) then
-	        cp%G2_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_G2(ityp)
-	    else
+! Note: now %I_rate has been converted into equivalent %dVdt, to simplify code
+!        if (use_metabolism) then
+!	        cp%G2_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_G2(ityp)
+!	    else
 			cp%G2_time = tnow + (max_growthrate(ityp)/cp%dVdt)*ccp%T_G2(ityp)
-		endif
+!		endif
     endif
 elseif (phase == G2_phase) then
     if (use_volume_based_transition) then
         switch = (cp%V > cp%G2_V)
     else
-		if (use_metabolism) then
-			switch = (tnow > cp%G2_time .and. cp%metab%Itotal > cp%metab%I2divide) ! try this to prevent volumes decreasing 
-		else
+! Note: now %I_rate has been converted into equivalent %dVdt, to simplify code
+!		if (use_metabolism) then
+!			switch = (tnow > cp%G2_time .and. cp%metab%Itotal > cp%metab%I2divide) ! try this to prevent volumes decreasing 
+!		else
 			switch = (tnow > cp%G2_time .and. cp%V > cp%divide_volume) ! try this to prevent volumes decreasing 
-		endif
+!		endif
     endif
     if (switch) then
         cp%phase = Checkpoint2

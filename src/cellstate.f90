@@ -224,7 +224,7 @@ logical :: ok
 integer :: kcell, nlist0, site(3), i, ichemo, idrug, im, ityp, killmodel, kpar=0 
 real(REAL_KIND) :: C_O2, C_glucose, Cdrug, n_O2, kmet, Kd, dMdt, kill_prob, dkill_prob, death_prob,survival_prob
 logical :: anoxia_death, aglucosia_death
-real(REAL_KIND) :: delayed_death_prob = 0.1
+real(REAL_KIND) :: delayed_death_prob(MAX_CELLTYPES)
 type(drug_type), pointer :: dp
 type(cell_type), pointer :: cp
 
@@ -237,23 +237,25 @@ endif
 !tnow = istep*DELTA_T	! seconds
 anoxia_death = chemo(OXYGEN)%controls_death
 aglucosia_death = chemo(GLUCOSE)%controls_death
+delayed_death_prob = apoptosis_rate*DELTA_T/3600
 nlist0 = nlist
 do kcell = 1,nlist
     cp => cell_list(kcell)
+	ityp = cp%celltype
 	if (cp%state == DEAD) cycle
 	if (cp%state == DYING) then
-	    if (par_uni(kpar) < delayed_death_prob) then	
+	    if (par_uni(kpar) < delayed_death_prob(ityp)) then	
 			call CellDies(kcell)
 		endif
 		cycle
 	endif	
-	ityp = cp%celltype
 	call getO2conc(cp,C_O2)
 	if (use_metabolism) then
-		if (cp%metab%A_rate < ATPs(ityp)) then
+		if (cp%metab%A_rate < cp%ATP_rate_factor*ATPs(ityp)) then
 !			write(*,'(a,2e12.3)') 'A_rate: ',cp%metab%A_rate,ATPs(ityp)
 !			call CellDies(kcell)
 			cp%state = DYING
+			cp%dVdt = 0
 			cycle
 		endif			
 	else
@@ -778,8 +780,7 @@ if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or
 	write(*,*) 'no growth - phase'
 	return
 endif
-if (use_metabolism .and. cp%metab%A_rate < ATPg(cp%celltype)) then
-!	write(*,*) 'no growth - cp%metab%A_rate < ATPg'
+if (use_metabolism .and. cp%metab%A_rate < cp%ATP_rate_factor*ATPg(cp%celltype)) then
 	cp%dVdt = 0
 	return
 endif
@@ -788,8 +789,10 @@ if (colony_simulation) then
 	if (use_metabolism) then
 		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
 		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max
+		cp%dVdt = cp%growth_rate_factor*cp%dVdt
 !		cp%V = cp%divide_volume*cp%metab%Itotal/cp%metab%I2Divide
-		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide
+!		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide
+		cp%V = cp%V + cp%dVdt*dt
 	else
 	    metab = 1
 		dVdt = get_dVdt(cp,metab)
@@ -801,7 +804,14 @@ else
 		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
 		! need to set cp%dVdt from cp%metab%I_rate
 		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max
-		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
+		cp%dVdt = cp%growth_rate_factor*cp%dVdt
+!		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
+		cp%V = cp%V + cp%dVdt*dt
+		metab = 1
+!		if (kcell_now == 1) then
+!			write(*,'(a,4e12.3)') 'dVdt: ',max_growthrate(ityp),cp%metab%I_rate/cp%metab%I_rate_max,cp%dVdt,get_dVdt(cp,metab)
+!			write(*,'(a,i3,4e12.3)') 'phase,V,Vdivide,I..: ', cp%phase,cp%V,cp%divide_volume,cp%metab%Itotal,cp%metab%I2Divide
+!		endif
 	else
 		oxygen_growth = chemo(OXYGEN)%controls_growth
 		glucose_growth = chemo(GLUCOSE)%controls_growth
@@ -929,6 +939,8 @@ type(cycle_parameters_type), pointer :: ccp
 !write(logmsg,*) 'divider: ',kcell1 
 !call logger(logmsg)
 ok = .true.
+ndivided = ndivided + 1
+!write(*,*) 'divider: ',kcell1,ndivided,Ncells
 !tnow = istep*DELTA_T
 ccp => cc_parameters
 if (colony_simulation) then
@@ -1012,6 +1024,8 @@ cp2%divide_time = Tdiv
 if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
 	cp2%metab%I2Divide = get_I2Divide(cp2)
 	cp2%metab%Itotal = 0
+	cp2%growth_rate_factor = get_growth_rate_factor()
+	cp2%ATP_rate_factor = get_ATP_rate_factor()
 endif
 cp2%CFSE = cfse2
 if (cp2%radiation_tag) then
@@ -1056,5 +1070,29 @@ endif
 !write(logmsg,'(a,4e12.4)') 'AdjustMM: C0, deltaC, C1, k: ',C0, ODEdiff%deltaC_soft, ODEdiff%C1_soft, ODEdiff%k_soft
 !call logger(logmsg)
 end subroutine
+
+!----------------------------------------------------------------------------------
+! This is used to adjust a cell's growth rate to introduce some random variability
+! into divide times.
+!----------------------------------------------------------------------------------
+function get_growth_rate_factor() result(r)
+real(REAL_KIND) :: r
+real(REAL_KIND) :: dr = 0.2
+integer :: kpar = 0
+
+r = 1 + (par_uni(kpar) - 0.5)*dr
+end function
+
+!----------------------------------------------------------------------------------
+! This is used to adjust a cell's ATP thresholds to introduce some random variability
+! into transitions to no-growth and death.
+!----------------------------------------------------------------------------------
+function get_ATP_rate_factor() result(r)
+real(REAL_KIND) :: r
+real(REAL_KIND) :: dr = 0.5
+integer :: kpar = 0
+
+r = 1 + (par_uni(kpar) - 0.5)*dr
+end function
 
 end module

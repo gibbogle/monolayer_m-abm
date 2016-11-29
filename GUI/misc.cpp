@@ -247,12 +247,13 @@ void ExecThread::run()
 //            get_distdata(&Global::dist_nv, Global::distParams, Global::distData);
 //            get_concdata(&Global::conc_nvars, &Global::conc_nc_ex, &Global::conc_dx_ex, Global::concData);
 //            get_ic_concdata(&Global::conc_nvars, &Global::conc_nc_ic, &Global::conc_dx_ic, Global::IC_concData);
-            if (Global::showingFACS || Global::recordingFACS) {
-                getFACS();
-            }
+
+//            if (Global::showingFACS || Global::recordingFACS) {
+//                getFACS();
+//            }
             mutex1.unlock();
             if (Global::showingFACS || Global::recordingFACS) {
-                emit facs_update();
+//                emit facs_update();
                 emit histo_update();
             }
             hour++;
@@ -352,7 +353,7 @@ void ExecThread::getProfiles()
 
 
 //-----------------------------------------------------------------------------------------
-// Get FACS data and histogram data
+// Get FACS data
 //-----------------------------------------------------------------------------------------
 void ExecThread::getFACS()
 {
@@ -365,6 +366,13 @@ void ExecThread::getFACS()
     }
 //    LOG_MSG("get_facs");
     get_facs(Global::FACS_data);
+}
+
+//-----------------------------------------------------------------------------------------
+// Get histogram data
+//-----------------------------------------------------------------------------------------
+void ExecThread::getHisto()
+{
     if (!Global::histo_data || Global::nhisto_bins*Global::nvars_used > Global::nhisto_dim) {
         if (Global::histo_data) free(Global::histo_data);
         if (Global::histo_data_log) free(Global::histo_data_log);

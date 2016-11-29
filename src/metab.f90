@@ -8,7 +8,9 @@
 !     mass				micromole = 10^-6 mol = mumol
 !     flux				mumol/s
 !     concentration		mumol/cm^3 = mM
-
+!
+! Need to comment out 'use chemokine' when used in the test program metab.exe
+!
 ! Question: How do the results of this model translate into cell rate of volume growth?
 !----------------------------------------------------------------------------------------------------------------
 module metabolism
@@ -26,20 +28,21 @@ implicit none
 
 real(REAL_KIND) :: Hill_Km_O2
 real(REAL_KIND) :: Hill_N_O2
-real(REAL_KIND) :: Hill_Km_G     ! Hill Km for dependence of glycolysis rate on glucose
-real(REAL_KIND) :: Hill_N_G      ! Hill N for dependence of glycolysis rate on glucose
-real(REAL_KIND) :: Hill_Km_P     ! Hill Km for dependence of pyruvate oxidation rate on pyruvate
-real(REAL_KIND) :: Hill_N_P      ! Hill N for dependence of pyruvate oxidation rate on pyruvate
-real(REAL_KIND) :: K_H1(MAX_CELLTYPES)     ! HIF-1 k1
-real(REAL_KIND) :: K_H2(MAX_CELLTYPES)     ! HIF-1 k2
-real(REAL_KIND) :: K_Ha     ! HIF-1 ka
-real(REAL_KIND) :: K_Hb(MAX_CELLTYPES)     ! HIF-1 kb
-real(REAL_KIND) :: K_PDK(MAX_CELLTYPES)    ! K_PDK
+real(REAL_KIND) :: Hill_Km_G				! Hill Km for dependence of glycolysis rate on glucose
+real(REAL_KIND) :: Hill_N_G					! Hill N for dependence of glycolysis rate on glucose
+real(REAL_KIND) :: Hill_Km_P(MAX_CELLTYPES)	! Hill Km for dependence of pyruvate oxidation rate on pyruvate
+real(REAL_KIND) :: Hill_N_P(MAX_CELLTYPES)	! Hill N for dependence of pyruvate oxidation rate on pyruvate
+real(REAL_KIND) :: K_H1(MAX_CELLTYPES)		! HIF-1 k1
+real(REAL_KIND) :: K_H2(MAX_CELLTYPES)		! HIF-1 k2
+real(REAL_KIND) :: K_Ha						! HIF-1 ka
+real(REAL_KIND) :: K_Hb(MAX_CELLTYPES)		! HIF-1 kb
+real(REAL_KIND) :: K_PDK(MAX_CELLTYPES)		! K_PDK
 real(REAL_KIND) :: PDKmin(MAX_CELLTYPES)    ! PDKmin
 real(REAL_KIND) :: P_conc_min
 !real(REAL_KIND) :: Vcell     ! cell volume
-real(REAL_KIND) :: K_PL(MAX_CELLTYPES)     ! P -> L
-real(REAL_KIND) :: K_LP(MAX_CELLTYPES)     ! L -> P
+real(REAL_KIND) :: K_PL(MAX_CELLTYPES)		! P -> L
+real(REAL_KIND) :: K_LP(MAX_CELLTYPES)		! L -> P
+real(REAL_KIND) :: Apoptosis_rate(MAX_CELLTYPES)     
 
 real(REAL_KIND) :: f_G_norm, f_P_norm, r_P_norm, r_G_norm, r_A_norm, r_I_norm
 
@@ -61,34 +64,23 @@ end function
 
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
-function get_Poxidation_rate(ityp, PDK, P) result(rate)
-integer :: ityp
-real(REAL_KIND) :: PDK, P, rate
-
-!write(*,*) 'Hill_Km_G,Hill_N_G: ',Hill_Km_G,Hill_N_G
-rate = PDK*P**Hill_N_P/(P**Hill_N_P + Hill_Km_P**Hill_N_P)
-end function
-
-!--------------------------------------------------------------------------
-!--------------------------------------------------------------------------
 subroutine SetupMetabolism
 real(REAL_KIND) :: f_PO, f_PA
+real(REAL_KIND) :: C_L_base = 0.0
 integer :: ityp
-type(metabolism_type), pointer :: M
+type(metabolism_type), pointer :: mp
 
 Hill_Km_O2 = chemo(OXYGEN)%MM_C0
 Hill_N_O2 = chemo(OXYGEN)%Hill_N
 Hill_Km_G = chemo(GLUCOSE)%MM_C0
 Hill_N_G = chemo(GLUCOSE)%Hill_N
-Hill_Km_P = Hill_Km_G/10	! just because as yet we have no idea 
-Hill_N_P = Hill_N_G
 N_PO = 3
 K_Ha = chemo(GLUCOSE)%max_cell_rate	! mumol/cell/s = 3.80e-17*1.0e6
 metabolic%HIF1 = 0
 metabolic%PDK1 = 1
 
 do ityp = 1,1
-    M => metabolic(ityp)
+    mp => metabolic(ityp)
 	f_G_norm = N_GI(ityp)
 	f_P_norm = N_PI(ityp)
 	f_PO = N_PO(ityp)
@@ -96,28 +88,19 @@ do ityp = 1,1
 	r_P_norm = f_MM(0.18d0,Hill_Km_O2,int(Hill_N_O2))*chemo(OXYGEN)%max_cell_rate/f_PO
 	r_G_norm = K_Ha*get_glycosis_rate(ityp,0.0d0,5.5d0)
 	r_A_norm = 2*(1-f_G_norm)*r_G_norm + f_PA*(1-f_P_norm)*r_P_norm
-	call new_metab2(ityp,M,0.18d0,5.5d0,1.0d0)  ! nominal "normal" concentrations
-	f_G_norm = M%f_G
-	f_P_norm = M%f_P
+	call new_metab2(ityp,mp,0.18d0,5.5d0,C_L_base)  ! nominal "normal" concentrations
+	f_G_norm = mp%f_G
+	f_P_norm = mp%f_P
+	r_P_norm = mp%PO_rate
 	r_A_norm = 2*(1-f_G_norm)*r_G_norm + f_PA*(1-f_P_norm)*r_P_norm
 	r_I_norm = f_G_norm*r_G_norm + f_P_norm*r_P_norm
 	ATPg(ityp) = f_ATPg(ityp)*r_A_norm
 	ATPs(ityp) = f_ATPs(ityp)*r_A_norm
-	metabolic(ityp)%I_rate_max = r_I_norm
-	write(*,'(a,4e12.3)') 'f_G_norm,r_G_norm,f_P_norm,r_P_norm: ',f_G_norm,r_G_norm,f_P_norm,r_P_norm
+	mp%I_rate_max = r_I_norm
+	write(logmsg,'(a,4e12.3)') 'f_G_norm,r_G_norm,f_P_norm,r_P_norm: ',f_G_norm,r_G_norm,f_P_norm,r_P_norm
+	call logger(logmsg)
 enddo
 end subroutine
-
-!--------------------------------------------------------------------------
-!--------------------------------------------------------------------------
-function get_I2Divide(cp) result(I2div)
-type(cell_type), pointer :: cp
-real(REAL_KIND) :: I2div
-integer :: ityp
-
-ityp = cp%celltype
-I2div = cp%divide_time*metabolic(ityp)%I_rate_max
-end function
 
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
@@ -221,9 +204,9 @@ end subroutine
 ! needs to have the intermediates coming from acetyl-CoA rather than pyruvate itself.
 !--------------------------------------------------------------------------
 !subroutine get_metab_rates(ityp, H, PDK, Cin, G_rate, PP_rate, PO_rate)
-subroutine get_metab_rates(ityp, M, Cin)
+subroutine get_metab_rates(ityp, mp, Cin)
 integer :: ityp
-type(metabolism_type), pointer :: M
+type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: Cin(:)
 real(REAL_KIND) :: G_norm       ! normalised glycolysis rate
 real(REAL_KIND) :: C_P			! steady-state pyruvate concentration
@@ -234,7 +217,7 @@ if (Cin(GLUCOSE) == 0) then
 	stop
 endif
 
-call new_metab2(ityp,M,Cin(OXYGEN),Cin(GLUCOSE),Cin(LACTATE))
+call new_metab2(ityp,mp,Cin(OXYGEN),Cin(GLUCOSE),Cin(LACTATE))
 end subroutine
 
 !--------------------------------------------------------------------------
@@ -243,22 +226,17 @@ end subroutine
 ! We may not need G_rate, PP_rate, PO_rate
 ! We update only by cell type here, because in the monolayer all cells of the
 ! same type have the same metabolic state.
+! NOT USED NOW
 !--------------------------------------------------------------------------
 subroutine update_metabolism
-type(metabolism_type), pointer :: M
 integer :: kcell, ityp
 real(REAL_KIND) :: Itotal, I2Divide
+type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
 
 do ityp = 1,Ncelltypes
-	M => metabolic(ityp)
-!	call get_metab_rates(ityp, M%HIF1, M%PDK1, Caverage(1:MAX_CHEMO), M%G_rate, M%PP_rate, M%PO_rate)
-	call get_metab_rates(ityp, M, Caverage(1:MAX_CHEMO))
-! Revised
-!	M%L_rate = M%PP_rate - M%PO_rate						! rate of production of lactate
-!	M%A_rate = M%PP_rate + N_PA(ityp)*(1 - N_PI(ityp))*M%PO_rate
-!	M%I_rate = N_GI(ityp)*M%G_rate + N_PI(ityp)*M%PO_rate	! rate of production of intermediates
-!	M%O_rate = N_PO(ityp)*(1 - N_PI(ityp))*M%PO_rate		! rate of consumption of oxygen
+	mp => metabolic(ityp)
+	call get_metab_rates(ityp, mp, Caverage(1:MAX_CHEMO))
 enddo
 
 do kcell = 1,nlist
@@ -322,9 +300,9 @@ end subroutine
 ! plenty of glucose but O2 is very low, r_G will be high but r_P will tend
 ! towards 0.  This must lead to an increase in C_P.
 !--------------------------------------------------------------------------
-subroutine new_metab2(ityp, M, C_O2, C_G, C_L)
+subroutine new_metab2(ityp, mp, C_O2, C_G, C_L)
 integer :: ityp
-type(metabolism_type), pointer :: M
+type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C_O2, C_G, C_L
 real(REAL_KIND) :: r_G, fPDK
 real(REAL_KIND) :: f_G, f_P, r_P, r_A, r_I, r_L, f_PO, f_PA
@@ -336,17 +314,17 @@ logical :: use_MM_P = .true.
 
 N_O2 = Hill_N_O2
 Km_O2 = Hill_Km_O2
-N_P = 1
-Km_P = Hill_Km_P		! not used if .not.use_MM_P
+N_P = Hill_N_P(ityp)		! not used if .not.use_MM_P
+Km_P = Hill_Km_P(ityp)		! not used if .not.use_MM_P
 V = Vcell_cm3
 
-M%G_rate = K_Ha*get_glycosis_rate(ityp,M%HIF1,C_G)
-r_G = M%G_rate
+mp%G_rate = K_Ha*get_glycosis_rate(ityp,mp%HIF1,C_G)
+r_G = mp%G_rate
 if (r_G == 0) then
-	write(*,'(a,3e12.3)') 'r_G=0: K_Ha,M%HIF1,C_G: ',K_Ha,M%HIF1,C_G
+	write(*,'(a,3e12.3)') 'r_G=0: K_Ha,mp%HIF1,C_G: ',K_Ha,mp%HIF1,C_G
 	stop
 endif
-fPDK = M%PDK1
+fPDK = mp%PDK1
 
 !f_G_norm = N_GI(ityp)
 !f_P_norm = N_PI(ityp)
@@ -429,18 +407,19 @@ enddo
 !write(*,'(a,4f8.4)') 'C_L,C_P,Km_P,MM_P: ',C_L,C_P,Km_P,MM_P
 !write(*,'(a,2f8.4,4e12.3)') 'f_G,f_P: ',f_G,f_P,r_P,r_P_norm,r_G,r_G_norm
 if (r_I < 0) stop
-M%A_rate = r_A				! production
-M%I_rate = r_I				! production
-M%PO_rate = r_P
-M%O_rate = f_PO*r_P			! consumption
-M%L_rate = r_L				! production
-M%GA_rate = r_GA			! production
+mp%A_rate = r_A				! production
+mp%I_rate = r_I				! production
+mp%PO_rate = r_P			! oxidation
+mp%O_rate = f_PO*r_P		! consumption
+mp%L_rate = r_L				! production
+mp%GA_rate = r_GA			! production
 
-!if (M%O_rate < 0.37e-10) write(*,'(a,5e12.3)') 'r_P_fac,MM_P,C_P: ',r_P_fac,MM_P,C_P,r_P,f_PO
+!if (mp%O_rate < 0.37e-10) write(*,'(a,5e12.3)') 'r_P_fac,MM_P,C_P: ',r_P_fac,MM_P,C_P,r_P,f_PO
 ! Add base rate correction
-M%O_rate = M%O_rate + base_O_rate
-M%f_G = f_G
-M%f_P = f_P
+mp%O_rate = mp%O_rate + base_O_rate
+mp%f_G = f_G
+mp%f_P = f_P
+mp%C_P = C_P
 end subroutine
 
 !--------------------------------------------------------------------------

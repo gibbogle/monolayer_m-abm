@@ -20,7 +20,7 @@ integer, parameter :: CONSTANT_DIST    = 4
 !integer, parameter :: DIVIDING  = 1
 !integer, parameter :: QUIESCENT = 2
 !integer, parameter :: DEAD      = 3
-integer, parameter :: ALIVE = 0
+integer, parameter :: ALIVE = 1
 integer, parameter :: DYING = 2
 integer, parameter :: DEAD = 3
 
@@ -52,8 +52,9 @@ integer, parameter :: MAX_CHEMO = DRUG_B + 2
 integer, parameter :: GROWTH_RATE = MAX_CHEMO + 1	! (not used here, used in the GUI)
 integer, parameter :: CELL_VOLUME = MAX_CHEMO + 2
 integer, parameter :: O2_BY_VOL = MAX_CHEMO + 3
+integer, parameter :: CYCLE_PHASE = MAX_CHEMO + 4
 
-integer, parameter :: N_EXTRA = O2_BY_VOL - MAX_CHEMO + 1	! = 4 = total # of variables - MAX_CHEMO
+integer, parameter :: N_EXTRA = CYCLE_PHASE - MAX_CHEMO + 1	! = 5 = total # of variables - MAX_CHEMO
 integer, parameter :: NCONST = MAX_CHEMO
 
 integer, parameter :: TPZ_CLASS = 1
@@ -118,6 +119,7 @@ type metabolism_type
 	real(REAL_KIND) :: GA_rate
 	real(REAL_KIND) :: f_G
 	real(REAL_KIND) :: f_P
+	real(REAL_KIND) :: C_P
 end type
 
 type cell_type
@@ -141,6 +143,8 @@ type cell_type
 	real(REAL_KIND) :: CFSE
 	real(REAL_KIND) :: dVdt
 	real(REAL_KIND) :: V			! actual volume cm3
+	real(REAL_KIND) :: growth_rate_factor	! to introduce some random variation 
+	real(REAL_KIND) :: ATP_rate_factor	! to introduce some random variation 
 	real(REAL_KIND) :: divide_volume	! fractional divide volume (normalised)
 	real(REAL_KIND) :: divide_time
 	real(REAL_KIND) :: t_divide_last	! these two values are used for colony simulation
@@ -301,30 +305,9 @@ type(cell_type), target, allocatable :: ccell_list(:)
 
 character*(12) :: dll_version, dll_run_version
 character*(12) :: gui_version, gui_run_version
-!integer :: NX, NY, NZ, NXB, NYB, NZB
-!integer :: ixb0, iyb0, izb0
 integer :: initial_count
-!integer, allocatable :: zdomain(:),zoffset(:)
-!integer :: blobrange(3,2)
-!real(REAL_KIND) :: Radius, Centre(3)		! sphere radius and centre
-!real(REAL_KIND) :: x0,y0,z0					! initial sphere centre in lattice coordinates (units = sites)
-!real(REAL_KIND) :: Centre_b(3)              ! sphere centre in coarse grid axes
-!real(REAL_KIND) :: xb0,yb0,zb0              ! sphere centre in coarse grid axes
-!real(REAL_KIND) :: blob_volume, blob_area       ! blob volume, max z-slice area (units = sites)
-!real(REAL_KIND) :: blob_centre(3), blob_radius  ! blob centre, radius in lattice coordinates (units = sites)
-!real(REAL_KIND) :: Vex_min, Vex_max
 
-!logical :: use_dropper
-!integer :: Ndrop
-!real(REAL_KIND) :: alpha_shape, beta_shape	! squashed sphere shape parameters
-!real(REAL_KIND) :: adrop, bdrop, cdrop		! drop shape transformation parameters
-!integer :: zmin     						! drop lower bound at drop time = lower limit of blob thereafter
-!logical :: is_dropped
-
-!integer :: jumpvec(3,27)
-
-integer :: nlist, Ncells, Ncells0, ncells_mphase, lastNcells, lastID, Ncelltypes, Ncells_type(MAX_CELLTYPES)
-!integer :: diam_count_limit
+integer :: nlist, Ncells, Ncells0, ncells_mphase, lastID, Ncelltypes, Ncells_type(MAX_CELLTYPES), Ncells_dying(MAX_CELLTYPES)
 logical :: limit_stop
 !integer :: nadd_sites, Nsites, Nreuse
 integer :: Ndrugs_used
@@ -333,7 +316,6 @@ integer :: Ndrug_tag(MAX_DRUGTYPES,MAX_CELLTYPES)
 integer :: Nradiation_dead(MAX_CELLTYPES), Nanoxia_dead(MAX_CELLTYPES), Naglucosia_dead(MAX_CELLTYPES)
 integer :: Ndrug_dead(MAX_DRUGTYPES,MAX_CELLTYPES)
 logical :: use_radiation_growth_delay_all = .true.
-!logical :: radiation_dosed
 
 integer :: ndoublings
 real(REAL_KIND) :: doubling_time_sum
@@ -382,7 +364,7 @@ type(metabolism_type), target :: metabolic(MAX_CELLTYPES)
 type(drug_type), allocatable, target :: drug(:)
 
 integer, allocatable :: gaplist(:)
-integer :: ngaps
+integer :: ngaps, ndivided
 integer, parameter :: max_ngaps = 200000
 
 logical :: bdry_changed
@@ -640,6 +622,22 @@ real(REAL_KIND), parameter :: rndfraction = 0.2
 DivisionTime = rv_lognormal(divide_dist(ityp)%p1,divide_dist(ityp)%p2,kpar)
 end function
 
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+function get_I2Divide(cp) result(I2div)
+type(cell_type), pointer :: cp
+real(REAL_KIND) :: I2div
+integer :: ityp
+type(cycle_parameters_type), pointer :: ccp
+
+ccp => cc_parameters
+
+ityp = cp%celltype
+!I2div = cp%divide_time*metabolic(ityp)%I_rate_max
+I2div = (ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp)) &
+		*metabolic(ityp)%I_rate_max
+end function
+
 !--------------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------------
 real(REAL_KIND) function rv_normal(p1,p2,kpar)
@@ -736,7 +734,7 @@ end function
 ! V0 = cell starting volume (after division) = %volume
 ! Two approaches:
 ! 1. Use Vdivide0 and dVdivide to generate a volume
-! 2. Use the divide time log-normal distribution
+! 2. Use the divide time log-normal distribution 
 !    (a) use_V_dependence = true
 !    (b) use_V_dependence = false
 !-----------------------------------------------------------------------------------------

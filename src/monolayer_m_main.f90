@@ -85,9 +85,9 @@ do irun = 1,1
 	do jstep = 1,Nsteps
 !		write(*,*) 'jstep: ',jstep
 		call simulate_step(res)
-!		if (mod(jstep,nsumm_interval) == 0) then
-!			call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
-!		endif
+		if (mod(jstep,nsumm_interval) == 0) then
+			call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
+		endif
 		if (res == 2) then
 			write(*,*) 'All cells have died'
 			stop

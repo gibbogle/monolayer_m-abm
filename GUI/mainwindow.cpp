@@ -181,8 +181,8 @@ void MainWindow::createFACSPage()
     QVBoxLayout *layout1v = new QVBoxLayout;
     layout1v->setMargin(1);
     vbox1->setLayout(layout1v);
-    vbox1->setMinimumWidth(101);
-    vbox1->setMaximumWidth(101);
+    vbox1->setMinimumWidth(103);
+    vbox1->setMaximumWidth(103);
     layout1v->setStretch(0,0);
     QLabel *xAxisLabel = new QLabel(" X axis");
     checkBox_FACS_log_x = new QCheckBox;
@@ -216,8 +216,8 @@ void MainWindow::createFACSPage()
     QVBoxLayout *layout2v = new QVBoxLayout;
     layout2v->setMargin(1);
     vBox2->setLayout(layout2v);
-    vBox2->setMinimumWidth(101);
-    vBox2->setMaximumWidth(101);
+    vBox2->setMinimumWidth(103);
+    vBox2->setMaximumWidth(103);
     QGroupBox *groupBox_celltype = new QGroupBox;
     groupBox_celltype->setMinimumHeight(80);
     groupBox_celltype->setMaximumHeight(80);
@@ -635,8 +635,13 @@ void MainWindow::showFACS()
     bool x_logscale, y_logscale;
     QString xlabel, ylabel;
     QRadioButton *rb;
+    QTime t;
 
-//    LOG_MSG("showFACS");
+    if (!paused) return;
+    t.start();
+    zzzgetFACS();
+    LOG_QMSG("getFACS time: " + QString::number(t.elapsed()));
+    LOG_QMSG("showFACS: nvars_used: " + QString::number(Global::nvars_used));
 //    if (Global::showingFACS) LOG_MSG("showingFACS");
 //    if (recordingFACS) LOG_MSG("recordingFACS");
 //    qpFACS = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_FACS");
@@ -674,6 +679,12 @@ void MainWindow::showFACS()
         xmin = 1.0e-3;
         xmax = 10.0;
         break;
+    case LACTATE:
+        xscale = 1;
+        xlabel = "Lactate";
+        xmin = 1.0e-3;
+        xmax = 10.0;
+        break;
     case TRACER:
         break;
     case DRUG_A_PARENT:
@@ -691,20 +702,26 @@ void MainWindow::showFACS()
     case GROWTH_RATE:
         xscale = 1;
         xlabel = "Growth rate";
-        xmin = 1.0e-7;
-        xmax = 1.0e-5;
+        xmin = 1.0e-8;
+        xmax = 2.0e-5;
         break;
     case CELL_VOLUME:
         xscale = 1;
         xlabel = "Cell volume";
-        xmin = 0;
+        xmin = 0.5;
         xmax = 2;
         break;
     case O2_BY_VOL:
         xscale = 1;
         xlabel = "O2 x volume";
-        xmin = 0;
+        xmin = 0.05;
         xmax = 2;
+        break;
+    case CYCLE_PHASE:
+        xscale = 1;
+        xlabel = "Cell cycle phase";
+        xmin = 0;
+        xmax = 8;
         break;
     }
     for (ivar=0; ivar<Global::nvars_used; ivar++) {
@@ -734,6 +751,13 @@ void MainWindow::showFACS()
         ymin = 1.0e-3;
         ymax = 10.0;
         break;
+    case LACTATE:
+        yscale = 1;
+        ylabel = "Lactate";
+        ymin = 1.0e-3;
+        ymax = 10.0;
+        LOG_MSG("Lactate selected");
+        break;
     case TRACER:
         break;
     case DRUG_A_PARENT:
@@ -751,27 +775,32 @@ void MainWindow::showFACS()
     case GROWTH_RATE:
         yscale = 1;
         ylabel = "Growth rate";
-        ymin = 1.0e-7;
-        ymax = 1.0e-5;
+        ymin = 1.0e-8;
+        ymax = 2.0e-5;
         break;
     case CELL_VOLUME:
         yscale = 1;
         ylabel = "Cell volume";
-        ymin = 0;
+        ymin = 0.5;
         ymax = 2;
         break;
     case O2_BY_VOL:
         yscale = 1;
         ylabel = "O2 x volume";
-        ymin = 0;
+        ymin = 0.05;
         ymax = 2;
+        break;
+    case CYCLE_PHASE:
+        yscale = 1;
+        ylabel = "Cell cycle phase";
+        ymin = 0;
+        ymax = 8;
         break;
     }
 
+    t.start();
     x_logscale = checkBox_FACS_log_x->isChecked();
     y_logscale = checkBox_FACS_log_y->isChecked();
-//    xmin = 0.1;
-//    xmax = 1500;
     double cfse_min = 1.0e20;
     for (i=0; i<Global::nFACS_cells; i++) {
         x = Global::FACS_data[Global::nvars_used*i+kvar_x];
@@ -780,7 +809,6 @@ void MainWindow::showFACS()
         x = xscale*x;
         y = yscale*y;
         y = max(y,1.01*ymin);
-//        ymax = max(y,ymax);
         if (x >= xmin) {
             QwtPlotMarker* m = new QwtPlotMarker();
             m->setSymbol( symbol );
@@ -809,6 +837,8 @@ void MainWindow::showFACS()
     qpFACS->setAxisMaxMajor(QwtPlot::xBottom, 5);
 
     qpFACS->replot();
+    LOG_QMSG("showFACS time: " + QString::number(t.elapsed()));
+
 //    if (videoFACS->record) {
 //        LOG_MSG("showFACS 6a");
 //        videoFACS->recorder();
@@ -817,6 +847,23 @@ void MainWindow::showFACS()
 //        actionStart_recording_FACS->setEnabled(true);
 //        actionStop_recording_FACS->setEnabled(false);
 //    }
+}
+
+
+//-----------------------------------------------------------------------------------------
+// Get FACS data TESTING WITH IT HERE
+//-----------------------------------------------------------------------------------------
+void MainWindow::zzzgetFACS()
+{
+//    LOG_MSG("get_nfacs");
+    get_nfacs(&Global::nFACS_cells);
+    if (!Global::FACS_data || Global::nFACS_cells*Global::nvars_used > Global::nFACS_dim) {
+        if (Global::FACS_data) free(Global::FACS_data);
+        Global::nFACS_dim = 3*Global::nFACS_cells*Global::nvars_used;   // 3* to avoid excessive malloc/free
+        Global::FACS_data = (double *)malloc(Global::nFACS_dim*sizeof(double));
+    }
+//    LOG_MSG("get_facs");
+    get_facs(Global::FACS_data);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -957,6 +1004,7 @@ void MainWindow:: showHisto()
     double width, xmin;
     bool log_scale;
 
+    exthread->getHisto();
     log_scale = checkBox_histo_logscale->isChecked();
     numValues = Global::nhisto_bins;
     QwtArray<double> values(numValues);
@@ -989,6 +1037,13 @@ void MainWindow:: showHisto()
     } else {
         xmin = Global::histo_vmin[ivar];
         width = (Global::histo_vmax[ivar] - Global::histo_vmin[ivar])/numValues;
+    }
+    if (xlabel.compare("Cycle phase") == 0) {
+        LOG_QMSG("xlabel: " + xlabel)
+        xmin = 1;
+        double xmax = 8;
+        numValues = 7;
+        width = (xmax - xmin)/numValues;
     }
     makeHistoPlot(numValues,xmin,width,values,xlabel);
 }
@@ -1708,6 +1763,17 @@ void MainWindow::goToFACS()
     Global::showingVTK = false;
     Global::showingFACS = true;
     Global::showingField = false;
+    emit histo_update();
+    emit facs_update();
+//    showHisto();
+//    if (paused) {
+//        LOG_MSG("gotoFACS: paused is true");
+//        showFACS();
+//    } else {
+//        LOG_MSG("gotoFACS: paused is false");
+//        goToOutputs();
+//        return;
+//    }
 }
 
 //-------------------------------------------------------------
@@ -3291,7 +3357,7 @@ void MainWindow::setupGraphSelector()
     for (int i=0; i<grph->n_tsGraphs; i++) {
         int itype = grph->tsGraphs[i].type;
         if (itype == 0) {
-            if (i < 16)
+            if (i < 24)
                 col = 0;
             else
                 col = 1;

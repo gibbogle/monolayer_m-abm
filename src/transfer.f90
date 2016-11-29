@@ -5,6 +5,7 @@ module transfer
 use global
 use chemokine
 use metabolism
+use cycle_mod
 use, intrinsic :: iso_c_binding
 
 #include "../src/version.h"
@@ -168,15 +169,14 @@ integer :: Nviable(MAX_CELLTYPES), Nlive(MAX_CELLTYPES), plate_eff_10(MAX_CELLTY
 integer :: nhypoxic(3), nclonohypoxic(3), ngrowth(3), &
     hypoxic_percent_10, clonohypoxic_percent_10, growth_percent_10, necrotic_percent_10, &
     medium_oxygen_1000, medium_glucose_1000, medium_lactate_1000, medium_drug_1000(2,0:2), &
-    IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_drug_1000(2,0:2), &
-    doubling_time_100
+    IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_pyruvate_1000, IC_drug_1000(2,0:2)
 integer :: TNanoxia_dead, TNaglucosia_dead, TNradiation_dead, TNdrug_dead(2),  TNviable, &
            Ntagged_anoxia(MAX_CELLTYPES), Ntagged_aglucosia(MAX_CELLTYPES), Ntagged_radiation(MAX_CELLTYPES), &
            Ntagged_drug(2,MAX_CELLTYPES), &
            TNtagged_anoxia, TNtagged_aglucosia, TNtagged_radiation, TNtagged_drug(2)
 integer :: Tplate_eff_10   
 integer :: ityp, i, im, idrug
-real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES)
+real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES), divide_fraction, P_oxidation, doubling_time
 real(REAL_KIND) :: cmedium(MAX_CHEMO)
 type(metabolism_type), pointer :: mp
 integer :: r_G_1000, r_P_1000, r_A_1000, r_I_1000
@@ -222,6 +222,19 @@ Tplate_eff_10 = 0
 do ityp = 1,Ncelltypes
 	Tplate_eff_10 = Tplate_eff_10 + plate_eff_10(ityp)*celltype_fraction(ityp)
 enddo
+
+! Metabolism state variables
+mp => metabolic(1)
+r_G_1000 = 1000*mp%G_rate/r_G_norm
+r_P_1000 = 1000*mp%PO_rate/r_P_norm
+r_A_1000 = 1000*mp%A_rate/r_A_norm
+r_I_1000 = 1000*mp%I_rate/r_I_norm
+if (mp%G_rate > 0 .and. mp%L_rate > 0) then
+	P_oxidation = mp%PO_rate/(2*(1-mp%f_G)*mp%G_rate)
+else
+	P_oxidation = 0
+endif
+
 call getMediumConc(cmedium)
 medium_oxygen_1000 = cmedium(OXYGEN)*1000.
 medium_glucose_1000 = cmedium(GLUCOSE)*1000.
@@ -235,6 +248,7 @@ enddo
 IC_oxygen_1000 = caverage(OXYGEN)*1000.
 IC_glucose_1000 = caverage(GLUCOSE)*1000.
 IC_lactate_1000 = caverage(LACTATE)*1000.
+IC_pyruvate_1000 = mp%C_P*1000.
 do i = 1,2
 	do im = 0,2
 		idrug = DRUG_A + 3*(i-1)
@@ -242,26 +256,29 @@ do i = 1,2
 	enddo
 enddo
 
-if (ndoublings > 0) then
-    doubling_time_100 = (100*doubling_time_sum)/(3600*ndoublings)
-else
-    doubling_time_100 = 0
+if (ndivided /= ndoublings) then
+	write(*,*) 'ndivided /= ndoublings: ',ndivided,ndoublings
+	stop
 endif
+if (ndoublings > 0) then
+    doubling_time = doubling_time_sum/(3600*ndoublings)
+else
+    doubling_time = 0
+endif
+!if (ndivided > 0 .and. Ncells > 0) then
+!	divide_fraction = real(ndivided)/Ncells
+!else
+!	divide_fraction = 0
+!endif
 
-! Metabolism state variables
-mp => metabolic(1)
-r_G_1000 = 1000*mp%G_rate/r_G_norm
-r_P_1000 = 1000*mp%PO_rate/r_P_norm
-r_A_1000 = 1000*mp%A_rate/r_A_norm
-r_I_1000 = 1000*mp%I_rate/r_I_norm
-
-summaryData(1:39) = [ istep, Ncells, TNanoxia_dead, TNaglucosia_dead, TNdrug_dead(1), TNdrug_dead(2), TNradiation_dead, &
+summaryData(1:42) = [ istep, Ncells, TNanoxia_dead, TNaglucosia_dead, TNdrug_dead(1), TNdrug_dead(2), TNradiation_dead, &
     TNtagged_anoxia, TNtagged_aglucosia, TNtagged_drug(1), TNtagged_drug(2), TNtagged_radiation, &
 	hypoxic_percent_10, clonohypoxic_percent_10, growth_percent_10, Tplate_eff_10, &
 	medium_oxygen_1000, medium_glucose_1000, medium_lactate_1000, medium_drug_1000(1,:), medium_drug_1000(2,:), &
-	IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_drug_1000(1,:), IC_drug_1000(2,:), &
-	doubling_time_100, r_G_1000, r_P_1000, r_A_1000, r_I_1000 ]
-write(nfres,'(a,a,2a12,i8,e12.4,22i7,34e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
+	IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_pyruvate_1000, &
+	IC_drug_1000(1,:), IC_drug_1000(2,:), &
+	int(100*doubling_time), r_G_1000, r_P_1000, r_A_1000, r_I_1000, ndivided, int(1000*P_oxidation) ]
+write(nfres,'(a,a,2a12,i8,e12.4,22i7,37e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), &
     Nanoxia_dead(1:2), Naglucosia_dead(1:2), Ndrug_dead(1,1:2), &
     Ndrug_dead(2,1:2), Nradiation_dead(1:2), &
@@ -269,10 +286,14 @@ write(nfres,'(a,a,2a12,i8,e12.4,22i7,34e12.4)') trim(header),' ',gui_run_version
     Ntagged_drug(2,1:2), Ntagged_radiation(1:2), &
 	nhypoxic(:)/real(Ncells), nclonohypoxic(:)/real(TNviable), ngrowth(:)/real(Ncells), plate_eff(1:2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
-	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
-	doubling_time_100/100., 100.*r_G_1000, 1000.*r_P_1000, 1000.*r_A_1000, 1000.*r_I_1000
+	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, &
+	caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
+	doubling_time, r_G_1000/1000., r_P_1000/1000., r_A_1000/1000., r_I_1000/1000., ndivided, P_oxidation
 	
 !call sum_dMdt(GLUCOSE)
+ndoublings = 0
+doubling_time_sum = 0
+ndivided = 0
 
 end subroutine
 
@@ -324,6 +345,7 @@ subroutine getGrowthCount(ngrowth)
 integer :: ngrowth(3)
 integer :: kcell, i, ityp
 real(REAL_KIND) :: r_mean(2)
+type(cell_type), pointer :: cp
 
 if (use_cell_cycle) then
     r_mean = max_growthrate
@@ -332,16 +354,16 @@ else
 endif
 ngrowth = 0
 do kcell = 1,nlist
-	if (cell_list(kcell)%state == DEAD) cycle
-	ityp = cell_list(kcell)%celltype
+	cp => cell_list(kcell)
+	ityp = cp%celltype
+	if (cp%state == DEAD) cycle
 	do i = 1,3
-		if (cell_list(kcell)%dVdt < growthcutoff(i)*r_mean(ityp)) then
+		if (cp%dVdt < growthcutoff(i)*r_mean(ityp) .or. cp%phase == Checkpoint1 .or. cp%phase == Checkpoint2) then
 		    ngrowth(i) = ngrowth(i) + 1
 !		    write(*,'(a,3i6,3e12.3)') 'getGrowthCount: ',kcell,ityp,i,cell_list(kcell)%dVdt,growthcutoff(i),r_mean(ityp)
 		endif
 	enddo
 enddo
-
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -381,14 +403,16 @@ subroutine getNviable(Nviable, Nlive)
 integer :: Nviable(:), Nlive(:)
 integer :: kcell, ityp, idrug
 logical :: tag
+type(cell_type), pointer :: cp
 
 Nviable = 0
 Nlive = 0
 do kcell = 1,nlist
-	if (cell_list(kcell)%state == DEAD) cycle
-    ityp = cell_list(kcell)%celltype
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+    ityp = cp%celltype
     Nlive(ityp) = Nlive(ityp) + 1
-	if (cell_list(kcell)%anoxia_tag .or. cell_list(kcell)%aglucosia_tag .or. cell_list(kcell)%radiation_tag) cycle
+	if (cp%anoxia_tag .or. cp%aglucosia_tag .or. cp%radiation_tag .or. cp%state == DYING) cycle
     tag = .false.
     do idrug = 1,ndrugs_used
 		if (cell_list(kcell)%drug_tag(idrug)) tag = .true.
@@ -466,6 +490,11 @@ k = ivar*nvarlen
 cvar_index(ivar) = O2_BY_VOL
 name = 'Cell O2xVol'
 call copyname(name,name_array(k),nvarlen)
+ivar = ivar + 1
+k = ivar*nvarlen
+cvar_index(ivar) = CYCLE_PHASE
+name = 'Cycle phase'
+call copyname(name,name_array(k),nvarlen)
 nvars = ivar + 1
 write(nflog,*) 'did get_constituents'
 end subroutine
@@ -509,7 +538,7 @@ real(c_double) :: val, facs_data(*)
 integer :: k, kcell, iextra, ichemo, ivar, nvars, var_index(32)
 real(REAL_KIND) :: cfse_min
 
-!call logger('get_FACS')
+call logger('get_FACS')
 nvars = 1	! CFSE
 var_index(nvars) = 0
 do ichemo = 1,MAX_CHEMO
@@ -520,6 +549,10 @@ enddo
 do iextra = 1,N_EXTRA-1
 	nvars = nvars + 1
 	var_index(nvars) = MAX_CHEMO + iextra
+enddo
+write(nflog,*) 'nvars: ',nvars
+do k = 1,nvars
+	write(nflog,*) 'k, var_index: ',k,var_index(k)
 enddo
 cfse_min = 1.0e20
 k = 0
@@ -533,11 +566,13 @@ do kcell = 1,nlist
 		elseif (ichemo <= MAX_CHEMO) then
 			val = cell_list(kcell)%Cin(ichemo)
 		elseif (ichemo == GROWTH_RATE) then
-			val = cell_list(kcell)%dVdt
+			val = cell_list(kcell)%dVdt/1.0e-9		! -> pL
 		elseif (ichemo == CELL_VOLUME) then
-			val = cell_list(kcell)%V
+			val = cell_list(kcell)%V/1.0e-9
 		elseif (ichemo == O2_BY_VOL) then
-			val = cell_list(kcell)%V*cell_list(kcell)%Cin(OXYGEN)
+			val = cell_list(kcell)%V*cell_list(kcell)%Cin(OXYGEN)/1.0e-9
+		elseif (ichemo == CYCLE_PHASE) then
+			val = cell_list(kcell)%phase
 		endif
 		k = k+1
 		facs_data(k) = val
@@ -566,7 +601,9 @@ integer :: n(3), i, ih, k, kcell, ict, ichemo, ivar, nvars, var_index(32)
 integer,allocatable :: cnt(:,:,:)
 real(REAL_KIND),allocatable :: dv(:,:), valmin(:,:), valmax(:,:)
 integer,allocatable :: cnt_log(:,:,:)
+integer :: phase_cnt(3,7), ivar_phase
 real(REAL_KIND),allocatable :: dv_log(:,:), valmin_log(:,:), valmax_log(:,:)
+type(cell_type), pointer :: cp
 !real(REAL_KIND) :: vmin_log(100), vmax_log(100)
 !real(REAL_KIND),allocatable :: histo_data_log(:)
 
@@ -584,6 +621,9 @@ nvars = nvars + 1
 var_index(nvars) = CELL_VOLUME
 nvars = nvars + 1
 var_index(nvars) = O2_BY_VOL
+nvars = nvars + 1
+var_index(nvars) = CYCLE_PHASE
+ivar_phase = nvars
 
 allocate(cnt(3,nvars,nhisto))
 allocate(dv(3,nvars))
@@ -602,20 +642,23 @@ valmin_log = 1.0e10
 valmax_log = -1.0e10
 n = 0
 do kcell = 1,nlist
-	if (cell_list(kcell)%state == DEAD) cycle
-	ict = cell_list(kcell)%celltype
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+	ict = cp%celltype
 	do ivar = 1,nvars
 		ichemo = var_index(ivar)
 		if (ichemo == 0) then
-			val = cell_list(kcell)%CFSE
+			val = cp%CFSE
 		elseif (ichemo <= MAX_CHEMO) then
-			val = cell_list(kcell)%Cin(ichemo)
+			val = cp%Cin(ichemo)
 		elseif (ichemo == GROWTH_RATE) then
-			val = cell_list(kcell)%dVdt
+			val = cp%dVdt/1.0e-9		! -> pL
 		elseif (ichemo == CELL_VOLUME) then
-			val = Vcell_pL*cell_list(kcell)%V
+			val = Vcell_pL*cp%V/1.0e-9
 		elseif (ichemo == O2_BY_VOL) then
-			val = cell_list(kcell)%Cin(OXYGEN)*Vcell_pL*cell_list(kcell)%V
+			val = cp%Cin(OXYGEN)*Vcell_pL*cp%V/1.0e-9
+		elseif (ichemo == CYCLE_PHASE) then
+			val = cp%phase
 		endif
 		valmax(ict+1,ivar) = max(valmax(ict+1,ivar),val)	! cell type 1 or 2
 		valmax(1,ivar) = max(valmax(1,ivar),val)			! both
@@ -648,21 +691,27 @@ dv = (valmax - valmin)/nhisto
 dv_log = (valmax_log - valmin_log)/nhisto
 !write(nflog,*) 'dv_log'
 !write(nflog,'(e12.3)') dv_log
+phase_cnt = 0
 do kcell = 1,nlist
-	if (cell_list(kcell)%state == DEAD) cycle
-	ict = cell_list(kcell)%celltype
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+	ict = cp%celltype
 	do ivar = 1,nvars
 		ichemo = var_index(ivar)
 		if (ichemo == 0) then
-			val = cell_list(kcell)%CFSE
+			val = cp%CFSE
 		elseif (ichemo <= MAX_CHEMO) then
-			val = cell_list(kcell)%Cin(ichemo)
+			val = cp%Cin(ichemo)
 		elseif (ichemo == GROWTH_RATE) then
-			val = cell_list(kcell)%dVdt
+			val = cp%dVdt/1.0e-9		! -> pL
 		elseif (ichemo == CELL_VOLUME) then
-			val = Vcell_pL*cell_list(kcell)%V
+			val = Vcell_pL*cp%V/1.0e-9
 		elseif (ichemo == O2_BY_VOL) then
-			val = cell_list(kcell)%Cin(OXYGEN)*Vcell_pL*cell_list(kcell)%V
+			val = cp%Cin(OXYGEN)*Vcell_pL*cp%V/1.0e-9
+		elseif (ichemo == CYCLE_PHASE) then
+			val = cell_list(kcell)%phase
+			phase_cnt(1,cp%phase) = phase_cnt(1,cp%phase) + 1
+			phase_cnt(ict+1,cp%phase) = phase_cnt(ict+1,cp%phase) + 1
 		endif
 		k = (val-valmin(1,ivar))/dv(1,ivar) + 1
 		k = min(k,nhisto)
@@ -712,6 +761,16 @@ do i = 1,3
 			enddo
 		enddo
 	endif
+	! Now overwrite CYCLE_PHASE data
+	ivar = ivar_phase
+	do ih = 1,nhisto
+		k = (i-1)*nvars*nhisto + (ivar-1)*nhisto + ih
+		if (ih <= 7) then
+			histo_data(k) = (100.*phase_cnt(i,ih))/n(i)
+		else
+			histo_data(k) = 0
+		endif
+	enddo
 enddo
 deallocate(cnt)
 deallocate(dv)

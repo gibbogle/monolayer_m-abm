@@ -589,7 +589,15 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 
       {"K_LP_1", 0.1, 0, 0,
       "Lactate -> pyruvate rate constant",
-       "The reverse rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of glucose to pyruvate"},
+      "The reverse rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of glucose to pyruvate"},
+
+       {"PYRUVATE_MM_KM_1", 20, 0, 0,
+       "Pyruvate Michaelis-Menten Km",
+       "Pyruvate Michaelis-Menten Km (uM). fMM = C_P/(Km + C_P) is a multiple of pyruvate oxidation rate, ensuring that the rate -> 0 as C_P -> 0"},
+
+       {"APOPTOSIS_RATE_1", 0.1, 0, 0,
+       "Apoptosis rate/hr",
+       "The rate of passage from state = DYING to state = DEAD, probability/hour"},
 
        {"N_GA_2", 2, 0, 0,
        "ATP moles produced per glucose mole",
@@ -647,6 +655,14 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        {"K_LP_2", 0.1, 0, 0,
        "Lactate -> pyruvate rate constant",
         "The reverse rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of glucose to pyruvate"},
+
+        {"PYRUVATE_MM_KM_2", 20, 0, 0,
+        "Pyruvate Michaelis-Menten Km",
+        "Pyruvate Michaelis-Menten Km (uM). fMM = C_P/(Km + C_P) is a multiple of pyruvate oxidation rate, ensuring that the rate -> 0 as C_P -> 0"},
+
+        {"APOPTOSIS_RATE_2", 0.1, 0, 0,
+        "Apoptosis rate/hr",
+        "The rate of passage from state = DYING to state = DEAD, probability/hour"},
 
 
 
@@ -764,7 +780,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"naglucosiadead",            1, 0,1,"","Total number of cells that have been killed by aglucosia"},
     {"ndrugAdead",                1, 0,1,"","Total number of cells that have been killed by drugA"},
     {"ndrugBdead",                0, 0,1,"","Total number of cells that have been killed by drugB"},
-    {"nradiationdead",            1, 0,1,"","Total number of cells that have been killed by radiation"},
+    {"nradiationdead",            0, 0,1,"","Total number of cells that have been killed by radiation"},
     {"nanoxiatagged",             1, 0,1,"","Current number of cells tagged to die by anoxia"},
     {"naglucosiatagged",          1, 0,1,"","Current number of cells tagged to die by aglucosia"},
     {"ndrugAtagged",              1, 0,1,"","Current number of cells tagged to die by drugA"},
@@ -786,6 +802,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ICoxygen",                  0, 0,1,"","IC concentration of oxygen"},
     {"ICglucose",                 0, 0,1,"","IC concentration of glucose"},
     {"IClactate",                 0, 0,1,"","IC concentration of lactate"},
+    {"ICpyruvate",                0, 0,1,"","IC concentration of pyruvate"},
     {"ICdrugA",                   0, 0,1,"","IC concentration of drug A"},
     {"ICdrugAmet1",               0, 0,1,"","IC concentration of drug A metabolite 1"},
     {"ICdrugAmet2",               0, 0,1,"","IC concentration of drug A metabolite 2"},
@@ -797,6 +814,8 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"Prate",                     0, 0,1,"","Normalised pyruvate oxidation rate"},
     {"Arate",                     0, 0,1,"","Normalised ATP production rate"},
     {"Irate",                     0, 0,1,"","Normalised rate of production of anabolic intermediates"},
+    {"dividerate",                1, 0,1,"","# divided/hour"},
+    {"Poxidation",                0, 0,1,"","% pyruvate oxidised"},
 
 /*
 // Profile plots
