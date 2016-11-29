@@ -256,6 +256,7 @@ do kcell = 1,nlist
 !			call CellDies(kcell)
 			cp%state = DYING
 			cp%dVdt = 0
+			Ncells_dying(ityp) = Ncells_dying(ityp) + 1
 			cycle
 		endif			
 	else
@@ -371,11 +372,7 @@ stop
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! If the dying cell site is less than a specified fraction f_migrate of the blob radius,
-! the site migrates towards the blob centre.
-! %indx -> 0
-! If the site is on the boundary, it is removed from the boundary list, and %indx -> OUTSIDE_TAG
-! The cell contents are released into the site.
+! A cell that dies must be subtracted from any counts it is on.
 !-----------------------------------------------------------------------------------------
 subroutine CellDies(kcell)
 integer :: kcell
@@ -383,8 +380,10 @@ integer :: site(3), ityp, idrug
 type(cell_type), pointer :: cp
 
 cp => cell_list(kcell)
-cp%state = DEAD
 ityp = cp%celltype
+if (cp%state == DYING) then
+	Ncells_dying(ityp) = Ncells_dying(ityp) - 1
+endif
 Ncells = Ncells - 1
 Ncells_type(ityp) = Ncells_type(ityp) - 1
 if (cp%anoxia_tag) then
@@ -401,6 +400,7 @@ enddo
 if (cp%radiation_tag) then
 	Nradiation_tag(ityp) = Nradiation_tag(ityp) - 1
 endif
+cp%state = DEAD
 
 ngaps = ngaps + 1
 if (ngaps > max_ngaps) then

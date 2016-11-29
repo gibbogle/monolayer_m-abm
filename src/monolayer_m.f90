@@ -691,6 +691,7 @@ call logger(logmsg)
 
 call DetermineKd	! Kd is now set or computed in the GUI 
 ndivided = 0
+Ncells_dying = 0
 ok = .true.
 
 end subroutine
@@ -1581,7 +1582,7 @@ integer(c_int) :: res
 integer :: kcell, site(3), hour, nthour, kpar=0
 real(REAL_KIND) :: r(3), rmax, tstart, dt, radiation_dose, diam_um, framp, tnow, area, diam
 !integer, parameter :: NT_CONC = 6
-integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv
+integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nlivecells
 integer :: nvars, ns
 real(REAL_KIND) :: dxc, ex_conc(120*CYCLE_PHASE+1)		! just for testing
 real(REAL_KIND) :: DELTA_T_save, t_sim_0
@@ -1593,8 +1594,14 @@ logical :: dbug
 !write(*,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
 !write(nflog,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
 dbug = .false.
+Nlivecells = Ncells - (Ncells_dying(1) + Ncells_dying(2))
+if (Nlivecells == 0) then
+	call logger('# of metabolising cells = 0')
+    res = 0
+    return
+endif
 if (Ncells == 0) then
-	call logger('Ncells = 0')
+	call logger('# of cells = 0')
     res = 2
     return
 endif

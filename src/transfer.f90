@@ -322,6 +322,7 @@ logical :: tagged
 nclonohypoxic = 0
 do kcell = 1,nlist
 	if (cell_list(kcell)%state == DEAD) cycle
+	if (cell_list(kcell)%state == DYING) cycle
 	if (cell_list(kcell)%anoxia_tag) cycle
 	if (cell_list(kcell)%aglucosia_tag) cycle
 	if (cell_list(kcell)%radiation_tag) cycle
