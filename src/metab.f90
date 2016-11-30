@@ -255,24 +255,6 @@ enddo
 
 end subroutine
 
-!----------------------------------------------------------------------------------
-! Computes metabolism rate as a fraction of the maximum cell rate
-! Use the "soft landing" option for Hill_N = 1 if MM_threshold = 0
-! TO BE REMOVED - NEEDED for metab only
-!----------------------------------------------------------------------------------
-!real(REAL_KIND) function O2_metab(C)
-!implicit none
-!integer :: ichemo
-!real(REAL_KIND) :: C
-!
-!ichemo = OXYGEN
-!if (C > 0) then
-!	O2_metab = C/(chemo(ichemo)%MM_C0 + C)
-!else
-!	O2_metab = 0
-!endif
-!end function
-
 !--------------------------------------------------------------------------
 ! Use:
 !	r_G for dG/dt, the rate of glycolysis = rate of glucose consumption
@@ -307,7 +289,7 @@ real(REAL_KIND) :: C_O2, C_G, C_L
 real(REAL_KIND) :: r_G, fPDK
 real(REAL_KIND) :: f_G, f_P, r_P, r_A, r_I, r_L, f_PO, f_PA
 real(REAL_KIND) :: K1, K2, C_P
-real(REAL_KIND) :: r_GP, r_GA, r_PA, r_P_fac, V, Km_O2, Km_P, a, b, c, e, MM_P, r_A_target
+real(REAL_KIND) :: r_GP, r_GA, r_PA, r_P_fac, V, Km_O2, Km_P, a, b, c, e, MM_P, r_A_target, df_G
 real(REAL_KIND) :: base_O_rate = 2.0e-11
 integer :: N_O2, N_P, it
 logical :: use_MM_P = .true.
@@ -420,6 +402,12 @@ mp%O_rate = mp%O_rate + base_O_rate
 mp%f_G = f_G
 mp%f_P = f_P
 mp%C_P = C_P
+
+df_G = f_G - f_G_norm
+if (abs(df_G) > 1.0e-6) then
+	write(*,'(a,2e12.3)') 'f_G, df_G: ',f_G, df_G
+	stop
+endif
 end subroutine
 
 !--------------------------------------------------------------------------
