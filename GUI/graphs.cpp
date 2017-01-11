@@ -249,9 +249,9 @@ GRAPH_SET tsGraphSet[] = {
     36, false, 0, 0.001, 0, TS_TYPE},
 
     {"Prate",
-    "Pyruvate oxidation rate",
+    "Pyruvate utilisation rate",
     "",
-    "Normalised rate of pyruvate oxidation",
+    "Normalised rate of pyruvate utilisation",
     37, false, 0, 0.001, 0, TS_TYPE},
 
     {"Arate",
@@ -272,10 +272,10 @@ GRAPH_SET tsGraphSet[] = {
     "# divided/hour",
     40, true, 0, 1, 0, TS_TYPE},
 
-    {"Poxidation",
-    "% pyruvate oxidised",
+    {"Pfraction",
+    "% pyruvate utilised",
     "%",
-    "% pyruvate oxidised",
+    "% pyruvate utilised",
     41, false, 0, 0.1, 0, TS_TYPE},
 
 

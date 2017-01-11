@@ -176,7 +176,7 @@ integer :: TNanoxia_dead, TNaglucosia_dead, TNradiation_dead, TNdrug_dead(2),  T
            TNtagged_anoxia, TNtagged_aglucosia, TNtagged_radiation, TNtagged_drug(2)
 integer :: Tplate_eff_10   
 integer :: ityp, i, im, idrug
-real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES), divide_fraction, P_oxidation, doubling_time
+real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES), divide_fraction, P_utilisation, doubling_time
 real(REAL_KIND) :: cmedium(MAX_CHEMO)
 type(metabolism_type), pointer :: mp
 integer :: r_G_1000, r_P_1000, r_A_1000, r_I_1000
@@ -226,13 +226,13 @@ enddo
 ! Metabolism state variables
 mp => metabolic(1)
 r_G_1000 = 1000*mp%G_rate/r_G_norm
-r_P_1000 = 1000*mp%PO_rate/r_P_norm
+r_P_1000 = 1000*mp%P_rate/r_P_norm
 r_A_1000 = 1000*mp%A_rate/r_A_norm
 r_I_1000 = 1000*mp%I_rate/r_I_norm
 if (mp%G_rate > 0 .and. mp%L_rate > 0) then
-	P_oxidation = mp%PO_rate/(2*(1-mp%f_G)*mp%G_rate)
+	P_utilisation = mp%P_rate/(2*(1-mp%f_G)*mp%G_rate)	!!!???
 else
-	P_oxidation = 0
+	P_utilisation = 0
 endif
 
 call getMediumConc(cmedium)
@@ -277,7 +277,7 @@ summaryData(1:42) = [ istep, Ncells, TNanoxia_dead, TNaglucosia_dead, TNdrug_dea
 	medium_oxygen_1000, medium_glucose_1000, medium_lactate_1000, medium_drug_1000(1,:), medium_drug_1000(2,:), &
 	IC_oxygen_1000, IC_glucose_1000, IC_lactate_1000, IC_pyruvate_1000, &
 	IC_drug_1000(1,:), IC_drug_1000(2,:), &
-	int(100*doubling_time), r_G_1000, r_P_1000, r_A_1000, r_I_1000, ndivided, int(1000*P_oxidation) ]
+	int(100*doubling_time), r_G_1000, r_P_1000, r_A_1000, r_I_1000, ndivided, int(1000*P_utilisation) ]
 write(nfres,'(a,a,2a12,i8,e12.4,22i7,37e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), &
     Nanoxia_dead(1:2), Naglucosia_dead(1:2), Ndrug_dead(1,1:2), &
@@ -288,7 +288,7 @@ write(nfres,'(a,a,2a12,i8,e12.4,22i7,37e12.4)') trim(header),' ',gui_run_version
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, &
 	caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
-	doubling_time, r_G_1000/1000., r_P_1000/1000., r_A_1000/1000., r_I_1000/1000., ndivided, P_oxidation
+	doubling_time, r_G_1000/1000., r_P_1000/1000., r_A_1000/1000., r_I_1000/1000., ndivided, P_utilisation
 	
 !call sum_dMdt(GLUCOSE)
 ndoublings = 0

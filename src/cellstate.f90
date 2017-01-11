@@ -251,7 +251,7 @@ do kcell = 1,nlist
 	endif	
 	call getO2conc(cp,C_O2)
 	if (use_metabolism) then
-		if (cp%metab%A_rate < cp%ATP_rate_factor*ATPs(ityp)) then
+		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
 !			write(*,'(a,2e12.3)') 'A_rate: ',cp%metab%A_rate,ATPs(ityp)
 !			call CellDies(kcell)
 			cp%state = DYING
@@ -780,10 +780,10 @@ if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or
 	write(*,*) 'no growth - phase'
 	return
 endif
-if (use_metabolism .and. cp%metab%A_rate < cp%ATP_rate_factor*ATPg(cp%celltype)) then
-	cp%dVdt = 0
-	return
-endif
+!if (use_metabolism .and. cp%metab%A_rate < cp%ATP_rate_factor*ATPg(cp%celltype)) then
+!	cp%dVdt = 0
+!	return
+!endif
 ityp = cp%celltype
 if (colony_simulation) then
 	if (use_metabolism) then
@@ -940,8 +940,6 @@ type(cycle_parameters_type), pointer :: ccp
 !call logger(logmsg)
 ok = .true.
 ndivided = ndivided + 1
-!write(*,*) 'divider: ',kcell1,ndivided,Ncells
-!tnow = istep*DELTA_T
 ccp => cc_parameters
 if (colony_simulation) then
     cp1 => ccell_list(kcell1)
@@ -961,15 +959,14 @@ else
 	kcell2 = nlist
 endif
 ncells = ncells + 1
+ityp = cp1%celltype
+ncells_type(ityp) = ncells_type(ityp) + 1
+ncells_mphase = ncells_mphase - 1
 if (colony_simulation) then
     cp2 => ccell_list(kcell2)
 else
 	cp2 => cell_list(kcell2)
 endif
-ityp = cp1%celltype
-ncells_type(ityp) = ncells_type(ityp) + 1
-ncells_mphase = ncells_mphase - 1
-!cp2 => cell_list(kcell2)
 
 cp1%state = ALIVE
 cp1%generation = cp1%generation + 1
@@ -1089,7 +1086,7 @@ end function
 !----------------------------------------------------------------------------------
 function get_ATP_rate_factor() result(r)
 real(REAL_KIND) :: r
-real(REAL_KIND) :: dr = 0.5
+real(REAL_KIND) :: dr = 0.2
 integer :: kpar = 0
 
 r = 1 + (par_uni(kpar) - 0.5)*dr

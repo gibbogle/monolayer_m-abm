@@ -109,7 +109,7 @@ type metabolism_type
 	real(REAL_KIND) :: I_rate_max
 	real(REAL_KIND) :: G_rate
 	real(REAL_KIND) :: PP_rate
-	real(REAL_KIND) :: PO_rate 
+	real(REAL_KIND) :: P_rate 
 	real(REAL_KIND) :: L_rate
 	real(REAL_KIND) :: A_rate
 	real(REAL_KIND) :: I_rate

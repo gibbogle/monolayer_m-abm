@@ -679,9 +679,8 @@ f_clonohypox(1) f_clonohypox(2) f_clonohypox(3) &
 f_growth(1) f_growth(2) f_growth(3) &
 plating_efficiency(1) plating_efficiency(2) &
 EC_oxygen EC_glucose EC_lactate EC_drugA EC_drugA_metab1 EC_drugA_metab2 EC_drugB EC_drugB_metab1 EC_drugB_metab2 &
-IC_oxygen IC_glucose IC_lactate IC_drugA IC_drugA_metab1 IC_drugA_metab2 IC_drugB IC_drugB_metab1 IC_drugB_metab2 &
-doubling_time'
-
+IC_oxygen IC_glucose IC_lactate IC_pyruvate IC_drugA IC_drugA_metab1 IC_drugA_metab2 IC_drugB IC_drugB_metab1 IC_drugB_metab2 &
+doubling_time glycolysis_rate pyruvate_oxidation_rate ATP_rate intermediates_rate Ndivided pyruvate_oxidised_fraction'
 write(logmsg,*) 'Opened nfout: ',trim(outputfile)
 call logger(logmsg)
 
@@ -756,7 +755,10 @@ do ityp = 1,Ncelltypes
 	read(nf,*) K_H2(ityp)
 	read(nf,*) K_HB(ityp)
 	read(nf,*) K_PDK(ityp)
-	read(nf,*) f_ATPg(ityp)
+	read(nf,*) PDKmin(ityp)
+	read(nf,*) C_O2_norm(ityp)
+	read(nf,*) C_G_norm(ityp)
+	read(nf,*) C_L_norm(ityp)
 	read(nf,*) f_ATPs(ityp)
 	read(nf,*) K_PL(ityp)
 	read(nf,*) K_LP(ityp)
@@ -1595,11 +1597,11 @@ logical :: dbug
 !write(nflog,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
 dbug = .false.
 Nlivecells = Ncells - (Ncells_dying(1) + Ncells_dying(2))
-if (Nlivecells == 0) then
-	call logger('# of metabolising cells = 0')
-    res = 0
-    return
-endif
+!if (Nlivecells == 0) then
+!	call logger('# of metabolising cells = 0')
+!    res = 0
+!    return
+!endif
 if (Ncells == 0) then
 	call logger('# of cells = 0')
     res = 2
@@ -1703,7 +1705,7 @@ if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
 	write(logmsg,'(a,i6,i4,a,i8,2e12.3)') 'istep, hour: ',istep,istep/nthour,' Ncells, Irate: ',Ncells,mp%I_rate,mp%I_rate_max
 	call logger(logmsg)
-!	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%PO_rate,mp%O_rate
+!	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%O_rate
 !	call logger(logmsg)
 !	write(logmsg,'(a,3e12.3)') 'C_O2, C_G, C_L: ',Caverage(1:3)
 !	call logger(logmsg)
@@ -1724,7 +1726,7 @@ integer :: kcell
 type(cell_type), pointer :: cp
 type (metabolism_type), pointer :: mp
 real(REAL_KIND) :: Cin(MAX_CHEMO)
-!real(REAL_KIND) :: HIF1, G_rate, PP_rate, PO_rate
+!real(REAL_KIND) :: HIF1, G_rate, PP_rate, P_rate
 !real(REAL_KIND) :: L_rate, A_rate, I_rate, O_rate
 
 cp =>cell_list(kcell)
@@ -1735,8 +1737,8 @@ call get_metab_rates(cp%celltype, mp, Cin)
 return
 
 write(*,'(a,i2,3e12.3)') 'phase, Itotal,I2Divide,V: ',cp%phase,mp%Itotal,mp%I2Divide,cp%V
-write(*,'(a,3e11.3)') 'G_rate, PP_rate, PO_rate: ',mp%G_rate, mp%PP_rate, mp%PO_rate
-write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate, O_rate: ',mp%L_rate, mp%A_rate, mp%I_rate, mp%O_rate
+write(*,'(a,3e11.3)') 'G_rate, P_rate, O_rate: ',mp%G_rate, mp%P_rate, mp%O_rate
+write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate: ',mp%L_rate, mp%A_rate, mp%I_rate
 write(*,'(a,4f8.4)') 'O2, glucose, lactate, H: ',Caverage(OXYGEN),Caverage(GLUCOSE),Caverage(LACTATE),mp%HIF1
 if (mp%A_rate < ATPg(cp%celltype)) then
 	write(*,*) 'Not growing'

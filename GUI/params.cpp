@@ -84,7 +84,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Randomise initial cell volumes",
 "The volumes of the initial cell population are randomised."},
 
-{"NDAYS", 10.0, 0.0, 30.0,
+{"NDAYS", 20.0, 0.0, 30.0,
 "Number of days",
 "Length of the simulation.\n\
 [days]"},
@@ -277,7 +277,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Constant concentration",
  "Extracellular concentration to be held constant everywhere at the specified boundary value"},
 
-{"GLUCOSE_CONSUMPTION", 3.8e-17, 0, 0,
+{"GLUCOSE_CONSUMPTION", 6.8e-17, 0, 0,
  "Max consumption rate",
  "GLUCOSE consumption rate"},
 
@@ -313,7 +313,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Membrane diff constant",
      "Cell membrane diffusion coefficient Kout"},
 
-    {"LACTATE_BDRY_CONC", 0, 0, 0,
+    {"LACTATE_BDRY_CONC", 3, 0, 0,
      "Boundary concentration",
      "LACTATE boundary concentration"},
 
@@ -542,21 +542,17 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP moles produced per pyruvate mole",
       "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
-      {"N_GI_1", 0.7, 0, 0,
+      {"N_GI_1", 0.4, 0, 0,
       "Intermediate moles produced per glucose mole",
       "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
 
-      {"N_PI_1", 0.5, 0, 0,
+      {"N_PI_1", 0.4, 0, 0,
       "Intermediate moles produced per pyruvate mole",
       "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
 
       {"N_PO_1", 3, 0, 0,
       "Oxygen moles consumed per pyruvate mole",
       "Number of moles of oxygen consumed the oxidation of one pyruvate mole"},
-
-//      {"F_PO_BASE_1", 0.1, 0, 0,
-//      "Base level of pyruvate oxidation (fraction of glycolysis)",
-//      "With no nutrient constraints, the fraction of pyruvate produced by glycolysis that goes to oxidation by TCA/ETC"},
 
       {"K_H1_1", 140, 0, 0,
       "K_H1",
@@ -569,15 +565,27 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       {"K_HB_1", 0.2, 0, 0,
       "K_HB",
       "Glycolysis rate = K_HA*(1 + K_HB*H)*C_G^N/(C_G^N + Km^N)\n\
-        where: H = HIF-1 level, C_G = glucose concentration, HB is maximum glucose consumption rate, Km and N are the glucose consumption Hill function parameters"},
+        where: H = HIF-1 level, C_G = glucose concentration, K_HA is maximum glucose consumption rate when H=0, Km and N are the glucose consumption Hill function parameters"},
 
       {"K_PDK_1", 4.63e-5, 0, 0,
       "K_PDK",
-      "Representing PDK1 level by y in the range (0,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + H) where H = HIF-1 level"},
+      "Representing PDK1 factor level by y in the range (0,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + H) where H = HIF-1 level"},
 
-      {"ATP_G_1", 0.6, 0, 0,
-      "ATP production threshold for growth (fraction of peak)",
-      "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate"},
+       {"PDKMIN_1", 0.3, 0, 0,
+       "PDKmin",
+       "Minimum value of the PDK1 factor"},
+
+       {"C_O2_NORM_1", 0.05, 0, 0,
+       "Nominal normal IC O2 concentration",
+       "Nominal normal IC O2 concentration, used to set normal metabolic rates for unconstrained growth"},
+
+       {"C_G_NORM_1", 2.5, 0, 0,
+       "Nominal normal IC glucose concentration",
+       "Nominal normal IC glucose concentration, used to set normal metabolic rates for unconstrained growth"},
+
+       {"C_L_NORM_1", 0.0, 0, 0,
+       "Nominal normal IC lactate concentration",
+       "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
       {"ATP_S_1", 0.4, 0, 0,
       "ATP production threshold for survival (fraction of peak)",
@@ -585,11 +593,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 
       {"K_PL_1", 0.1, 0, 0,
       "Pyruvate -> lactate rate constant",
-      "The forward rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of pyruvate to glucose"},
+      "The forward rate constant K_PL of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
 
       {"K_LP_1", 0.1, 0, 0,
       "Lactate -> pyruvate rate constant",
-      "The reverse rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of glucose to pyruvate"},
+      "The reverse rate constant K_LP of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
 
        {"PYRUVATE_MM_KM_1", 20, 0, 0,
        "Pyruvate Michaelis-Menten Km",
@@ -607,21 +615,17 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "ATP moles produced per pyruvate mole",
        "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
-       {"N_GI_2", 0.5, 0, 0,
+       {"N_GI_2", 0.4, 0, 0,
        "Intermediate moles produced per glucose mole",
        "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
 
-       {"N_PI_2", 0.5, 0, 0,
+       {"N_PI_2", 0.4, 0, 0,
        "Intermediate moles produced per pyruvate mole",
        "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
 
        {"N_PO_2", 3, 0, 0,
        "Oxygen moles consumed per pyruvate mole",
        "Number of moles of oxygen consumed the oxidation of one pyruvate mole"},
-
-//       {"F_PO_BASE_2", 0.1, 0, 0,
-//       "Base level of pyruvate oxidation (fraction of glycolysis)",
-//       "With no nutrient constraints, the fraction of pyruvate produced by glycolysis that goes to oxidation by TCA/ETC"},
 
        {"K_H1_2", 140, 0, 0,
        "K_H1",
@@ -634,15 +638,27 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        {"K_HB_2", 0.2, 0, 0,
        "K_HB",
         "Glycolysis rate = K_HA*(1 + K_HB*H)*C_G^N/(C_G^N + Km^N)\n\
-         where: H = HIF-1 level, C_G = glucose concentration, HB is maximum glucose consumption rate, Km and N are the glucose consumption Hill function parameters"},
+         where: H = HIF-1 level, C_G = glucose concentration, K_HA is maximum glucose consumption rate when H=0, Km and N are the glucose consumption Hill function parameters"},
 
        {"K_PDK_2", 4.63e-5, 0, 0,
        "K_PDK",
-       "Representing PDK1 level by y in the range (0,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + H) where H = HIF-1 level"},
+       "Representing PDK1 factor level by y in the range (0,1), the rate of change of y is: dy/dt = -K_PDK*(y - 1 + H) where H = HIF-1 level"},
 
-       {"ATP_G_2", 0.5, 0, 0,
-       "ATP production threshold for growth (fraction of peak)",
-        "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate"},
+        {"PDKMIN_2", 0.3, 0, 0,
+        "PDKmin",
+        "Minimum value of the PDK1 factor"},
+
+        {"C_O2_NORM_2", 0.05, 0, 0,
+        "Nominal normal IC O2 concentration",
+        "Nominal normal IC O2 concentration, used to set normal metabolic rates for unconstrained growth"},
+
+        {"C_G_NORM_2", 2.5, 0, 0,
+        "Nominal normal IC glucose concentration",
+        "Nominal normal IC glucose concentration, used to set normal metabolic rates for unconstrained growth"},
+
+        {"C_L_NORM_2", 0.0, 0, 0,
+        "Nominal normal IC lactate concentration",
+        "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
        {"ATP_S_2", 0.25, 0, 0,
        "ATP production threshold for survival (fraction of peak)",
@@ -650,11 +666,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 
        {"K_PL_2", 0.2, 0, 0,
        "Pyruvate -> lactate rate constant",
-       "The forward rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of pyruvate to glucose"},
+       "The forward rate constant of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
 
        {"K_LP_2", 0.1, 0, 0,
        "Lactate -> pyruvate rate constant",
-        "The reverse rate constant of the pyruvate-glucose reaction, i.e. the rate constant for conversion of glucose to pyruvate"},
+        "The reverse rate constant of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
 
         {"PYRUVATE_MM_KM_2", 20, 0, 0,
         "Pyruvate Michaelis-Menten Km",
@@ -776,19 +792,19 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 
 // Time-series plots
     {"nlive",                     1, 0,1,"","Number of live cells"},
-    {"nanoxiadead",               1, 0,1,"","Total number of cells that have been killed by anoxia"},
-    {"naglucosiadead",            1, 0,1,"","Total number of cells that have been killed by aglucosia"},
-    {"ndrugAdead",                1, 0,1,"","Total number of cells that have been killed by drugA"},
+    {"nanoxiadead",               0, 0,1,"","Total number of cells that have been killed by anoxia"},
+    {"naglucosiadead",            0, 0,1,"","Total number of cells that have been killed by aglucosia"},
+    {"ndrugAdead",                0, 0,1,"","Total number of cells that have been killed by drugA"},
     {"ndrugBdead",                0, 0,1,"","Total number of cells that have been killed by drugB"},
     {"nradiationdead",            0, 0,1,"","Total number of cells that have been killed by radiation"},
-    {"nanoxiatagged",             1, 0,1,"","Current number of cells tagged to die by anoxia"},
-    {"naglucosiatagged",          1, 0,1,"","Current number of cells tagged to die by aglucosia"},
-    {"ndrugAtagged",              1, 0,1,"","Current number of cells tagged to die by drugA"},
+    {"nanoxiatagged",             0, 0,1,"","Current number of cells tagged to die by anoxia"},
+    {"naglucosiatagged",          0, 0,1,"","Current number of cells tagged to die by aglucosia"},
+    {"ndrugAtagged",              0, 0,1,"","Current number of cells tagged to die by drugA"},
     {"ndrugBtagged",              0, 0,1,"","Current number of cells tagged to die by drugB"},
-    {"nradiationtagged",          1, 0,1,"","Current number of cells tagged to die by radiation"},
+    {"nradiationtagged",          0, 0,1,"","Current number of cells tagged to die by radiation"},
     {"hypoxicfraction",           0, 0,1,"","Fraction of cells with oxygen level below the specified threshold for hypoxia"},
     {"clonohypoxicfraction",      1, 0,1,"","Fraction of clonogenic cells with oxygen level below the specified threshold for hypoxia"},
-    {"growthfraction",            1, 0,1,"","Percentage of cells that are growing at a rate less than the specified fraction of the mean growth rate with no nutrient limits"},
+    {"growthfraction",            0, 0,1,"","Percentage of cells that are growing at a rate less than the specified fraction of the mean growth rate with no nutrient limits"},
     {"platingefficiency",         1, 0,1,"","Percentage of live cells that are viable"},
     {"ECoxygen",                  1, 0,1,"","EC concentration of oxygen in the medium (bottom)"},
     {"ECglucose",                 1, 0,1,"","EC concentration of glucose in the medium (bottom)"},
@@ -799,23 +815,23 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ECdrugB",                   0, 0,1,"","EC concentration of drug B in the medium (bottom)"},
     {"ECdrugBmet1",               0, 0,1,"","EC concentration of drug B metabolite 1 in the medium (bottom)"},
     {"ECdrugBmet2",               0, 0,1,"","EC concentration of drug B metabolite 2 in the medium (bottom)"},
-    {"ICoxygen",                  0, 0,1,"","IC concentration of oxygen"},
-    {"ICglucose",                 0, 0,1,"","IC concentration of glucose"},
-    {"IClactate",                 0, 0,1,"","IC concentration of lactate"},
-    {"ICpyruvate",                0, 0,1,"","IC concentration of pyruvate"},
+    {"ICoxygen",                  1, 0,1,"","IC concentration of oxygen"},
+    {"ICglucose",                 1, 0,1,"","IC concentration of glucose"},
+    {"IClactate",                 1, 0,1,"","IC concentration of lactate"},
+    {"ICpyruvate",                1, 0,1,"","IC concentration of pyruvate"},
     {"ICdrugA",                   0, 0,1,"","IC concentration of drug A"},
     {"ICdrugAmet1",               0, 0,1,"","IC concentration of drug A metabolite 1"},
     {"ICdrugAmet2",               0, 0,1,"","IC concentration of drug A metabolite 2"},
     {"ICdrugB",                   0, 0,1,"","IC concentration of drug B"},
     {"ICdrugBmet1",               0, 0,1,"","IC concentration of drug B metabolite 1"},
     {"ICdrugBmet2",               0, 0,1,"","IC concentration of drug B metabolite 2"},
-    {"doublingtime",              1, 0,1,"","Average doubling time"},
-    {"Grate",                     0, 0,1,"","Normalised glycolysis rate"},
-    {"Prate",                     0, 0,1,"","Normalised pyruvate oxidation rate"},
-    {"Arate",                     0, 0,1,"","Normalised ATP production rate"},
-    {"Irate",                     0, 0,1,"","Normalised rate of production of anabolic intermediates"},
+    {"doublingtime",              0, 0,1,"","Average doubling time"},
+    {"Grate",                     1, 0,1,"","Normalised glycolysis rate"},
+    {"Prate",                     1, 0,1,"","Normalised pyruvate utilisation rate"},
+    {"Arate",                     1, 0,1,"","Normalised ATP production rate"},
+    {"Irate",                     1, 0,1,"","Normalised rate of production of anabolic intermediates"},
     {"dividerate",                1, 0,1,"","# divided/hour"},
-    {"Poxidation",                0, 0,1,"","% pyruvate oxidised"},
+    {"Pfraction",                 1, 0,1,"","% pyruvate utilised"},
 
 /*
 // Profile plots

@@ -93,7 +93,7 @@ integer :: neqn, icase
 real(REAL_KIND) :: t, y(neqn), dydt(neqn)
 integer :: ic, ichemo, idrug, im, ict, Ng, ncvars
 real(REAL_KIND) :: dCsum, dCdiff, dCreact, vol_cm3, val, Cin(MAX_CHEMO), Cmedium(MAX_CHEMO), Cex
-real(REAL_KIND) :: G_rate,PP_rate,PO_rate
+real(REAL_KIND) :: G_rate,PP_rate,P_rate
 real(REAL_KIND) :: decay_rate, C, membrane_kin, membrane_kout, membrane_flux, area_factor, n_O2(0:2)
 logical :: metabolised(MAX_CELLTYPES,0:2)
 real(REAL_KIND) :: metab, cell_flux, dMdt, KmetC, vcell_actual, Kd(0:2), dC, C0
@@ -810,7 +810,7 @@ area_factor = (average_volume)**(2./3.)
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
 membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
-!write(*,'(a,3e12.3)') 'Lactate flux: ',mp%L_rate,membrane_flux,2*(1-N_GI(1))*mp%G_rate-mp%PO_rate
+!write(*,'(a,3e12.3)') 'Lactate flux: ',mp%L_rate,membrane_flux,2*(1-N_GI(1))*mp%G_rate-mp%P_rate
 ! Checks OK
 
 end subroutine
