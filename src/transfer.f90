@@ -784,6 +784,76 @@ deallocate(valmax_log)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! If a variable value is missing 
+!-----------------------------------------------------------------------------------------
+subroutine get_values(nvars,varID,ysim)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_values
+integer :: nvars
+character*(24) :: varID(nvars)
+real(REAL_KIND) :: ysim(nvars)
+integer :: ivar, ityp
+integer :: Nviable(MAX_CELLTYPES), Nlive(MAX_CELLTYPES)
+real(REAL_KIND) :: plate_eff(MAX_CELLTYPES)
+
+do ivar = 1,nvars
+	if (varID(ivar) == 'OXYGEN_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+OXYGEN)
+	elseif (varID(ivar) == 'GLUCOSE_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+GLUCOSE)
+	elseif (varID(ivar) == 'LACTATE_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+LACTATE)
+	elseif (varID(ivar) == 'SN30000_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+	elseif (varID(ivar) == 'SN30000_METAB1_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+	elseif (varID(ivar) == 'SN30000_METAB2_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+	elseif (varID(ivar) == 'PR104A_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+	elseif (varID(ivar) == 'PR104A_METAB1_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+	elseif (varID(ivar) == 'PR104A_METAB2_EC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+	elseif (varID(ivar) == 'OXYGEN_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+OXYGEN)
+	elseif (varID(ivar) == 'GLUCOSE_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+GLUCOSE)
+	elseif (varID(ivar) == 'LACTATE_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+LACTATE)
+	elseif (varID(ivar) == 'SN30000_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+	elseif (varID(ivar) == 'SN30000_METAB1_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+	elseif (varID(ivar) == 'SN30000_METAB2_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+	elseif (varID(ivar) == 'PR104A_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+	elseif (varID(ivar) == 'PR104A_METAB1_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+	elseif (varID(ivar) == 'PR104A_METAB2_IC') then
+		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+	elseif (varID(ivar) == 'NCELLS') then
+		ysim(ivar) = Ncells			! for now, total live cells
+	elseif (varID(ivar) == 'PE') then
+		call getNviable(Nviable, Nlive)
+		do ityp = 1,Ncelltypes
+			if (Nlive(ityp) > 0) then
+				plate_eff(ityp) = real(Nviable(ityp))/Nlive(ityp)
+			else
+				plate_eff(ityp) = 0
+			endif
+		enddo
+		ysim(ivar) = plate_eff(1)	! for now, just type 1 cells
+	elseif (varID(ivar) == 'RADIATION') then
+		ysim(ivar) = -1
+	else
+		write(*,*) 'varID is not in the list of possible IDs: ',varID(ivar)
+		stop
+	endif
+enddo
+end subroutine
+
+!-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine get_string(bufptr) bind(C)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_string
