@@ -1,5 +1,5 @@
 ! Main parameter fitting program
-! Calls monolayer.dll subroutines
+! Calls monolayer.dll subroutines 
 
 module fitter_mod
 use monolayer_mod
@@ -591,7 +591,11 @@ do iter = 1,Niters
 	write(nflog,*) 'imin, fmin: ',imin,fmin
 	write(nflog,*) 'ivalmin: ',ivalmin(0:Nparams-1)
 	write(nflog,*)
-	write(nflog,*) 'Optimum parameter values: '
+	if (iter < Niters) then
+		write(nflog,*) 'Interim optimum parameter values:'
+	else
+		write(nflog,*) 'Final optimum parameter values:'
+	endif
 	do k = 0,Nparams-1
 		write(nflog,'(i2,a20,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
 	enddo
