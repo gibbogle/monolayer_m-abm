@@ -6,7 +6,7 @@ use monolayer_mod
 use strings
 implicit none
 
-integer, parameter :: nfexpt = 21, nfparam = 22
+integer, parameter :: nfexpt = 21, nfparam = 22, nfitlog = 23
 integer, parameter :: max_params = 10, max_vals = 20
 
 type parameter_type
@@ -392,9 +392,9 @@ do jstep = 1,Nsteps
 	do i = 1,pexp%ntimes
 		if (pexp%itsim(i) == jstep) then
 			call get_values(pexp%nvars,pexp%varID(:),pexp%ysim(i,:))
-!			write(nflog,'(a,i4,f8.2)') 'time: ',jstep,pexp%itsim(i)*DELTA_T/(60*60)
+!			write(nfitlog,'(a,i4,f8.2)') 'time: ',jstep,pexp%itsim(i)*DELTA_T/(60*60)
 !			do k = 1,pexp%nvars
-!				write(nflog,'(i3,a32,e12.3)') k,pexp%varID(k),pexp%ysim(i,k)
+!				write(nfitlog,'(i3,a32,e12.3)') k,pexp%varID(k),pexp%ysim(i,k)
 !			enddo
 		endif
 	enddo
@@ -440,7 +440,7 @@ do it = 1,pexp%ntimes
 		if (isnan(dv2)) then
 			write(*,'(2i4,3e12.3)') it,ivar,pexp%y(it,ivar),pexp%ysim(it,ivar),dv2
 			write(*,*) 'Bad dv2'
-			write(nflog,*) 'Bad dv2'
+			write(nfitlog,*) 'Bad dv2'
 			stop
 		endif
 		dfobj = dfobj + dv2
@@ -513,9 +513,9 @@ do i = 1, cnt
     endif
 end do
 
-open(nflog,file=logfile,status='replace')
-write(nflog,'(a,a)') 'infile: ',trim(template_infile)
-write(nflog,'(a,a)') 'outfile: ',trim(outfile)
+open(nfitlog,file=logfile,status='replace')
+write(nfitlog,'(a,a)') 'infile: ',trim(template_infile)
+write(nfitlog,'(a,a)') 'outfile: ',trim(outfile)
 ncpu = 1
 
 call read_expt(nfexpt,exptfile)
@@ -536,7 +536,7 @@ do i = Nparams-2,0,-1
 	n(i) = param(i+1)%nvals*n(i+1)
 enddo
 Nsims = n(0)*param(0)%nvals
-write(nflog,*) 'Nsims: ',Nsims
+write(nfitlog,*) 'Nsims: ',Nsims
 write(*,*) 'Nsims: ',Nsims
 
 call disableTCP
@@ -553,10 +553,10 @@ do iter = 1,Niters
 			param(k)%ival = (isim - istart)/n(k)
 			istart = istart + param(k)%ival*n(k)
 		enddo
-		write(nflog,*) isim,param(0:Nparams-1)%ival
+		write(nfitlog,*) isim,param(0:Nparams-1)%ival
 		fobj = 0
 		do iexp = 1,Nexpts
-			write(nflog,*) '        iexp: ',iexp
+			write(nfitlog,*) '        iexp: ',iexp
 			! Need to set the parameter values appropriately in the infile
 			! including protocol initial values if they vary with iexp
 			call create_input(iexp,nfin,template_infile, infile)
@@ -565,19 +565,19 @@ do iter = 1,Niters
 			call quantify(iexp,dfobj)
 			if (isnan(dfobj)) then
 				write(*,*) 'Bad dfobj'
-				write(nflog,*) 'Bad dfobj'
+				write(nfitlog,*) 'Bad dfobj'
 				stop
 			endif
 			fobj = fobj + dfobj
 			pexp => experiment(iexp)
 			do k = 1,pexp%ntimes
-				write(nflog,'(i2,f8.3,10e14.6)') iexp,pexp%t(k),(pexp%ysim(k,i),i=1,pexp%nvars)
+				write(nfitlog,'(i2,f8.3,10e14.6)') iexp,pexp%t(k),(pexp%ysim(k,i),i=1,pexp%nvars)
 			enddo
 		enddo
-		write(nflog,*) 'fobj: ',fobj
+		write(nfitlog,*) 'fobj: ',fobj
 		if (isnan(fobj)) then
 			write(*,*) 'Bad fobj'
-			write(nflog,*) 'Bad fobj'
+			write(nfitlog,*) 'Bad fobj'
 			stop
 		endif
 		if (fobj < fmin) then
@@ -586,18 +586,18 @@ do iter = 1,Niters
 			ivalmin(:) = param(:)%ival
 		endif
 	enddo
-	write(nflog,*)
-	write(nflog,*) 'Iteration: ',iter
-	write(nflog,*) 'imin, fmin: ',imin,fmin
-	write(nflog,*) 'ivalmin: ',ivalmin(0:Nparams-1)
-	write(nflog,*)
+	write(nfitlog,*)
+	write(nfitlog,*) 'Iteration: ',iter
+	write(nfitlog,*) 'imin, fmin: ',imin,fmin
+	write(nfitlog,*) 'ivalmin: ',ivalmin(0:Nparams-1)
+	write(nfitlog,*)
 	if (iter < Niters) then
-		write(nflog,*) 'Interim optimum parameter values:'
+		write(nfitlog,*) 'Interim optimum parameter values:'
 	else
-		write(nflog,*) 'Final optimum parameter values:'
+		write(nfitlog,*) 'Final optimum parameter values:'
 	endif
 	do k = 0,Nparams-1
-		write(nflog,'(i2,a20,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
+		write(nfitlog,'(i2,a20,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
 	enddo
 	
 	do k = 0,Nparams-1
