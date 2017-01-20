@@ -79,7 +79,8 @@ type(ODEdiff_type) :: ODEdiff
 
 integer :: nchemo, chemomap(MAX_CHEMO)
 
-real(REAL_KIND) :: Caverage(2*MAX_CHEMO)    ! average cell and average medium concentrations
+real(REAL_KIND) :: Caverage(2*MAX_CHEMO)    ! average cell and medium bdry concentrations
+real(REAL_KIND) :: Cmediumave(MAX_CHEMO)    ! average medium concentrations
 integer, parameter :: N1D = 20
 real(REAL_KIND) :: Cglucose(N1D)
 real(REAL_KIND) :: Cdrug(0:2,N1D)

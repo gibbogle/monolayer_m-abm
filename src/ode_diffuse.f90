@@ -648,7 +648,7 @@ real(REAL_KIND) :: tstart, dt
 logical :: ok
 integer :: ichemo, k, ict, neqn, i, kcell, im
 real(REAL_KIND) :: t, tend
-real(REAL_KIND) :: C(3*N1D+3)
+real(REAL_KIND) :: C(3*N1D+3), Csum
 real(REAL_KIND) :: timer1, timer2
 ! Variables for RKC
 integer :: info(4), idid
@@ -700,9 +700,12 @@ do im = 0,2
 	if (.not.chemo(ichemo)%present) cycle
     k = im*(N1D+1) + 1
     Caverage(ichemo) = C(k)
+	Csum = 0
     do i = 1,N1D
 		Cdrug(im,i) = C(k+i)
+		Csum = Csum + C(k+i)
 	enddo
+	Cmediumave(ichemo) = Csum/N1D
     do kcell = 1,nlist
         if (cell_list(kcell)%state == DEAD) cycle
         cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)
@@ -721,7 +724,7 @@ real(REAL_KIND) :: tstart, dt
 logical :: ok
 integer :: ichemo, k, ict, neqn, i, kcell
 real(REAL_KIND) :: t, tend
-real(REAL_KIND) :: C(3*N1D+3), Cin(3), Itotal, I2Divide
+real(REAL_KIND) :: C(3*N1D+3), Cin(3), Csum, Itotal, I2Divide
 real(REAL_KIND) :: timer1, timer2
 ! Variables for RKC
 integer :: info(4), idid
@@ -774,9 +777,12 @@ do ichemo = 1,3
 	if (.not.chemo(ichemo)%present) cycle
     k = (ichemo-1)*(N1D+1) + 1
     Caverage(ichemo) = C(k)
+    Csum = 0
     do i = 1,N1D
 		C_OGL(ichemo,i) = C(k+i)
+		Csum = Csum + C(k+i)
 	enddo
+	Cmediumave(ichemo) = Csum/N1D
     do kcell = 1,nlist
         if (cell_list(kcell)%state == DEAD) cycle
         cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)

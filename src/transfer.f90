@@ -784,7 +784,9 @@ deallocate(valmax_log)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-! If a variable value is missing 
+! Note:
+! DRUG_A = TPZ_DRUG e.g. SN30000
+! DRUG_B = DNB_DRUG e.g. PR104A 
 !-----------------------------------------------------------------------------------------
 subroutine get_values(nvars,varID,ysim)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_values
@@ -797,23 +799,23 @@ real(REAL_KIND) :: plate_eff(MAX_CELLTYPES)
 
 do ivar = 1,nvars
 	if (varID(ivar) == 'OXYGEN_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+OXYGEN)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+OXYGEN)
 	elseif (varID(ivar) == 'GLUCOSE_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+GLUCOSE)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+GLUCOSE)
 	elseif (varID(ivar) == 'LACTATE_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+LACTATE)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+LACTATE)
 	elseif (varID(ivar) == 'SN30000_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A)
 	elseif (varID(ivar) == 'SN30000_METAB1_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A+1)
 	elseif (varID(ivar) == 'SN30000_METAB2_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A+2)
 	elseif (varID(ivar) == 'PR104A_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A)
 	elseif (varID(ivar) == 'PR104A_METAB1_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+1)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A+1)
 	elseif (varID(ivar) == 'PR104A_METAB2_EC') then
-		ysim(ivar) = Caverage(MAX_CHEMO+DRUG_A+2)
+		ysim(ivar) = Cmediumave(MAX_CHEMO+DRUG_A+2)
 	elseif (varID(ivar) == 'OXYGEN_IC') then
 		ysim(ivar) = Caverage(MAX_CHEMO+OXYGEN)
 	elseif (varID(ivar) == 'GLUCOSE_IC') then
