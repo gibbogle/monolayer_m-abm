@@ -803,7 +803,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ndrugBtagged",              0, 0,1,"","Current number of cells tagged to die by drugB"},
     {"nradiationtagged",          0, 0,1,"","Current number of cells tagged to die by radiation"},
     {"hypoxicfraction",           0, 0,1,"","Fraction of cells with oxygen level below the specified threshold for hypoxia"},
-    {"clonohypoxicfraction",      1, 0,1,"","Fraction of clonogenic cells with oxygen level below the specified threshold for hypoxia"},
+    {"clonohypoxicfraction",      0, 0,1,"","Fraction of clonogenic cells with oxygen level below the specified threshold for hypoxia"},
     {"growthfraction",            0, 0,1,"","Percentage of cells that are growing at a rate less than the specified fraction of the mean growth rate with no nutrient limits"},
     {"platingefficiency",         1, 0,1,"","Percentage of live cells that are viable"},
     {"ECoxygen",                  1, 0,1,"","EC concentration of oxygen in the medium (bottom)"},
@@ -825,6 +825,15 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ICdrugB",                   0, 0,1,"","IC concentration of drug B"},
     {"ICdrugBmet1",               0, 0,1,"","IC concentration of drug B metabolite 1"},
     {"ICdrugBmet2",               0, 0,1,"","IC concentration of drug B metabolite 2"},
+    {"Medglucose",                0, 0,1,"","Average medium concentration of glucose"},
+    {"Medglucose",                0, 0,1,"","Average medium concentration of glucose"},
+    {"Medlactate",                0, 0,1,"","Average medium concentration of lactate"},
+    {"MeddrugA",                  0, 0,1,"","Average medium concentration of drug A"},
+    {"MeddrugAmet1",              0, 0,1,"","Average medium concentration of drug A metabolite 1"},
+    {"MeddrugAmet2",              0, 0,1,"","Average medium concentration of drug A metabolite 2"},
+    {"MeddrugB",                  0, 0,1,"","Average medium concentration of drug B"},
+    {"MeddrugBmet1",              0, 0,1,"","Average medium concentration of drug B metabolite 1"},
+    {"MeddrugBmet2",              0, 0,1,"","Average medium concentration of drug B metabolite 2"},
     {"doublingtime",              0, 0,1,"","Average doubling time"},
     {"Grate",                     1, 0,1,"","Normalised glycolysis rate"},
     {"Prate",                     1, 0,1,"","Normalised pyruvate utilisation rate"},
@@ -833,7 +842,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"dividerate",                1, 0,1,"","# divided/hour"},
     {"Pfraction",                 1, 0,1,"","% pyruvate utilised"},
 
-/*
+
 // Profile plots
     {"MULTI",                     1, 0,1,"","Selected constituent on a line through the blob centre"},
 //    {"CFSE",                      0, 0,1,"","Extracellular CFSE concentration on a line through the blob centre"},
@@ -846,6 +855,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"Drug_B",                    0, 0,1,"","Extracellular drug Bconcentration on a line through the blob centre"},
     {"Drug_B_metab1",             0, 0,1,"","Extracellular drug B metabolite 1 concentration on a line through the blob centre"},
     {"Drug_B_metab2",             0, 0,1,"","Extracellular drug B metabolite 2 concentration on a line through the blob centre"},
+/*
     {"IC_MULTI",                  1, 0,1,"","Selected constituent on a line through the blob centre"},
     {"IC_Oxygen",                 0, 0,1,"","Intracellular oxygen concentration on a line through the blob centre"},
     {"IC_Glucose",                0, 0,1,"","Intracellular glucose concentration on a line through the blob centre"},

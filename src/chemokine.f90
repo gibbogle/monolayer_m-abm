@@ -18,6 +18,8 @@ implicit none
 !end type
 !type(receptor_type), target :: receptor(MAX_RECEPTOR)
 
+integer, parameter :: N1D = 20
+
 type chemokine_type
 	character(24) :: name
 	logical :: used
@@ -53,6 +55,8 @@ type chemokine_type
 !	real(REAL_KIND), allocatable :: Cprev_b(:,:,:)
 !	real(REAL_KIND), allocatable :: Fprev_b(:,:,:)
 !	real(REAL_KIND), allocatable :: Fcurr_b(:,:,:)
+
+	real(REAL_KIND) :: Cmedium(N1D)
 end type
 type(chemokine_type), target :: chemo(MAX_CHEMO)
 
@@ -79,11 +83,10 @@ type(ODEdiff_type) :: ODEdiff
 
 integer :: nchemo, chemomap(MAX_CHEMO)
 
-real(REAL_KIND) :: Caverage(2*MAX_CHEMO)    ! average cell and medium bdry concentrations
+real(REAL_KIND) :: Caverage(2*MAX_CHEMO)    ! average cell (IC) and medium bdry (EC) concentrations
 real(REAL_KIND) :: Cmediumave(MAX_CHEMO)    ! average medium concentrations
-integer, parameter :: N1D = 20
-real(REAL_KIND) :: Cglucose(N1D)
-real(REAL_KIND) :: Cdrug(0:2,N1D)
+!real(REAL_KIND) :: Cglucose(N1D)
+!real(REAL_KIND) :: Cdrug(0:2,N1D)
 real(REAL_KIND) :: C_OGL(3,N1D)				! 1=OXYGEN, 2=GLUCOSE, 3=LACTATE
 
 contains

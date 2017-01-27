@@ -236,78 +236,103 @@ GRAPH_SET tsGraphSet[] = {
      "Intracellular concentration of Drug B metabolite 2",
     34, true, 0, 0.001, 0, TS_TYPE},
 
+    {"Medoxygen",
+    "Medium Oxygen",
+    "Concentration",
+    "Average concentration of oxygen in the medium",
+    35, true, 0, 0.001, 0, TS_TYPE},
+
+    {"Medglucose",
+    "Medium Glucose",
+    "Concentration",
+     "Average concentration of glucose in the medium",
+    36, true, 0, 0.001, 0, TS_TYPE},
+
+    {"Medlactate",
+    "Medium Lactate",
+    "Concentration",
+     "Average concentration of lactate in the medium",
+    37, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugA",
+    "Medium Drug A",
+    "Concentration",
+     "Average concentration of Drug A in the medium",
+    38, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugAmet1",
+    "Medium Drug A metab1",
+    "Concentration",
+     "Average concentration of Drug A metabolite 1 in the medium",
+    39, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugAmet2",
+    "Medium Drug A metab2",
+    "Concentration",
+     "Average concentration of Drug A metabolite 2 in the medium",
+    40, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugB",
+    "Medium Drug B",
+    "Concentration",
+     "Average concentration of Drug B in the medium",
+    41, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugBmet1",
+    "Medium Drug B metab1",
+    "Concentration",
+     "Average concentration of Drug B metabolite 1 in the medium",
+    42, true, 0, 0.001, 0, TS_TYPE},
+
+    {"MeddrugBmet2",
+     "Medium Drug B metab2",
+    "Concentration",
+     "Average concentration of Drug B metabolite 2 in the medium",
+    43, true, 0, 0.001, 0, TS_TYPE},
+
     {"doublingtime",
     "Ave Doubling time",
     "Hours",
     "Average doubling time",
-    35, true, 0, 0.01, 0, TS_TYPE},
+    44, true, 0, 0.01, 0, TS_TYPE},
 
     {"Grate",
     "Glycolysis rate",
     "",
     "Normalised rate of glycolysis",
-    36, false, 0, 0.001, 0, TS_TYPE},
+    45, false, 0, 0.001, 0, TS_TYPE},
 
     {"Prate",
     "Pyruvate utilisation rate",
     "",
     "Normalised rate of pyruvate utilisation",
-    37, false, 0, 0.001, 0, TS_TYPE},
+    46, false, 0, 0.001, 0, TS_TYPE},
 
     {"Arate",
     "ATP production rate",
     "",
     "Normalised rate of ATP production",
-    38, false, 0, 0.001, 0, TS_TYPE},
+    47, false, 0, 0.001, 0, TS_TYPE},
 
     {"Irate",
     "Intermediates production rate",
     "",
     "Normalised rate of production of anabolic intermediates",
-    39, false, 0, 0.001, 0, TS_TYPE},
+    48, false, 0, 0.001, 0, TS_TYPE},
 
     {"dividerate",
     "# divided/hour",
     "/hour",
     "# divided/hour",
-    40, true, 0, 1, 0, TS_TYPE},
+    49, true, 0, 1, 0, TS_TYPE},
 
     {"Pfraction",
     "% pyruvate utilised",
     "%",
     "% pyruvate utilised",
-    41, false, 0, 0.1, 0, TS_TYPE},
+    50, false, 0, 0.1, 0, TS_TYPE},
 
-
-
-//    {"bdryoxygen",
-//    "Blob Boundary Oxygen",
-//    "Concentration",
-//     "Average concentration of oxygen at the blob boundary",
-//    24, true, 0, 0.001, 0, TS_TYPE},
-
-//    {"bdryglucose",
-//    "Blob Boundary Glucose",
-//    "Concentration",
-//     "Average concentration of glucose at the blob boundary",
-//    25, true, 0, 0.001, 0, TS_TYPE},
-
-//    {"bdrydrugA",
-//    "Blob Boundary Drug A",
-//    "Concentration",
-//     "Average concentration of drug A at the blob boundary",
-//    26, true, 0, 0.001, 0, TS_TYPE},
-
-//    {"bdrydrugB",
-//    "Blob Boundary Drug B",
-//    "Concentration",
-//     "Average concentration of drug B at the blob boundary",
-//    27, true, 0, 0.001, 0, TS_TYPE},
-
-/*
-// No profiles now - could add a 1D profile in the medium
-
-// Extracellular profiles
+// Medium z-profiles
 
     {"MULTI",
     "Multi-constituent",
@@ -369,6 +394,7 @@ GRAPH_SET tsGraphSet[] = {
     "Drug_B_metab2 description",
     DRUG_B_METAB_2, false, 0, 1, 0, PROF_TYPE},
 
+/*
 // Intracellular profiles
 
     {"IC_MULTI",

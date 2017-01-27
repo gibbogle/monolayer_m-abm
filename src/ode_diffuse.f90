@@ -87,6 +87,7 @@ end subroutine
 ! neqn = 2*ncvars = 2*number of constituents present
 ! ic > ncvars implies a medium concentration
 ! chemo_active(ic) = false means we do not solve for it (only medium variables)
+! NOT USED NOW - we use f_rkc_OGL
 !----------------------------------------------------------------------------------
 subroutine f_rkc(neqn,t,y,dydt,icase)
 integer :: neqn, icase
@@ -667,7 +668,8 @@ do im = 0,2
 	C(k) = Caverage(ichemo)		! IC 
 	do i = 1,N1D
 		k = k+1
-		C(k) = Cdrug(im,i)		! EC
+!		C(k) = Cdrug(im,i)		! EC
+		C(k) = chemo(ichemo)%Cmedium(i)
 	enddo
 enddo
 
@@ -677,7 +679,7 @@ info(1) = 1
 info(2) = 1		! = 1 => use spcrad() to estimate spectral radius, != 1 => let rkc do it
 info(3) = 1
 info(4) = 0
-rtol = 1d-2
+rtol = 1d-5
 atol = rtol
 
 idid = 0
@@ -702,7 +704,6 @@ do im = 0,2
     Caverage(ichemo) = C(k)
 	Csum = 0
     do i = 1,N1D
-		Cdrug(im,i) = C(k+i)
 		Csum = Csum + C(k+i)
 	enddo
 	Cmediumave(ichemo) = Csum/N1D
@@ -710,7 +711,7 @@ do im = 0,2
         if (cell_list(kcell)%state == DEAD) cycle
         cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)
     enddo
-    Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer
+    Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer, i.e. EC
 !	write(nflog,'(a,i3,5e12.3)') 'Cdrug: im: ',im,Cdrug(im,1:5)
 enddo
 !write(*,'(a,3e12.3)') 'Cell drug conc: ',(Caverage(DRUG_A+k),k=0,2)
@@ -735,7 +736,7 @@ type(cell_type), pointer :: cp
 real(REAL_KIND) :: Cic,Cex,average_volume,area_factor,membrane_kin,membrane_kout,membrane_flux
 
 !write(nflog,*) 'DrugSolver: ',istep
-ict = 1 ! for now just a single cell type
+ict = selected_celltype ! for now just a single cell type
 
 k = 0
 do ichemo = 1,3
@@ -754,7 +755,7 @@ info(1) = 1
 info(2) = 1		! = 1 => use spcrad() to estimate spectral radius, != 1 => let rkc do it
 info(3) = 1
 info(4) = 0
-rtol = 1d-2
+rtol = 1d-5
 atol = rtol
 
 idid = 0
@@ -781,13 +782,14 @@ do ichemo = 1,3
     do i = 1,N1D
 		C_OGL(ichemo,i) = C(k+i)
 		Csum = Csum + C(k+i)
+		chemo(ichemo)%Cmedium(i) = C(k+i)
 	enddo
 	Cmediumave(ichemo) = Csum/N1D
     do kcell = 1,nlist
         if (cell_list(kcell)%state == DEAD) cycle
         cell_list(kcell)%Cin(ichemo) = Caverage(ichemo)
     enddo
-    Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer
+    Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer, i.e. EC
 !	write(nflog,'(a,i3,5e12.3)') 'Cdrug: im: ',im,Cdrug(im,1:5)
 enddo
 !write(*,'(a,3e12.3)') 'C O2: ',C(1),C(2),C(N1D+1)
@@ -953,6 +955,7 @@ end subroutine
 ! 1D FD solution
 ! uptake_rate is the total rate summed over all cells in mumol/s
 ! flux/vol_cm3	to convert mass rate (mumol/s) to concentration rate (mM/s)
+! NOT USED NOW
 !-----------------------------------------------------------------------------------------
 subroutine SolveMediumGlucose(dt)
 real(REAL_KIND) :: dt
@@ -961,9 +964,12 @@ real(REAL_KIND) :: C, Cex, membrane_flux, uptake_rate, F(N1D+1)
 integer :: ichemo, i, k
 integer :: ndt = 20
 real(REAL_KIND) :: average_volume = 1.2
+real(REAL_KIND), dimension(:), pointer :: Cglucose
 
 !write(*,*) 'SolveMediumGlucose: ',dt
 ichemo = GLUCOSE
+!Cglucose(:) = chemo(ichemo)%Cmedium(:)
+Cglucose => chemo(ichemo)%Cmedium
 Kd = chemo(ichemo)%medium_diff_coef
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
@@ -992,6 +998,7 @@ enddo
 !write(nflog,'(6e12.3)') F(1),C,(Cglucose(i),i=1,4)
 !write(nflog,'(10e12.3)') (Cglucose(i),i=1,N1D)
 Caverage(MAX_CHEMO + ichemo) = Cex
+!chemo(ichemo)%Cmedium(:) = Cglucose(:)
 end subroutine
 
 end module

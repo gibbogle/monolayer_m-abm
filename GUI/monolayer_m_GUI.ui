@@ -79,7 +79,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>6</number>
+           <number>5</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -7236,7 +7236,7 @@ padding: 8px
              <rect>
               <x>10</x>
               <y>20</y>
-              <width>601</width>
+              <width>851</width>
               <height>451</height>
              </rect>
             </property>
@@ -7267,8 +7267,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_mins">
             <property name="geometry">
              <rect>
-              <x>950</x>
-              <y>290</y>
+              <x>1170</x>
+              <y>280</y>
               <width>21</width>
               <height>16</height>
              </rect>
@@ -7280,8 +7280,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_nbins">
             <property name="geometry">
              <rect>
-              <x>810</x>
-              <y>250</y>
+              <x>1030</x>
+              <y>240</y>
               <width>131</width>
               <height>21</height>
              </rect>
@@ -7293,8 +7293,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_summary_interval">
             <property name="geometry">
              <rect>
-              <x>815</x>
-              <y>290</y>
+              <x>1035</x>
+              <y>280</y>
               <width>101</width>
               <height>20</height>
              </rect>
@@ -7306,8 +7306,8 @@ padding: 8px
            <widget class="QLineEdit" name="lineEdit_summary_interval">
             <property name="geometry">
              <rect>
-              <x>910</x>
-              <y>290</y>
+              <x>1130</x>
+              <y>280</y>
               <width>31</width>
               <height>16</height>
              </rect>
@@ -7322,14 +7322,33 @@ padding: 8px
            <widget class="QLineEdit" name="lineEdit_nhistobins">
             <property name="geometry">
              <rect>
-              <x>940</x>
-              <y>250</y>
+              <x>1160</x>
+              <y>240</y>
               <width>21</width>
               <height>20</height>
              </rect>
             </property>
             <property name="text">
              <string>20</string>
+            </property>
+           </widget>
+           <widget class="QLabel" name="alabel_profileplots">
+            <property name="geometry">
+             <rect>
+              <x>650</x>
+              <y>0</y>
+              <width>81</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Profile Plots</string>
             </property>
            </widget>
           </widget>

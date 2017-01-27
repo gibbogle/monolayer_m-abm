@@ -198,16 +198,20 @@ integer :: ichemo, im
 
 if (chemo(ichemo)%present) then
     Caverage(MAX_CHEMO+ichemo) = chemo(ichemo)%bdry_conc
-    C_OGL(ichemo,:) = chemo(ichemo)%bdry_conc
 else
     Caverage(MAX_CHEMO+ichemo) = 0
 endif
+if (ichemo <= 3) then
+    C_OGL(ichemo,:) = chemo(ichemo)%bdry_conc
+endif
 if (ichemo == GLUCOSE) then
-	Cglucose = chemo(ichemo)%bdry_conc
+!	Cglucose = chemo(ichemo)%bdry_conc
+	chemo(ichemo)%Cmedium = chemo(ichemo)%bdry_conc
 endif
 if (ichemo >= DRUG_A) then
-	im = ichemo - DRUG_A
-	Cdrug(im,:) = 0
+!	im = ichemo - DRUG_A
+!	Cdrug(im,:) = 0
+	chemo(ichemo)%Cmedium = 0
 endif
 end subroutine
 
@@ -515,7 +519,8 @@ read(nfcell,*) iusecellcycle
 use_cell_cycle = (iusecellcycle == 1)
 call ReadCellCycleParameters(nfcell)
 read(nfcell,*) iusemetabolism
-use_metabolism = (iusemetabolism == 1)
+!use_metabolism = (iusemetabolism == 1)
+use_metabolism = .true.
 call ReadMetabolismParameters(nfcell)
 read(nfcell,*) O2cutoff(1)
 read(nfcell,*) O2cutoff(2)
@@ -563,6 +568,19 @@ if (is_radiation) then
 endif
 
 close(nfcell)
+
+if (celltype_fraction(1) == 1.0) then
+	write(nflog,*) 'Type 1 cells'
+	selected_celltype = 1
+elseif (celltype_fraction(2) == 1.0) then
+	write(nflog,*) 'Type 2 cells'
+	selected_celltype = 2
+else
+	write(logmsg,*) 'Error: cells must all be of the same type'
+	call logger(logmsg)
+	ok = .false.
+	return
+endif
 
 if (chemo(OXYGEN)%Hill_N /= 1 .and. chemo(OXYGEN)%Hill_N /= 2) then
 	call logger('Error: OXYGEN_HILL_N must be 1 or 2')
@@ -680,6 +698,7 @@ f_growth(1) f_growth(2) f_growth(3) &
 plating_efficiency(1) plating_efficiency(2) &
 EC_oxygen EC_glucose EC_lactate EC_drugA EC_drugA_metab1 EC_drugA_metab2 EC_drugB EC_drugB_metab1 EC_drugB_metab2 &
 IC_oxygen IC_glucose IC_lactate IC_pyruvate IC_drugA IC_drugA_metab1 IC_drugA_metab2 IC_drugB IC_drugB_metab1 IC_drugB_metab2 &
+medium_oxygen medium_glucose medium_lactate medium_drugA medium_drugA_metab1 medium_drugA_metab2 medium_drugB medium_drugB_metab1 medium_drugB_metab2 &
 doubling_time glycolysis_rate pyruvate_oxidation_rate ATP_rate intermediates_rate Ndivided pyruvate_oxidised_fraction'
 write(logmsg,*) 'Opened nfout: ',trim(outputfile)
 call logger(logmsg)
@@ -1501,7 +1520,7 @@ end subroutine
 subroutine MediumChange(Ve,Ce)
 real(REAL_KIND) :: Ve, Ce(:)
 real(REAL_KIND) :: R, Vm, Vr, Vcells, mass(MAX_CHEMO)
-integer :: ichemo, im
+integer :: ichemo, idrug, im, iparent
 
 write(nflog,*) 'MediumChange:'
 write(nflog,'(a,f8.4)') 'Ve: ',Ve
@@ -1523,9 +1542,15 @@ Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
 !write(nflog,'(a,13f8.4)') 'medium_Cext ',chemo(OXYGEN+1:)%medium_Cext
 chemo(OXYGEN)%bdry_conc = Ce(OXYGEN)
 call SetOxygenLevels
-Cglucose = Caverage(MAX_CHEMO+GLUCOSE)
-do im = 0,2
-	Cdrug(im,:) = Caverage(MAX_CHEMO+DRUG_A+im)
+!Cglucose = Caverage(MAX_CHEMO+GLUCOSE)
+chemo(GLUCOSE)%Cmedium = Caverage(MAX_CHEMO+GLUCOSE)
+do idrug = 1,2
+	iparent = DRUG_A + 3*(idrug-1)
+	do im = 0,2
+		ichemo = iparent + im	
+		chemo(ichemo)%Cmedium = Caverage(MAX_CHEMO+ichemo)
+!		Cdrug(im,:) = Caverage(MAX_CHEMO+DRUG_A+im)
+	enddo
 enddo
 t_lastmediumchange = istep*DELTA_T
 medium_change_step = .true.
@@ -1614,7 +1639,6 @@ if (limit_stop) then
 endif
 
 nthour = 3600/DELTA_T
-dt = DELTA_T/NT_CONC
 
 if (istep == -100) then
 	stop
@@ -1631,6 +1655,7 @@ if (medium_change_step) then
 else
 	ndiv = 1
 endif
+dt = DELTA_T/(NT_CONC*ndiv)
 DELTA_T_save = DELTA_T
 DELTA_T = DELTA_T/ndiv
 t_sim_0 = t_simulation
@@ -1703,7 +1728,7 @@ res = 0
 
 if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
-	write(logmsg,'(a,i6,i4,a,i8,2e12.3)') 'istep, hour: ',istep,istep/nthour,' Ncells, Irate: ',Ncells,mp%I_rate,mp%I_rate_max
+	write(logmsg,'(a,i6,i4,a,i8)') 'istep, hour: ',istep,istep/nthour,' Ncells: ',Ncells
 	call logger(logmsg)
 !	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%O_rate
 !	call logger(logmsg)
