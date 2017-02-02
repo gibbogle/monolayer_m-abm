@@ -10,7 +10,7 @@ integer, parameter :: nfexpt = 21, nfparam = 22, nfitlog = 23
 integer, parameter :: max_params = 10, max_vals = 20
 
 type parameter_type
-	character*(16) :: ID
+	character*(48) :: ID
 	integer :: nvals
 	real(REAL_KIND) :: minval, maxval
 	real(REAL_KIND) :: val(0:max_vals)
@@ -19,7 +19,7 @@ end type
 
 type experiment_type
 	integer :: nvars, ntimes
-	character*(24), allocatable :: varID(:)
+	character*(24), allocatable :: varID(:)		! this must agree with size in monolayer_m > transfer.f90 > subroutine get_values
 	integer, allocatable :: varnum(:)
 	real(REAL_KIND), allocatable :: t(:)
 	real(REAL_KIND), allocatable :: y(:,:)
@@ -31,7 +31,7 @@ end type
 integer :: ncpu, Niters, Nparams, Nsims, Nexpts
 integer :: ivalmin(0:max_params),n(0:max_params)
 real(REAL_KIND) :: val(0:max_params,0:max_vals)
-character*(32) :: template_infile, infile, outfile, logfile, paramfile, exptfile
+character*(48) :: template_infile, infile, outfile, logfile, paramfile, exptfile
 
 type(experiment_type), allocatable, target :: experiment(:)
 type(parameter_type), target :: param(0:max_params)
@@ -42,9 +42,9 @@ contains
 !----------------------------------------------------------------------------
 function exp_var_dose(iexp,str) result(dose)
 integer :: iexp
-character*(16) :: str
+character*(48) :: str
 real(REAL_KIND) :: dose
-character*(16) :: expstr
+character*(48) :: expstr
 integer :: k, kvar
 logical :: is_drug
 
@@ -77,7 +77,7 @@ end function
 !----------------------------------------------------------------------------
 !----------------------------------------------------------------------------
 function get_param_num(str) result(kpar)
-character*(16) :: str
+character*(48) :: str
 integer :: kpar
 
 do kpar = 0,Nparams-1
@@ -123,10 +123,10 @@ end subroutine
 !----------------------------------------------------------------------------
 subroutine read_input(nfin,old_infile,new_infile)
 integer :: nfin
-character*(32) :: old_infile, new_infile
+character*(48) :: old_infile, new_infile
 character*(128) :: line
 character*(50) :: str50
-character*(32) :: arg(16)
+character*(48) :: arg(16)
 integer :: nargs, nfnew = 20
 
 open(nfin,file=old_infile,status='old')
@@ -150,7 +150,7 @@ end subroutine
 !----------------------------------------------------------------------------
 subroutine create_input(iexp,nfin,old_infile,new_infile)
 integer :: iexp, nfin
-character*(32) :: old_infile, new_infile
+character*(48) :: old_infile, new_infile
 character*(128) :: line
 character*(50) :: str50
 character*(12) :: str12
@@ -268,9 +268,9 @@ end subroutine
 !----------------------------------------------------------------------------
 subroutine read_expt(nf,filename)
 integer :: nf
-character*(32) :: filename
+character*(48) :: filename
 character*(128) :: line
-character*(32) :: arg(16)
+character*(48) :: arg(16)
 integer :: nargs
 integer :: iexp, it, i, k
 real(REAL_KIND) :: val
@@ -597,7 +597,7 @@ do iter = 1,Niters
 		write(nfitlog,*) 'Final optimum parameter values:'
 	endif
 	do k = 0,Nparams-1
-		write(nfitlog,'(i2,a20,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
+		write(nfitlog,'(i2,2x,a48,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
 	enddo
 	
 	do k = 0,Nparams-1
