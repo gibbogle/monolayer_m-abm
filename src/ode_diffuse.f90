@@ -755,7 +755,7 @@ info(1) = 1
 info(2) = 1		! = 1 => use spcrad() to estimate spectral radius, != 1 => let rkc do it
 info(3) = 1
 info(4) = 0
-rtol = 1d-5
+rtol = 5d-4
 atol = rtol
 
 idid = 0
