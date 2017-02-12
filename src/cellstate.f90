@@ -774,7 +774,7 @@ real(REAL_KIND) :: dt
 real(REAL_KIND) :: Cin_0(NCONST), Cex_0(NCONST)		! at some point NCONST -> MAX_CHEMO
 real(REAL_KIND) :: dVdt,  metab_O2, metab_glucose, metab
 integer :: ityp
-logical :: oxygen_growth, glucose_growth
+logical :: oxygen_growth, glucose_growth, tagged
 
 if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or. cp%phase == G2_phase)) then
 	write(*,*) 'no growth - phase'
@@ -785,6 +785,11 @@ endif
 !	return
 !endif
 ityp = cp%celltype
+tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
+if (tagged) then
+	cp%dVdt = 0
+	return
+endif
 if (colony_simulation) then
 	if (use_metabolism) then
 		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
@@ -794,7 +799,7 @@ if (colony_simulation) then
 !		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide
 		cp%V = cp%V + cp%dVdt*dt
 	else
-	    metab = 1
+		metab = 1
 		dVdt = get_dVdt(cp,metab)
 		cp%dVdt = dVdt
 		cp%V = cp%V + dVdt*dt

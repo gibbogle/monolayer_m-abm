@@ -810,6 +810,8 @@ do idrug = 1,Ndrugs_used
 	endif
 	drug(idrug)%nmetabolites = 2			! currently all drugs have 2 metabolites
 	drug(idrug)%use_metabolites = .true.	! currently simulate metabolites
+	drug(idrug)%phase_dependent = .false.
+	drug(idrug)%active_phase = .false.
     do im = 0,2			! 0 = parent, 1 = metab_1, 2 = metab_2
 		read(nf,'(a)') drugname
 		if (im == 0) then
@@ -848,6 +850,11 @@ do idrug = 1,Ndrugs_used
             drug(idrug)%KO2(ictyp,im) = 1.0e-3*drug(idrug)%KO2(ictyp,im)					! um -> mM
             drug(idrug)%kill_duration(ictyp,im) = 60*drug(idrug)%kill_duration(ictyp,im)	! min -> sec
 		enddo
+	    if (drug(idrug)%name == 'EDU') then
+			drug(idrug)%nmetabolites = 1
+			drug(idrug)%phase_dependent = .true.
+			drug(idrug)%active_phase(S_phase) = .true.
+		endif
     enddo
     write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
 enddo

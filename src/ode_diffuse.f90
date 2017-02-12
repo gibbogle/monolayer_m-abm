@@ -642,6 +642,7 @@ endif
 end subroutine
 
 !----------------------------------------------------------------------------------
+! For phase-dependent drug, e.g. EDU, 
 !----------------------------------------------------------------------------------
 subroutine DrugSolver(iparent,tstart,dt,idrug,ok)
 integer :: iparent, idrug
@@ -655,6 +656,11 @@ real(REAL_KIND) :: timer1, timer2
 integer :: info(4), idid
 real(REAL_KIND) :: rtol, atol(1)
 type(rkc_comm) :: comm_rkc(1)
+
+if (drug(idrug)%phase_dependent) then
+	call DrugPhaseSolver(iparent,tstart,dt,idrug,ok)
+	return
+endif
 
 !write(nflog,*) 'DrugSolver: ',istep
 ict = 1 ! for now just a single cell type
@@ -999,6 +1005,99 @@ enddo
 !write(nflog,'(10e12.3)') (Cglucose(i),i=1,N1D)
 Caverage(MAX_CHEMO + ichemo) = Cex
 !chemo(ichemo)%Cmedium(:) = Cglucose(:)
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Drug reactions and fluxes are solved for all cells separately.
+! Currently only set up for labelling drugs like EDU, for which only the parent can
+! exist in free form in the cell, and metabolite "concentration" in actuality
+! represents metabolite that has been incorporated into DNA.
+! For now only a single metabolite is simulated.
+!-----------------------------------------------------------------------------------------
+subroutine DrugPhaseSolver(iparent,tstart,dt,idrug,ok)
+integer :: iparent, idrug
+real(REAL_KIND) :: tstart, dt
+logical :: ok
+logical :: tagged, active
+type(cell_type), pointer :: cp
+type(drug_type), pointer :: dp
+integer :: ict, n_O2, ichemo, kcell, it, k, i
+real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, Cex, vol_cm3, area_factor
+real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd
+real(REAL_KIND) :: average_volume = 1.2
+real(REAL_KIND), dimension(:), pointer :: Cmedium
+logical :: use_average_volume = .true.
+integer :: nt = 1
+integer :: ndt = 20
+
+! First solve for each cell separately
+dtt = dt/nt
+dp => drug(idrug)
+n_O2 = dp%n_O2(ict,0)
+ichemo = iparent
+decay_rate = chemo(ichemo)%decay_rate
+membrane_kin = chemo(ichemo)%membrane_diff_in
+membrane_kout = chemo(ichemo)%membrane_diff_out
+Cex = Caverage(MAX_CHEMO+ichemo)
+if (use_average_volume) then
+    vol_cm3 = Vcell_cm3*average_volume	  ! not accounting for cell volume change
+    area_factor = (average_volume)**(2./3.)
+endif
+totalflux = 0
+do kcell = 1,nlist
+   	cp => cell_list(kcell)
+   	tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
+	if (cp%state == DEAD .or. tagged) cycle		! no metabolism
+	ict = cp%celltype
+	CO2 = cp%Cin(OXYGEN)
+	active = drug(idrug)%active_phase(cp%phase)
+	do it = 1,nt
+		cellfluxsum = 0
+		C = cp%Cin(ichemo)
+		Clabel = cp%Cin(ichemo+1)
+		membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*C)
+		if (active) then
+			KmetC = dp%Kmet0(ict,0)*C
+			if (dp%Vmax(ict,0) > 0) then
+				KmetC = KmetC + dp%Vmax(ict,0)*C/(dp%Km(ict,0) + C)
+			endif
+			dCreact = -(1 - dp%C2(ict,0) + dp%C2(ict,0)*dp%KO2(ict,0)**n_O2/(dp%KO2(ict,0)**n_O2 + CO2**n_O2))*KmetC
+			cp%dCdt(ichemo) = dCreact + membrane_flux/vol_cm3 - C*decay_rate
+			cp%dCdt(ichemo+1) = -dCreact
+			Clabel = Clabel + dtt*cp%dCdt(ichemo+1)
+		else
+			cp%dCdt(ichemo) = membrane_flux/vol_cm3 - C*decay_rate	
+		endif
+		C = C + dtt*cp%dCdt(ichemo)
+		cellfluxsum = cellfluxsum + membrane_flux
+	enddo
+	cp%Cin(ichemo) = C
+	cp%Cin(ichemo+1) = Clabel
+    cp%dMdt(ichemo) = -cellfluxsum/nt	! average flux of parent drug
+    totalflux = totalflux + cp%dMdt(ichemo)
+enddo	
+	
+! Next solve for ID concentrations of parent in medium, %Cmedium(:)
+Kd = chemo(ichemo)%medium_diff_coef
+A = well_area
+d = total_volume/A
+dX = d/N1D
+dV = A*dX
+Cex = Caverage(MAX_CHEMO + ichemo)
+Cmedium => chemo(ichemo)%Cmedium
+do k = 1,ndt
+	F(1) = -totalflux
+	do i = 2,N1D
+		F(i) = Kd*A*(Cmedium(i-1) - Cmedium(i))/dX
+	enddo
+	F(N1D+1) = 0
+	do i = 1,N1D
+		Cmedium(i) = Cmedium(i)*(1 - decay_rate) + (F(i) - F(i+1))*(dt/ndt)/dV
+	enddo
+	Cex = Cmedium(1)
+enddo
+Caverage(MAX_CHEMO + ichemo) = Cex
+
 end subroutine
 
 end module
