@@ -124,6 +124,7 @@ end function
 subroutine SetupChemo
 integer :: ichemo
 
+write(nflog,*) 'SetupChemo'
 chemo(OXYGEN)%name = 'Oxygen'
 chemo(GLUCOSE)%name = 'Glucose'
 chemo(LACTATE)%name = 'Lactate'
@@ -141,7 +142,9 @@ do ichemo = 1,MAX_CHEMO
 			chemo(ichemo)%present = .true.
 		endif
 	endif
+	chemo(ichemo)%Cmedium = 0
 enddo
+Caverage = 0
 !call AllocateConcArrays
 !if (use_FD) then
 !	do ichemo = 1,MAX_CHEMO
@@ -328,8 +331,34 @@ do idrug = 1,ndrugs_used
 				ichemo = iparent + im
 				chemo(ichemo)%present = .false.
 			enddo
+			call RemoveDrug(idrug)
 		endif
 	endif
+enddo
+end subroutine
+
+!----------------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------------
+subroutine RemoveDrug(idrug)
+integer :: idrug
+integer :: iparent, ichemo, im, kcell
+type(cell_type), pointer :: cp
+
+iparent = DRUG_A + 3*(idrug-1)
+do im = 0,2
+	ichemo = iparent + im
+	chemo(ichemo)%medium_Cbnd = 0
+	chemo(ichemo)%Cmedium = 0
+	Caverage(ichemo) = 0
+	Caverage(MAX_CHEMO+ichemo) = 0
+enddo
+do kcell = 1,nlist
+	if (cell_list(kcell)%state == DEAD) cycle
+    cp => cell_list(kcell)
+	do im = 0,2
+		ichemo = iparent + im
+		cp%Cin(ichemo) = 0
+	enddo
 enddo
 end subroutine
 

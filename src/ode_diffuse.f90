@@ -1021,13 +1021,13 @@ logical :: ok
 logical :: tagged, active
 type(cell_type), pointer :: cp
 type(drug_type), pointer :: dp
-integer :: ict, n_O2, ichemo, kcell, it, k, i
+integer :: ict, n_O2, ichemo, kcell, it, k, i, n_S_phase, n
 real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, Cex, vol_cm3, area_factor
 real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd
 real(REAL_KIND) :: average_volume = 1.2
 real(REAL_KIND), dimension(:), pointer :: Cmedium
 logical :: use_average_volume = .true.
-integer :: nt = 1
+integer :: nt = 20
 integer :: ndt = 20
 
 ! First solve for each cell separately
@@ -1039,24 +1039,32 @@ decay_rate = chemo(ichemo)%decay_rate
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
 Cex = Caverage(MAX_CHEMO+ichemo)
+Cmedium => chemo(ichemo)%Cmedium
 if (use_average_volume) then
     vol_cm3 = Vcell_cm3*average_volume	  ! not accounting for cell volume change
     area_factor = (average_volume)**(2./3.)
 endif
+
+do it = 1,nt
+
+n_S_phase = 0
 totalflux = 0
 do kcell = 1,nlist
    	cp => cell_list(kcell)
    	tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
-	if (cp%state == DEAD .or. tagged) cycle		! no metabolism
+	if (cp%state == DEAD) cycle	
 	ict = cp%celltype
 	CO2 = cp%Cin(OXYGEN)
 	active = drug(idrug)%active_phase(cp%phase)
-	do it = 1,nt
+	if (active .and. .not.tagged) then
+		n_S_phase = n_S_phase + 1
+	endif
+!	do it = 1,nt
 		cellfluxsum = 0
 		C = cp%Cin(ichemo)
 		Clabel = cp%Cin(ichemo+1)
 		membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*C)
-		if (active) then
+		if (active .and. .not.tagged) then
 			KmetC = dp%Kmet0(ict,0)*C
 			if (dp%Vmax(ict,0) > 0) then
 				KmetC = KmetC + dp%Vmax(ict,0)*C/(dp%Km(ict,0) + C)
@@ -1064,18 +1072,21 @@ do kcell = 1,nlist
 			dCreact = -(1 - dp%C2(ict,0) + dp%C2(ict,0)*dp%KO2(ict,0)**n_O2/(dp%KO2(ict,0)**n_O2 + CO2**n_O2))*KmetC
 			cp%dCdt(ichemo) = dCreact + membrane_flux/vol_cm3 - C*decay_rate
 			cp%dCdt(ichemo+1) = -dCreact
+!			write(*,*) 'kcell: ',kcell
+!			if (kcell == 1) write(*,'(a,4e12.3)') 'dCreact, membrane_flux: ',dCreact, membrane_flux, C, Cex
 			Clabel = Clabel + dtt*cp%dCdt(ichemo+1)
 		else
 			cp%dCdt(ichemo) = membrane_flux/vol_cm3 - C*decay_rate	
 		endif
 		C = C + dtt*cp%dCdt(ichemo)
 		cellfluxsum = cellfluxsum + membrane_flux
-	enddo
+!	enddo
 	cp%Cin(ichemo) = C
 	cp%Cin(ichemo+1) = Clabel
     cp%dMdt(ichemo) = -cellfluxsum/nt	! average flux of parent drug
     totalflux = totalflux + cp%dMdt(ichemo)
-enddo	
+enddo
+!write(*,*) 'n_S_phase, totalflux: ',n_S_phase,totalflux
 	
 ! Next solve for ID concentrations of parent in medium, %Cmedium(:)
 Kd = chemo(ichemo)%medium_diff_coef
@@ -1083,8 +1094,7 @@ A = well_area
 d = total_volume/A
 dX = d/N1D
 dV = A*dX
-Cex = Caverage(MAX_CHEMO + ichemo)
-Cmedium => chemo(ichemo)%Cmedium
+!Cex = Caverage(MAX_CHEMO + ichemo)
 do k = 1,ndt
 	F(1) = -totalflux
 	do i = 2,N1D
@@ -1096,8 +1106,22 @@ do k = 1,ndt
 	enddo
 	Cex = Cmedium(1)
 enddo
-Caverage(MAX_CHEMO + ichemo) = Cex
+!write(*,*) 'istep,Cex: ',istep,Cex
 
+enddo
+C = 0
+Clabel = 0
+n = 0
+do kcell = 1,nlist
+   	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+	n = n+1
+	C = C + cp%Cin(ichemo)
+	Clabel = Clabel + cp%Cin(ichemo+1)
+enddo
+Caverage(ichemo) = C/n
+Caverage(ichemo+1) = Clabel/n
+Caverage(MAX_CHEMO + ichemo) = Cex
 end subroutine
 
 end module

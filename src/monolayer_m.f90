@@ -1412,6 +1412,7 @@ do kevent = 1,Nevents
 			C(OXYGEN) = E%O2medium
 			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 			C(LACTATE) = chemo(LACTATE)%bdry_conc
+			C(DRUG_A:DRUG_A+6) = 0
 			V = E%volume
 			call MediumChange(V,C)
 		elseif (E%etype == DRUG_EVENT) then
@@ -1536,7 +1537,7 @@ write(nflog,'(a,13e12.3)')'medium_M: ',chemo(OXYGEN+1:)%medium_M
 Vcells = Ncells*Vcell_cm3
 Vm = total_volume - Vcells
 Vr = min(Vm,Ve)
-!write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr
+!write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr 
 mass = (Vm - Vr)*Caverage(MAX_CHEMO+1:2*MAX_CHEMO) + Ve*Ce(:)
 !chemo(:)%medium_M = ((Vm - Vr)/Vm)*chemo(:)%medium_M + Ve*Ce(:)
 total_volume = Vm - Vr + Ve + Vcells
@@ -1546,7 +1547,7 @@ Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
 !chemo(OXYGEN+1:)%medium_Cext = chemo(OXYGEN+1:)%medium_M/(total_volume - Vblob)
 !chemo(OXYGEN)%medium_Cext = chemo(OXYGEN)%bdry_conc
 !write(nflog,'(a,13e12.3)')'medium_M: ',chemo(OXYGEN+1:)%medium_M
-!write(nflog,'(a,13f8.4)') 'medium_Cext ',chemo(OXYGEN+1:)%medium_Cext
+!write(nflog,'(a,13f8.4)') 'medium_Cext ',chemo(OXYGEN+1:)%medium_Cext 
 chemo(OXYGEN)%bdry_conc = Ce(OXYGEN)
 call SetOxygenLevels
 !Cglucose = Caverage(MAX_CHEMO+GLUCOSE)
@@ -1559,6 +1560,7 @@ do idrug = 1,2
 !		Cdrug(im,:) = Caverage(MAX_CHEMO+DRUG_A+im)
 	enddo
 enddo
+write(nflog,'(a,2e12.3)') 'Drug Cmedium: ',Caverage(MAX_CHEMO+DRUG_A:MAX_CHEMO+DRUG_A+1)
 t_lastmediumchange = istep*DELTA_T
 medium_change_step = .true.
 end subroutine
@@ -1657,7 +1659,7 @@ endif
 
 drug_gt_cthreshold = .false.
 
-if (medium_change_step) then
+if (medium_change_step .or. chemo(DRUG_A)%present) then
 	ndiv = 6
 else
 	ndiv = 1
