@@ -99,11 +99,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "The number of subdivisions of the major time step, for the ODE diffusion-reaction solver."},
 
 {"VCELL_PL", 1.0, 0, 0,
-"Cell volume (pL)",
+"Cell volume",
 "Nominal cell volume."},
 
 {"WELL_AREA", 0.33, 0, 0,
-"Well area (cm2)",
+"Well area",
 "Cross-sectional area of the well."},
 
 {"MEDIUM_VOLUME", 0.2, 0, 0,
@@ -709,6 +709,10 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 {"GROWTH_FRACTION_3", 0.01, 0, 0,
 "Growth fraction threshold 3",
 "Growth fraction threshold 3"},
+
+{"DRUG_THRESHOLD", 1.0e-6, 0, 0,
+ "Drug Threshold",
+ "Threshold drug concentration - when all intracellular and extracellular concentrations fall below this level, the drug concentrations everywhere are set to zero"},
 
 {"SPCRAD", 200.0, 0, 0,
 "Spectral radius",

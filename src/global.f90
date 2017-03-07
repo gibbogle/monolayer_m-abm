@@ -49,6 +49,7 @@ integer, parameter :: DNB_DRUG = DRUG_B
 integer, parameter :: DNB_DRUG_METAB_1 = DNB_DRUG + 1
 integer, parameter :: DNB_DRUG_METAB_2 = DNB_DRUG + 2
 integer, parameter :: MAX_CHEMO = DRUG_B + 2
+
 integer, parameter :: GROWTH_RATE = MAX_CHEMO + 1	! (not used here, used in the GUI)
 integer, parameter :: CELL_VOLUME = MAX_CHEMO + 2
 integer, parameter :: O2_BY_VOL = MAX_CHEMO + 3
@@ -71,7 +72,7 @@ integer, parameter :: EXTRA = 1
 integer, parameter :: INTRA = 2
 integer, parameter :: MAX_CELLTYPES = 2
 integer, parameter :: MAX_DRUGTYPES = 2
-integer, parameter :: max_nlist = 500000
+integer, parameter :: max_nlist = 2000000
 integer, parameter :: NRF = 4
 integer, parameter :: LIMIT_THRESHOLD = 1500
 
@@ -326,7 +327,7 @@ real(REAL_KIND) :: doubling_time_sum
 type(cycle_parameters_type), target :: cc_parameters    ! possibly varies by cell type
 
 logical :: drug_gt_cthreshold(MAX_DRUGTYPES)
-real(REAL_KIND), parameter :: Cthreshold = 1.0e-5
+real(REAL_KIND) :: Cthreshold
 
 !type(savedata_type) :: saveprofile, saveslice
 

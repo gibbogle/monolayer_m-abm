@@ -315,7 +315,7 @@ call logger(logmsg)
 allocate(cell_list(max_nlist))
 !allocate(occupancy(NX,NY,NZ))
 allocate(gaplist(max_ngaps))
-!allocate(Cslice(NX/2,NY/2,NZ/2,MAX_CHEMO))
+!allocate(Cslice(NX/2,NY/2,NZ/2,MAX_CHEMO)) 
 !allocate(Cslice(NX,NY,NZ,MAX_CHEMO))
 
 ok = .true.
@@ -529,6 +529,7 @@ read(nfcell,*) hypoxia_threshold
 read(nfcell,*) growthcutoff(1)
 read(nfcell,*) growthcutoff(2)
 read(nfcell,*) growthcutoff(3)
+read(nfcell,*) Cthreshold
 read(nfcell,*) spcrad_value
 !read(nfcell,*) iuse_extra
 !read(nfcell,*) iuse_relax

@@ -79,7 +79,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>5</number>
+           <number>6</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -8102,7 +8102,14 @@ padding: 8px
               <item row="2" column="3">
                <widget class="QLabel" name="alabel_diamlimit">
                 <property name="text">
-                 <string>um</string>
+                 <string>pL</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="3">
+               <widget class="QLabel" name="alabel_cm2">
+                <property name="text">
+                 <string>cm2</string>
                 </property>
                </widget>
               </item>
@@ -8266,7 +8273,7 @@ padding: 8px
             <property name="geometry">
              <rect>
               <x>740</x>
-              <y>170</y>
+              <y>150</y>
               <width>171</width>
               <height>131</height>
              </rect>
@@ -8704,6 +8711,48 @@ padding: 8px
             </property>
             <property name="text">
              <string>Fully mixed?</string>
+            </property>
+           </widget>
+           <widget class="QMyLabel" name="label_DRUG_THRESHOLD">
+            <property name="geometry">
+             <rect>
+              <x>750</x>
+              <y>300</y>
+              <width>81</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>Drug Threshold</string>
+            </property>
+           </widget>
+           <widget class="QLineEdit" name="lineEdit">
+            <property name="geometry">
+             <rect>
+              <x>830</x>
+              <y>300</y>
+              <width>50</width>
+              <height>20</height>
+             </rect>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+           <widget class="QLabel" name="alabel_mM">
+            <property name="geometry">
+             <rect>
+              <x>890</x>
+              <y>300</y>
+              <width>21</width>
+              <height>21</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>mM</string>
             </property>
            </widget>
           </widget>
