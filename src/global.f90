@@ -72,7 +72,7 @@ integer, parameter :: EXTRA = 1
 integer, parameter :: INTRA = 2
 integer, parameter :: MAX_CELLTYPES = 2
 integer, parameter :: MAX_DRUGTYPES = 2
-integer, parameter :: max_nlist = 2000000
+integer, parameter :: max_nlist = 1500000
 integer, parameter :: NRF = 4
 integer, parameter :: LIMIT_THRESHOLD = 1500
 
@@ -121,6 +121,7 @@ type metabolism_type
 	real(REAL_KIND) :: f_G
 	real(REAL_KIND) :: f_P
 	real(REAL_KIND) :: C_P
+	real(REAL_KIND) :: A_fract
 end type
 
 type cell_type
@@ -363,6 +364,9 @@ real(REAL_KIND) :: f_ATPg(MAX_CELLTYPES)	! threshold ATP production rate fractio
 real(REAL_KIND) :: f_ATPs(MAX_CELLTYPES)	! threshold ATP production rate fractionss for cell growth, survival
 real(REAL_KIND) :: ATPg(MAX_CELLTYPES)		! threshold ATP production rates for cell growth, survival
 real(REAL_KIND) :: ATPs(MAX_CELLTYPES)		! threshold ATP production rates for cell growth, survival
+real(REAL_KIND) :: ATP_Km(MAX_CELLTYPES)	! Michaelis-Menten Km for dependence of target ATP rate on C_O2
+real(REAL_KIND) :: CO_H(MAX_CELLTYPES)		! threshold O2 for Ofactor
+real(REAL_KIND) :: CG_H(MAX_CELLTYPES)		! threshold glucose for Gfactor
 ! By cell
 type(metabolism_type), target :: metabolic(MAX_CELLTYPES)
 

@@ -729,9 +729,9 @@ end subroutine
 subroutine OGLSolver(tstart,dt,ok)
 real(REAL_KIND) :: tstart, dt
 logical :: ok
-integer :: ichemo, k, ict, neqn, i, kcell
+integer :: ichemo, k, ict, neqn, i, kcell, it
 real(REAL_KIND) :: t, tend
-real(REAL_KIND) :: C(3*N1D+3), Cin(3), Csum, Itotal, I2Divide
+real(REAL_KIND) :: C(3*N1D+3), Cin(3), Csum, Itotal, I2Divide, dCdt(63), dtt
 real(REAL_KIND) :: timer1, timer2
 ! Variables for RKC
 integer :: info(4), idid
@@ -740,9 +740,12 @@ type(rkc_comm) :: comm_rkc(1)
 type(metabolism_type), pointer :: mp
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: Cic,Cex,average_volume,area_factor,membrane_kin,membrane_kout,membrane_flux
+integer :: nt = 1000
+logical :: use_explicit = .false.		! The explicit approach is hopelessly unstable, even with nt = 1000
 
 !write(nflog,*) 'DrugSolver: ',istep
-ict = selected_celltype ! for now just a single cell type
+ict = selected_celltype ! for now just a single cell type 
+mp => metabolic(ict)
 
 k = 0
 do ichemo = 1,3
@@ -754,29 +757,49 @@ do ichemo = 1,3
 		C(k) = C_OGL(ichemo,i)	! EC
 	enddo
 enddo
-
 neqn = k
+call Set_f_GP(ict,mp,C)
+!mp%A_fract = f_MM(C(1),ATP_Km(ict),1)
+!write(nflog,'(a,3e12.3)') 'A_fract: ',mp%A_fract
+if (.not.use_explicit) then		! RKC solver
+	info(1) = 1
+	info(2) = 1		! = 1 => use spcrad() to estimate spectral radius, != 1 => let rkc do it
+	info(3) = 1
+	info(4) = 0
+	rtol = 5d-4		! was 5d-4
+!	if (mp%G_rate < r_G_threshold) then
+!		write(*,'(a,4e12.3)') 'r_G < r_G_threshold: ',mp%G_rate
+!		rtol = 1d-2
+!	endif
+	atol = rtol
 
-info(1) = 1
-info(2) = 1		! = 1 => use spcrad() to estimate spectral radius, != 1 => let rkc do it
-info(3) = 1
-info(4) = 0
-rtol = 5d-4
-atol = rtol
-
-idid = 0
-t = tstart
-tend = t + dt
-call rkc(comm_rkc(1),neqn,f_rkc_OGL,C,t,tend,rtol,atol,info,work_rkc,idid,ict)
-if (idid /= 1) then
-	write(logmsg,*) 'Solver: Failed at t = ',t,' with idid = ',idid
-	call logger(logmsg)
-	ok = .false.
-	return
+	idid = 0
+	t = tstart
+	tend = t + dt
+	call rkc(comm_rkc(1),neqn,f_rkc_OGL,C,t,tend,rtol,atol,info,work_rkc,idid,ict)
+	if (idid /= 1) then
+		write(logmsg,*) 'Solver: Failed at t = ',t,' with idid = ',idid
+		call logger(logmsg)
+		ok = .false.
+		return
+	endif
+	!write(nflog,'(a,3e12.3)') 'IC: ',C(1),C(N1D+2),C(2*N1D+3)
+	!write(*,'(a,3e12.3)') 'IC: ',C(1),C(N1D+2),C(2*N1D+3) 
+else	! explicit solver UNSTABLE
+	t = 0
+	dtt = dt/nt
+	do it = 1,10	! nt
+		t = t + dtt
+		call f_rkc_OGL(neqn,t,C,dCdt,ict)
+		write(*,*) 'dCdt'
+		write(*,'(7e11.3)') dCdt(1:neqn)
+		do k = 1,neqn
+			C(k) = C(k) + dtt*dCdt(k)
+		enddo
+		write(*,*) 'C'
+		write(*,'(7e11.3)') C(1:neqn)
+	enddo
 endif
-!write(nflog,'(a,3e12.3)') 'IC: ',C(1),C(N1D+2),C(2*N1D+3)
-!write(*,'(a,3e12.3)') 'IC: ',C(1),C(N1D+2),C(2*N1D+3)
-
 ! This determines average cell concentrations, assumed the same for all cells
 ! Now put the concentrations into the cells 
 
@@ -802,7 +825,6 @@ enddo
 Cin(1) = C(1)
 Cin(2) = C(N1D+2)
 Cin(3) = C(2*N1D+3)
-mp => metabolic(ict)
 call get_metab_rates(ict,mp,Cin)
 do kcell = 1,nlist
 	cp => cell_list(kcell)
@@ -826,7 +848,45 @@ membrane_kout = chemo(ichemo)%membrane_diff_out
 membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
 !write(*,'(a,3e12.3)') 'Lactate flux: ',mp%L_rate,membrane_flux,2*(1-N_GI(1))*mp%G_rate-mp%P_rate
 ! Checks OK
+!if (istep > 1100) write(*,'(a,2e12.3)') 'f_G, f_P: ',mp%f_G,mp%f_P
 
+end subroutine
+
+!----------------------------------------------------------------------------------
+! When C_O2 < CO_H both f_G and f_P are reduced, to 0 when C_O2 <= CO_L
+! When C_G < CG_H f_G is reduced, to 0 when C_G <= CG_L
+! When both concentrations are below the H threshold the reduction factors are 
+! multiplied for f_G
+!----------------------------------------------------------------------------------
+subroutine Set_f_GP(ityp,mp,C)
+integer :: ityp
+type(metabolism_type), pointer :: mp
+real(REAL_KIND) :: C(:)
+real(REAL_KIND) :: C_O2, C_G, Ofactor, Gfactor
+!real(REAL_KIND) :: CO_H = 0.005
+!real(REAL_KIND) :: CG_H = 0.05
+real(REAL_KIND) :: CO_L, CG_L
+
+C_O2 = C(1)
+C_G = C(N1D+2)
+CO_L = 0.8*CO_H(ityp)
+CG_L = 0.8*CG_H(ityp)
+Ofactor = 1
+Gfactor = 1
+
+if (C_O2 < CO_L) then
+	Ofactor = 0
+elseif (C_O2 < CO_H(ityp)) then
+	Ofactor = (C_O2 - CO_L)/(CO_H(ityp) - CO_L)
+endif
+if (C_G < CG_L) then
+	Gfactor = 0
+elseif (C_G < CG_H(ityp)) then
+	Gfactor = (C_G - CG_L)/(CG_H(ityp) - CG_L)
+endif
+mp%f_G = Gfactor*Ofactor*f_G_norm
+mp%f_P = Ofactor*f_P_norm
+write(*,'(a,6f8.4)') 'G, Ofactor: ',Gfactor, Ofactor, C_G, C_O2, mp%f_G, mp%f_P
 end subroutine
 
 !----------------------------------------------------------------------------------

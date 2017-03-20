@@ -302,21 +302,13 @@ call logger('did deallocation')
 ngaps = 0
 nlist = 0
 
-!allocate(zoffset(0:2*Mnodes))
-!allocate(zdomain(NZ))
-!x0 = (NX + 1.0)/2.        ! global value
-!y0 = (NY + 1.0)/2.
-!z0 = (NZ + 1.0)/2.
-!blob_centre = [x0,y0,z0]   ! now, actually the global centre (units = grids)
-!call SetRadius(initial_count)
 write(logmsg,*) 'Initial count, max_nlist: ',initial_count, max_nlist
 call logger(logmsg)
 
+! How big is cell_list?
+!write(*,*) 'size of cell_list: ',sizeof(cell_list(1)),sizeof(cell_list(1))*max_nlist
 allocate(cell_list(max_nlist))
-!allocate(occupancy(NX,NY,NZ))
 allocate(gaplist(max_ngaps))
-!allocate(Cslice(NX/2,NY/2,NZ/2,MAX_CHEMO)) 
-!allocate(Cslice(NX,NY,NZ,MAX_CHEMO))
 
 ok = .true.
 
@@ -614,7 +606,6 @@ chemo(TRACER)%used = (iuse_tracer == 1)
 chemo(OXYGEN)%MM_C0 = chemo(OXYGEN)%MM_C0/1000		! uM -> mM
 chemo(GLUCOSE)%MM_C0 = chemo(GLUCOSE)%MM_C0/1000	! uM -> mM
 chemo(LACTATE)%MM_C0 = chemo(LACTATE)%MM_C0/1000	! uM -> mM
-Hill_Km_P = Hill_Km_P/1000							! uM -> mM
 if (.not.chemo(OXYGEN)%used) then
     chemo(OXYGEN)%controls_growth = .false.
     chemo(OXYGEN)%controls_death = .false.
@@ -779,7 +770,10 @@ do ityp = 1,Ncelltypes
 	read(nf,*) C_O2_norm(ityp)
 	read(nf,*) C_G_norm(ityp)
 	read(nf,*) C_L_norm(ityp)
+	read(nf,*) CO_H(ityp)
+	read(nf,*) CG_H(ityp)
 	read(nf,*) f_ATPs(ityp)
+	read(nf,*) ATP_Km(ityp)
 	read(nf,*) K_PL(ityp)
 	read(nf,*) K_LP(ityp)
 	read(nf,*) Hill_Km_P(ityp)
@@ -787,6 +781,8 @@ do ityp = 1,Ncelltypes
 enddo
 PDKmin(:) = 0.3
 Hill_N_P = 1
+Hill_Km_P = Hill_Km_P/1000		! uM -> mM
+ATP_Km = ATP_Km/1000			! uM -> mM
 end subroutine
 
 !-----------------------------------------------------------------------------------------

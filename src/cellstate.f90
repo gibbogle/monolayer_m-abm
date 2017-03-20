@@ -251,7 +251,8 @@ do kcell = 1,nlist
 	endif	
 	call getO2conc(cp,C_O2)
 	if (use_metabolism) then
-		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
+!		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
+		if (cp%metab%A_rate < cp%ATP_rate_factor*ATPs(ityp)) then
 !			write(*,'(a,2e12.3)') 'A_rate: ',cp%metab%A_rate,ATPs(ityp)
 !			call CellDies(kcell)
 			cp%state = DYING
@@ -1091,7 +1092,7 @@ end function
 !----------------------------------------------------------------------------------
 function get_ATP_rate_factor() result(r)
 real(REAL_KIND) :: r
-real(REAL_KIND) :: dr = 0.2
+real(REAL_KIND) :: dr = 0.2		! was 0.2
 integer :: kpar = 0
 
 r = 1 + (par_uni(kpar) - 0.5)*dr

@@ -538,7 +538,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP moles produced per glucose mole",
       "Number of ATP moles produced by the glycolysis of one glucose mole"},
 
-      {"N_PA_1", 18, 0, 0,
+      {"N_PA_1", 14, 0, 0,
       "ATP moles produced per pyruvate mole",
       "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
@@ -587,9 +587,21 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "Nominal normal IC lactate concentration",
        "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
-      {"ATP_S_1", 0.4, 0, 0,
+       {"CO_H_1", 0.005, 0, 0,
+        "Oxygen H threshold for Ofactor",
+        "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
+
+       {"CG_H_1", 0.05, 0, 0,
+        "Glucose H threshold for Gfactor",
+        "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
+
+      {"ATP_S_1", 0.2, 0, 0,
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
+
+       {"ATP_MM_KM_1", 2, 0, 0,
+       "ATP Michaelis-Menten Km (uM)",
+       "The target ATP production rate depends on C_O2 via a Michaelis-Menten function, ensuring that the target rate -> threshold value as C_O2 -> 0"},
 
       {"K_PL_1", 0.1, 0, 0,
       "Pyruvate -> lactate rate constant",
@@ -600,7 +612,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "The reverse rate constant K_LP of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
 
        {"PYRUVATE_MM_KM_1", 20, 0, 0,
-       "Pyruvate Michaelis-Menten Km",
+       "Pyruvate Michaelis-Menten Km (uM)",
        "Pyruvate Michaelis-Menten Km (uM). fMM = C_P/(Km + C_P) is a multiple of pyruvate oxidation rate, ensuring that the rate -> 0 as C_P -> 0"},
 
        {"APOPTOSIS_RATE_1", 0.1, 0, 0,
@@ -611,7 +623,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "ATP moles produced per glucose mole",
        "Number of ATP moles produced by the glycolysis of one glucose mole"},
 
-       {"N_PA_2", 18, 0, 0,
+       {"N_PA_2", 14, 0, 0,
        "ATP moles produced per pyruvate mole",
        "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
@@ -660,11 +672,23 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
         "Nominal normal IC lactate concentration",
         "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
-       {"ATP_S_2", 0.25, 0, 0,
+        {"CO_H_2", 0.005, 0, 0,
+         "Oxygen H threshold for Ofactor",
+         "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
+
+        {"CG_H_2", 0.05, 0, 0,
+         "Glucose H threshold for Gfactor",
+         "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
+
+       {"ATP_S_2", 0.2, 0, 0,
        "ATP production threshold for survival (fraction of peak)",
         "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
-       {"K_PL_2", 0.2, 0, 0,
+        {"ATP_MM_KM_2", 2, 0, 0,
+        "ATP Michaelis-Menten Km (uM)",
+        "The target ATP production rate depends on C_O2 via a Michaelis-Menten function, ensuring that the target rate -> threshold value as C_O2 -> 0"},
+
+       {"K_PL_2", 0.1, 0, 0,
        "Pyruvate -> lactate rate constant",
        "The forward rate constant of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
 

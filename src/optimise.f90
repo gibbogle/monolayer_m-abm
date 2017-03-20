@@ -154,7 +154,8 @@ MM_O2 = f_MM(C_O2,Km_O2,N_O2)
 r_G_max = get_glycosis_rate(ityp,HIF1,C_G)
 !r_Pm_max = fPDK*MM_O2*O2_maxrate/(f_PO*(1-f_P_norm))	! note that MM_P is not here, since it varies it is added in optimiser()
 ! This is the rate of oxidation of pyruvate, i.e. (1-f_P)*r_P, excluding the effect of MM(C_P)
-r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added in optimiser()
+!r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added in optimiser()
+r_Pm_base = fPDK*MM_O2*O2_maxrate/f_PO	! note that MM_P is not here, since it varies it is added in optimiser()
 C_L_max = 3.0
 
 r_G = r_G_max
@@ -164,7 +165,7 @@ C_P = C_P_norm		! initial guess
 write(*,'(a,3e12.3)') 'r_G, C_L, r_Pm: ',r_G, C_L, r_Pm
 write(*,*)
 call optimiser(ityp, r_G, C_L, r_Pm, mp, x, y, C_P)
-mp%O_rate = mp%O_rate + MM_O2*base_O_rate
+!mp%O_rate = mp%O_rate + MM_O2*base_O_rate
 write(*,'(a,4f8.4)') 'optimiser: x, y, C_P: ',x,y,C_P
 stop
 
