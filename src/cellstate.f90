@@ -252,7 +252,7 @@ do kcell = 1,nlist
 	call getO2conc(cp,C_O2)
 	if (use_metabolism) then
 !		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
-		if (cp%metab%A_rate < cp%ATP_rate_factor*ATPs(ityp)) then
+		if (cp%metab%A_rate < ATPs(ityp)) then
 !			write(*,'(a,2e12.3)') 'A_rate: ',cp%metab%A_rate,ATPs(ityp)
 !			call CellDies(kcell)
 			cp%state = DYING
@@ -464,151 +464,6 @@ end subroutine
 ! 
 ! NOTE: now the medium concentrations are not affected by cell growth
 !-----------------------------------------------------------------------------------------
-subroutine grower1(dt, changed, ok)
-real(REAL_KIND) :: dt
-logical :: changed, ok
-integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
-type(cell_type), pointer :: cp
-type(cycle_parameters_type), pointer :: ccp
-real(REAL_KIND) :: R
-integer, parameter :: MAX_DIVIDE_LIST = 10000
-integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
-logical :: drugkilled
-logical :: mitosis_entry, in_mitosis, divide
-type(metabolism_type), pointer :: mp
-
-ok = .true.
-changed = .false.
-ccp => cc_parameters
-nlist0 = nlist
-ndivide = 0
-!tnow = istep*DELTA_T !+ t_fmover
-!if (colony_simulation) write(*,*) 'grower: ',nlist0,use_volume_method,tnow
-do kcell = 1,nlist0
-	kcell_now = kcell
-	if (colony_simulation) then
-	    cp => ccell_list(kcell)
-	else
-    	cp => cell_list(kcell)
-    endif
-	if (cp%state == DEAD) cycle
-	ityp = cp%celltype
-	divide = .false.
-	mitosis_entry = .false.
-	in_mitosis = .false.
-	if (use_volume_method) then
-!        if (colony_simulation) then
-!            write(*,'(a,i6,L2,2e12.3)') 'kcell: ',kcell,cp%Iphase,cp%V,cp%divide_volume
-!        endif
-	    if (cp%Iphase) then
-		    call growcell(cp,dt)
-		    if (cp%V > cp%divide_volume) then	! time to enter mitosis
-    	        mitosis_entry = .true.
-	        endif
-	    else
-	        in_mitosis = .true.
-	    endif
-	else
-	    prev_phase = cp%phase
-        call timestep(cp, ccp, dt)
-        if (cp%phase >= M_phase) then
-            if (prev_phase == Checkpoint2) then
-                mitosis_entry = .true.
-            else
-                in_mitosis = .true.
-            endif
-        endif
-		if (cp%phase < Checkpoint2 .and. cp%phase /= Checkpoint1) then
-		    call growcell(cp,dt)
-		endif	
-	endif
-	if (mitosis_entry) then
-		drugkilled = .false.
-		do idrug = 1,ndrugs_used
-			if (cp%drug_tag(idrug)) then
-				call CellDies(kcell)
-				changed = .true.
-				Ndrug_dead(idrug,ityp) = Ndrug_dead(idrug,ityp) + 1
-				drugkilled = .true.
-				exit
-			endif
-		enddo
-		if (drugkilled) cycle
-			
-		if (use_volume_method) then
-			if (cp%growth_delay) then
-				if (cp%G2_M) then
-					if (tnow > cp%t_growth_delay_end) then
-						cp%G2_M = .false.
-					else
-						cycle
-					endif
-				else
-					cp%t_growth_delay_end = tnow + cp%dt_delay
-					cp%G2_M = .true.
-					cycle
-				endif
-			endif
-			! try moving death prob test to here
-			if (cp%radiation_tag) then
-				R = par_uni(kpar)
-				if (R < cp%p_rad_death) then
-					call CellDies(kcell)
-					changed = .true.
-					Nradiation_dead(ityp) = Nradiation_dead(ityp) + 1
-					cycle
-				endif
-			endif		
-		else
-		    ! Check for cell death by radiation lesions
-		    ! For simplicity: 
-		    !   cell death occurs only at mitosis entry
-		    !   remaining L1 lesions and L2c misrepair (non-reciprocal translocation) are treated the same way
-		    !   L2a and L2b are treated as non-fatal
-		    if (cp%NL1 > 0 .or. cp%NL2(2) > 0) then
-				call CellDies(kcell)
-				changed = .true.
-				Nradiation_dead(ityp) = Nradiation_dead(ityp) + 1
-				cycle
-			endif		        
-		endif
-		
-		cp%Iphase = .false.
-		cp%mitosis = 0
-		cp%t_start_mitosis = tnow
-!		ncells_mphase = ncells_mphase + 1
-	elseif (in_mitosis) then
-		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
-        if (cp%mitosis >= 1) then
-			divide = .true.
-		endif
-	endif
-	if (divide) then
-		ndivide = ndivide + 1
-		if (ndivide > MAX_DIVIDE_LIST) then
-		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST
-		    call logger(logmsg)
-		    ok = .false.
-		    return
-		endif
-		divide_list(ndivide) = kcell
-	endif
-enddo
-do k = 1,ndivide
-	changed = .true.
-	kcell = divide_list(k)
-	if (colony_simulation) then
-	    cp => ccell_list(kcell)
-	else
-    	cp => cell_list(kcell)
-    endif
-	call divider(kcell, ok)
-	if (.not.ok) return
-enddo
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-!-----------------------------------------------------------------------------------------
 subroutine grower(dt, changed, ok)
 real(REAL_KIND) :: dt
 logical :: changed, ok
@@ -663,6 +518,7 @@ do kcell = 1,nlist0
 !			write(nflog,*) 'dVdt=0: kcell, phase: ',kcell,cp%phase
 !		endif
         call timestep(cp, ccp, dt)
+!		if (istep > 1560 .and. kcell == 6) write(*,*) 'kcell: ',kcell,cp%phase
         if (cp%phase >= M_phase) then
             if (prev_phase == Checkpoint2) then
 !                mitosis_entry = .true.
@@ -781,14 +637,16 @@ if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or
 	write(*,*) 'no growth - phase'
 	return
 endif
-!if (use_metabolism .and. cp%metab%A_rate < cp%ATP_rate_factor*ATPg(cp%celltype)) then
-!	cp%dVdt = 0
-!	return
-!endif
+if (use_metabolism .and. cp%metab%A_rate < ATPg(cp%celltype)) then
+	cp%dVdt = 0
+!	write(*,*) 'A_rate < ATPg: ', kcell_now
+	return
+endif
 ityp = cp%celltype
 tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
 if (tagged) then
 	cp%dVdt = 0
+	write(*,*) 'tagged: ',kcell_now
 	return
 endif
 if (colony_simulation) then
@@ -814,9 +672,9 @@ else
 !		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
 		cp%V = cp%V + cp%dVdt*dt
 		metab = 1
-!		if (kcell_now == 1) then
-!			write(*,'(a,4e12.3)') 'dVdt: ',max_growthrate(ityp),cp%metab%I_rate/cp%metab%I_rate_max,cp%dVdt,get_dVdt(cp,metab)
-!			write(*,'(a,i3,4e12.3)') 'phase,V,Vdivide,I..: ', cp%phase,cp%V,cp%divide_volume,cp%metab%Itotal,cp%metab%I2Divide
+!		if (istep >= 1560 .and. kcell_now == 6) then
+!			write(nflog,'(a,i6,4e12.3)') 'dVdt: ',kcell_now,max_growthrate(ityp),cp%metab%I_rate/cp%metab%I_rate_max,cp%dVdt	!,get_dVdt(cp,metab)
+!			write(nflog,'(a,2i6,4e12.3)') 'istep,phase,V,Vdivide,I..: ', istep,cp%phase,cp%V,cp%divide_volume,cp%metab%Itotal,cp%metab%I2Divide
 !		endif
 	else
 		oxygen_growth = chemo(OXYGEN)%controls_growth
@@ -1087,7 +945,7 @@ r = 1 + (par_uni(kpar) - 0.5)*dr
 end function
 
 !----------------------------------------------------------------------------------
-! This is used to adjust a cell's ATP thresholds to introduce some random variability
+! This is used to adjust a cell's ATP rate to introduce some random variability
 ! into transitions to no-growth and death.
 !----------------------------------------------------------------------------------
 function get_ATP_rate_factor() result(r)

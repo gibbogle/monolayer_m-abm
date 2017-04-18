@@ -1944,7 +1944,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="1">
+              <item row="14" column="1">
                <widget class="QLineEdit" name="line_ATP_S_1">
                 <property name="maximumSize">
                  <size>
@@ -1957,7 +1957,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="18" column="1">
+              <item row="17" column="1">
                <widget class="QLineEdit" name="line_K_PL_1">
                 <property name="maximumSize">
                  <size>
@@ -1970,7 +1970,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="19" column="1">
+              <item row="18" column="1">
                <widget class="QLineEdit" name="line_K_LP_1">
                 <property name="maximumSize">
                  <size>
@@ -1983,21 +1983,21 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="0">
+              <item row="14" column="0">
                <widget class="QMyLabel" name="label_ATP_S_1">
                 <property name="text">
                  <string>ATP production threshold for death (fraction of peak)</string>
                 </property>
                </widget>
               </item>
-              <item row="18" column="0">
+              <item row="17" column="0">
                <widget class="QMyLabel" name="label_K_PL_1">
                 <property name="text">
                  <string>Pyruvate -&gt; lactate rate constant</string>
                 </property>
                </widget>
               </item>
-              <item row="19" column="0">
+              <item row="18" column="0">
                <widget class="QMyLabel" name="label_K_LP_1">
                 <property name="text">
                  <string>Lactate -&gt; pyruvate rate constant</string>
@@ -2095,7 +2095,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="2">
+              <item row="14" column="2">
                <widget class="QLineEdit" name="line_ATP_S_2">
                 <property name="maximumSize">
                  <size>
@@ -2108,7 +2108,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="18" column="2">
+              <item row="17" column="2">
                <widget class="QLineEdit" name="line_K_PL_2">
                 <property name="maximumSize">
                  <size>
@@ -2121,7 +2121,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="19" column="2">
+              <item row="18" column="2">
                <widget class="QLineEdit" name="line_K_LP_2">
                 <property name="maximumSize">
                  <size>
@@ -2167,7 +2167,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="21" column="1">
+              <item row="20" column="1">
                <widget class="QLineEdit" name="line_APOPTOSIS_RATE_1">
                 <property name="maximumSize">
                  <size>
@@ -2180,7 +2180,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="21" column="2">
+              <item row="20" column="2">
                <widget class="QLineEdit" name="line_APOPTOSIS_RATE_2">
                 <property name="maximumSize">
                  <size>
@@ -2193,14 +2193,14 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="21" column="0">
+              <item row="20" column="0">
                <widget class="QMyLabel" name="label_APOPTOSIS_RATE_1">
                 <property name="text">
                  <string>Rate of apoptosis</string>
                 </property>
                </widget>
               </item>
-              <item row="20" column="0">
+              <item row="19" column="0">
                <widget class="QMyLabel" name="label_PYRUVATE_MM_KM_1">
                 <property name="font">
                  <font>
@@ -2213,7 +2213,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="20" column="1">
+              <item row="19" column="1">
                <widget class="QLineEdit" name="line_PYRUVATE_MM_KM_1">
                 <property name="maximumSize">
                  <size>
@@ -2226,7 +2226,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="20" column="2">
+              <item row="19" column="2">
                <widget class="QLineEdit" name="line_PYRUVATE_MM_KM_2">
                 <property name="maximumSize">
                  <size>
@@ -2398,7 +2398,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="17" column="1">
+              <item row="16" column="1">
                <widget class="QLineEdit" name="line_ATP_MM_KM_1">
                 <property name="maximumSize">
                  <size>
@@ -2411,7 +2411,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="17" column="2">
+              <item row="16" column="2">
                <widget class="QLineEdit" name="line_ATP_MM_KM_2">
                 <property name="maximumSize">
                  <size>
@@ -2424,41 +2424,15 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="17" column="0">
+              <item row="16" column="0">
                <widget class="QMyLabel" name="label_ATP_MM_KM_1">
                 <property name="text">
                  <string>ATP Michaelis-Menten Km</string>
                 </property>
                </widget>
               </item>
-              <item row="14" column="1">
-               <widget class="QLineEdit" name="line_CO_H_1">
-                <property name="maximumSize">
-                 <size>
-                  <width>60</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
-              <item row="14" column="2">
-               <widget class="QLineEdit" name="line_CO_H_2">
-                <property name="maximumSize">
-                 <size>
-                  <width>60</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="15" column="1">
-               <widget class="QLineEdit" name="line_CG_H_1">
+               <widget class="QLineEdit" name="line_ATP_G_1">
                 <property name="maximumSize">
                  <size>
                   <width>60</width>
@@ -2471,7 +2445,7 @@ padding: 8px
                </widget>
               </item>
               <item row="15" column="2">
-               <widget class="QLineEdit" name="line_CG_H_2">
+               <widget class="QLineEdit" name="line_ATP_G_2">
                 <property name="maximumSize">
                  <size>
                   <width>60</width>
@@ -2483,17 +2457,10 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="14" column="0">
-               <widget class="QMyLabel" name="label_CO_H_1">
-                <property name="text">
-                 <string>Oxygen H threshold for Ofactor</string>
-                </property>
-               </widget>
-              </item>
               <item row="15" column="0">
-               <widget class="QMyLabel" name="label_CG_H_1">
+               <widget class="QMyLabel" name="label_ATP_G_1">
                 <property name="text">
-                 <string>Glucose H threshold for Gfactor</string>
+                 <string>ATP production threshold for growth (fraction of peak)</string>
                 </property>
                </widget>
               </item>
@@ -7335,7 +7302,7 @@ padding: 8px
              <rect>
               <x>10</x>
               <y>20</y>
-              <width>851</width>
+              <width>1081</width>
               <height>451</height>
              </rect>
             </property>
@@ -7366,8 +7333,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_mins">
             <property name="geometry">
              <rect>
-              <x>1170</x>
-              <y>280</y>
+              <x>1290</x>
+              <y>270</y>
               <width>21</width>
               <height>16</height>
              </rect>
@@ -7379,8 +7346,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_nbins">
             <property name="geometry">
              <rect>
-              <x>1030</x>
-              <y>240</y>
+              <x>1150</x>
+              <y>230</y>
               <width>131</width>
               <height>21</height>
              </rect>
@@ -7392,8 +7359,8 @@ padding: 8px
            <widget class="QLabel" name="alabel_summary_interval">
             <property name="geometry">
              <rect>
-              <x>1035</x>
-              <y>280</y>
+              <x>1155</x>
+              <y>270</y>
               <width>101</width>
               <height>20</height>
              </rect>
@@ -7405,8 +7372,8 @@ padding: 8px
            <widget class="QLineEdit" name="lineEdit_summary_interval">
             <property name="geometry">
              <rect>
-              <x>1130</x>
-              <y>280</y>
+              <x>1250</x>
+              <y>270</y>
               <width>31</width>
               <height>16</height>
              </rect>
@@ -7421,8 +7388,8 @@ padding: 8px
            <widget class="QLineEdit" name="lineEdit_nhistobins">
             <property name="geometry">
              <rect>
-              <x>1160</x>
-              <y>240</y>
+              <x>1280</x>
+              <y>230</y>
               <width>21</width>
               <height>20</height>
              </rect>
@@ -7434,7 +7401,7 @@ padding: 8px
            <widget class="QLabel" name="alabel_profileplots">
             <property name="geometry">
              <rect>
-              <x>650</x>
+              <x>940</x>
               <y>0</y>
               <width>81</width>
               <height>21</height>

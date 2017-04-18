@@ -97,19 +97,22 @@ if (cp%dVdt == 0) then
 	return
 endif
 ityp = cp%celltype
-if (.not.colony_simulation .and. (phase == Checkpoint1)) then    ! check for starvation arrest
-    cf_O2 = cp%Cin(OXYGEN)/anoxia_threshold
-    pcp_O2 = getPcp_release(cf_O2,dt)
-    cf_glucose = cp%Cin(GLUCOSE)/aglucosia_threshold
-    pcp_glucose = getPcp_release(cf_glucose,dt)
-    pcp_starvation = pcp_O2*pcp_glucose
-    if (pcp_starvation == 0) then
-        return
-    elseif (pcp_starvation < 1) then
-!        call random_number(R)
-        R = par_uni(kpar)
-        if (R < pcp_starvation) return
-    endif
+
+if (.not.use_metabolism) then
+	if (.not.colony_simulation .and. (phase == Checkpoint1)) then    ! check for starvation arrest
+		cf_O2 = cp%Cin(OXYGEN)/anoxia_threshold
+		pcp_O2 = getPcp_release(cf_O2,dt)
+		cf_glucose = cp%Cin(GLUCOSE)/aglucosia_threshold
+		pcp_glucose = getPcp_release(cf_glucose,dt)
+		pcp_starvation = pcp_O2*pcp_glucose
+		if (pcp_starvation == 0) then
+			return
+		elseif (pcp_starvation < 1) then
+	!        call random_number(R)
+			R = par_uni(kpar)
+			if (R < pcp_starvation) return
+		endif
+	endif
 endif
 if (phase == G1_phase) then
     if (use_volume_based_transition) then
@@ -133,8 +136,9 @@ elseif (phase == Checkpoint1) then  ! this checkpoint combines the release from 
     if (use_metabolism) then
 		cp%G1S_flag = cp%G1S_flag .and. (cp%metab%A_rate > ATPg(ityp))
 	endif
-!    if (kcell_now == 1) then
-!		write(*,*) 'CP1: ',cp%G1_flag,cp%G1S_flag,cp%NL1,tnow - cp%G1S_time
+!    if (kcell_now == 6) then
+!		write(*,'(a,2L2,i6,3e12.3)') 'CP1: ',cp%G1_flag,cp%G1S_flag,cp%NL1,tnow - cp%G1S_time,cp%metab%A_rate,ATPg(ityp)
+!		write(nflog,'(a,2L2,i6,3e12.3)') 'CP1: ',cp%G1_flag,cp%G1S_flag,cp%NL1,tnow - cp%G1S_time,cp%metab%A_rate,ATPg(ityp)
 !	endif
     if (cp%G1_flag .and. cp%G1S_flag) then
         cp%phase = S_phase

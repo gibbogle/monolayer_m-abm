@@ -3358,9 +3358,9 @@ void MainWindow::setupCellColours()
 void MainWindow::setupGraphSelector()
 {
     QGridLayout *grid = new QGridLayout;
-    int row[4];
+    int row[5];
     int col;
-    row[0] = row[1] = row[2] = row[3] = -1;
+    row[0] = row[1] = row[2] = row[3] = row[4] = -1;
 
     cbox_ts = new QMyCheckBox*[grph->n_tsGraphs];
     for (int i=0; i<grph->n_tsGraphs; i++) {
@@ -3370,11 +3370,13 @@ void MainWindow::setupGraphSelector()
                 col = 0;
             } else if (i < 32) {
                 col = 1;
-            } else {
+            } else if (i < 48) {
                 col = 2;
+            } else {
+                col = 3;
             }
         } else {
-            col = 3;
+            col = 4;
         }
         row[col]++;
         QString text = grph->tsGraphs[i].title;

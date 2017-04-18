@@ -72,7 +72,7 @@ integer, parameter :: EXTRA = 1
 integer, parameter :: INTRA = 2
 integer, parameter :: MAX_CELLTYPES = 2
 integer, parameter :: MAX_DRUGTYPES = 2
-integer, parameter :: max_nlist = 1500000
+integer, parameter :: max_nlist = 1000000
 integer, parameter :: NRF = 4
 integer, parameter :: LIMIT_THRESHOLD = 1500
 
@@ -312,7 +312,8 @@ character*(12) :: dll_version, dll_run_version
 character*(12) :: gui_version, gui_run_version
 integer :: initial_count
 
-integer :: nlist, Ncells, Ncells0, ncells_mphase, lastID, Ncelltypes, Ncells_type(MAX_CELLTYPES), Ncells_dying(MAX_CELLTYPES)
+integer :: nlist, Ncells, Ncells0, ncells_mphase, lastID, Ncelltypes
+integer :: Ncells_type(MAX_CELLTYPES), Ncells_dying(MAX_CELLTYPES), Nviable(MAX_CELLTYPES)
 logical :: limit_stop
 !integer :: nadd_sites, Nsites, Nreuse
 integer :: Ndrugs_used
@@ -422,6 +423,7 @@ integer :: Nbnd
 integer :: seed(2)
 integer :: kcell_dbug
 integer :: kcell_now
+
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
 ! Off-lattice parameters, in the input file but unused here

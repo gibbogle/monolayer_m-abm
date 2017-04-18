@@ -770,9 +770,10 @@ do ityp = 1,Ncelltypes
 	read(nf,*) C_O2_norm(ityp)
 	read(nf,*) C_G_norm(ityp)
 	read(nf,*) C_L_norm(ityp)
-	read(nf,*) CO_H(ityp)
-	read(nf,*) CG_H(ityp)
+!	read(nf,*) CO_H(ityp)
+!	read(nf,*) CG_H(ityp)
 	read(nf,*) f_ATPs(ityp)
+	read(nf,*) f_ATPg(ityp)
 	read(nf,*) ATP_Km(ityp)
 	read(nf,*) K_PL(ityp)
 	read(nf,*) K_LP(ityp)
@@ -1732,9 +1733,11 @@ res = 0
 !	call get_concdata(nvars, ns, dxc, ex_conc)
 !endif
 
+call getNviable
+
 if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
-	write(logmsg,'(a,i6,i4,a,i8)') 'istep, hour: ',istep,istep/nthour,' Ncells: ',Ncells
+	write(logmsg,'(a,i6,i4,a,i8,a,i8)') 'istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,'   Nviable: ',sum(Nviable)
 	call logger(logmsg)
 !	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%O_rate
 !	call logger(logmsg)

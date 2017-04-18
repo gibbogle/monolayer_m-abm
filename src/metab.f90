@@ -124,7 +124,7 @@ do ityp = 1,1
 	C_L = C_L_norm(ityp)
 	C_P = C_L
 
-	do it = 1,10
+	do it = 1,10	! new method, set f_G, f_P
 		MM_P = f_MM(C_P,Km_P,N_P)
 		r_Gn = get_glycosis_rate(ityp,0.0d0,C_G_norm(ityp))
 !		r_Ln = 2*(1-f_Gn)*r_Gn - MM_P*MM_O2*(O2_maxrate-base_O_rate)/(f_PO*(1-f_Pn))
@@ -148,7 +148,9 @@ do ityp = 1,1
 	r_A_norm = r_An
 	r_I_norm = r_In
 	C_P_norm = C_P
-!	ATPg(ityp) = f_ATPg(ityp)*r_A_norm
+	mp%f_G = f_Gn
+	mp%f_P = f_Pn
+	ATPg(ityp) = f_ATPg(ityp)*r_A_norm
 	ATPs(ityp) = f_ATPs(ityp)*r_A_norm
 	mp%I_rate_max = r_I_norm
 	mp%A_rate = r_A_norm
@@ -278,157 +280,7 @@ end subroutine
 ! plenty of glucose but O2 is very low, r_G will be high but r_P will tend
 ! towards 0.  This must lead to an increase in C_P.
 !--------------------------------------------------------------------------
-subroutine f_metab1(ityp, mp, C_O2_, C_G_, C_L_)
-integer :: ityp
-type(metabolism_type), pointer :: mp
-real(REAL_KIND) :: C_O2_, C_G_, C_L_
-real(REAL_KIND) :: C_O2, C_G, C_L
-real(REAL_KIND) :: r_G, fPDK
-real(REAL_KIND) :: f_G, f_P, r_P, r_A, r_I, r_L, f_PO, f_PA
-real(REAL_KIND) :: K1, K2, C_P
-real(REAL_KIND) :: r_GP, r_GA, r_PA, r_Pm, V, Km_O2, Km_P, c1, c2, a, b, c, d, e, MM_P, MM_O2
-real(REAL_KIND) :: r_Pm_base, r_A_target, f_G_new, C_P_max, dA, fract
-integer :: N_O2, N_P, it
-logical :: exceed
 
-C_O2 = max(0.0,C_O2_)
-C_G = max(0.0,C_G_)
-C_L = max(0.0,C_L_)
-
-N_O2 = Hill_N_O2
-Km_O2 = Hill_Km_O2
-N_P = 1
-Km_P = Hill_Km_P(ityp)
-V = Vcell_cm3		! should be actual cell volume cp%V 
-f_PO = N_PO(ityp)
-f_PA = N_PA(ityp)
-K1 = K_PL(ityp)
-K2 = K_LP(ityp)
-f_G = f_G_norm
-f_P = f_P_norm
-
-mp%G_rate = get_glycosis_rate(ityp,mp%HIF1,C_G)
-r_G = mp%G_rate
-!if (r_G == 0) then
-!	write(*,'(a,3e12.3)') 'r_G = 0: G_maxrate,mp%HIF1,C_G: ',G_maxrate,mp%HIF1,C_G
-!	stop
-!endif
-fPDK = mp%PDK1
-MM_O2 = f_MM(C_O2,Km_O2,N_O2)
-!r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added as needed
-r_Pm_base = fPDK*MM_O2*O2_maxrate/f_PO	! note that MM_P is not here, since it varies it is added as needed
-
-if (dbug) write(*,'(a,5e12.3)') 'r_G,C_L,r_Pm: ',r_G,C_L,r_Pm_base,fPDK,MM_O2
-exceed = .false.
-if (r_G < r_G_threshold) then
-	r_G = max(0.0d0,r_G)
-	f_G = 0
-	fract = r_G/r_G_threshold
-	fract = sin(fract*PI/2)
-	f_P = f_P_norm*fract
-	r_GA = 2*r_G
-!	r_P = r_GA - V*(K1*C_P - K2*C_L) = MM(C_P)*r_Pm_base/(1-f_P) = r_Pm_base*C_P/((1-f_P)*(Km_P + C_P)) 
-	e = r_GA + V*K2*C_L
-	a = V*K1
-	b = r_Pm_base/(1-f_P) - e + V*K1*Km_P
-	c = -e*Km_P
-	d = sqrt(b*b - 4*a*c)
-	C_P = (-b + d)/(2*a)
-	r_P = r_GA - V*(K1*C_P - K2*C_L)	
-	r_PA = f_PA*(1-f_P)*r_P
-!	write(*,'(a,4e12.3)') 'r_G < r_G_threshold: ',r_G,fract,f_P,C_P 
-!	write(nflog,*) 'r_G < r_G_threshold' 
-!	write(nflog,'(a,5e13.6,2f9.6)') 'f_G,f_P,r_G,GA,L,C_P,C_L: ',f_G,f_P,r_G,r_GA,V*(K1*C_P - K2*C_L),C_P,C_L
-!	stop
-else
-
-	r_A_target = r_A_norm
-	r_A_target = mp%A_fract*r_A_norm + (1-mp%A_fract)*ATPs(ityp)
-	
-	it = 0
-	do
-		it = it + 1
-		if (it > 10) then
-			write(*,*) 'f_metab: it,kcell: ',it,kcell_now
-			write(*,'(a,3f9.6)') 'C O2,G,L: ',C_O2, C_G, C_L
-			write(*,'(a,2f9.6)') 'HIF1,fPDK: ',mp%HIF1,fPDK
-!			stop
-			exceed = .true.
-			r_PA = f_PA*(1-f_P)*r_P
-			exit
-		endif
-		if (dbug) write(*,'(a,i2,e12.3)') 'r_A_target: ',it,r_A_target
-		c1 = r_Pm_base*(f_PA + 1/(1-f_P))
-		c2 = r_A_target + V*K2*C_L
-		a = V*K1
-		b = V*K1*Km_P + c1 - c2
-		c = -Km_P*c2
-	!	C_P = solve_C_P(a,b,c)	! solves a*x^2 + b*x + c = 0
-		d = sqrt(b*b - 4*a*c)
-		C_P = (-b + d)/(2*a)
-		r_GA = r_A_target - f_PA*r_Pm_base*C_P/(Km_P + C_P)
-		
-		r_GA = min(r_GA, 2*r_G)
-		r_A_target = r_GA + f_PA*r_Pm_base*C_P/(Km_P + C_P)
-		
-		r_P = r_GA - V*(K1*C_P - K2*C_L)
-		r_P = max(0.0,r_P)
-		C_P_max = (r_GA + V*K2*C_L)/(V*K1)
-	!	if (C_P > C_P_max) then
-	!		write(*,*) 'C_P_max is exceeded!!!!'
-	!	endif
-		if (dbug) write(*,'(a,4f8.4)') 'f_P, f_G, C_P, C_P_max: ',f_P, f_G, C_P, C_P_max
-		if (dbug) write(*,'(a,2e12.3)') 'r_P, r_GA: ',r_P,r_GA
-		dA = r_GA - 2*(1-f_G)*r_G
-		if (dA < dA_threshold) then
-			r_PA = f_PA*(1-f_P)*r_P
-			r_A = r_GA + r_PA
-			if (dbug) write(*,'(a,3e12.3)') 'r_GA,r_PA,r_A: ',r_GA,r_PA,r_A/r_A_norm
-			if (dbug) write(*,*)
-			exit
-		else
-			if (dbug) write(*,'(a,e12.3)') 'dA: ',dA
-			f_G_new = max(0.0d0,f_G - dA/(2*r_G))
-			dA = dA - 2*(f_G - f_G_new)*r_G
-			if (f_G_new == 0) dA = 1.001*dA
-			if (dbug) write(*,'(a,2e12.3)') 'f_G_new, dA: ',f_G_new, dA
-			if (dbug) write(*,*)
-			f_G = f_G_new
-			r_A_target = max(0.0,r_A_target - dA)
-			
-!			r_A_target = min(r_A_target,2*r_G + f_PA*r_Pm_base*C_P/(Km_P + C_P))
-			
-			! Note: if f_G_new > 0, r_A_target is unchanged
-			cycle
-		endif
-	enddo
-endif
-
-mp%A_rate = r_GA + r_PA				! production
-mp%I_rate = f_G*r_G + f_P*r_P		! production
-mp%P_rate = r_P						! utilisation
-mp%O_rate = f_PO*r_P*(1-f_P)		! consumption
-mp%L_rate = V*(K1*C_P - K2*C_L)		! production
-mp%C_P = C_P
-! Add base rate correction
-mp%O_rate = mp%O_rate + O2_baserate(ityp)
-mp%f_G = f_G
-mp%f_P = f_P
-
-!if (r_G < r_G_threshold) then
-!	write(*,'(a)') 'G,P,L,A,I,O rates: '
-!	write(*,'(6e11.3)') mp%G_rate,mp%P_rate,mp%L_rate,mp%A_rate,mp%I_rate,mp%O_rate
-!endif
-!if (dbug .or. exceed) then
-!	write(*,'(a,6e10.3)') 'r_G,A,P,I,L,O2: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%I_rate,mp%L_rate,mp%O_rate
-!endif
-!if (istep >= 1187) then
-!	write(nflog,'(a,5e13.6,2f9.6)') 'f_G,f_P,r_G,GA,L,C_P: ',f_G,f_P,r_G,r_GA,mp%L_rate,C_P,C_L
-!	write(nflog,'(a,5e13.6)') 'f_G,f_P,r_G,O,L: ',f_G,f_P,mp%G_rate,mp%O_rate,mp%L_rate
-!	write(nflog,'(a,4e13.6)') 'r_G,r_GA,C_P,C_L: ',r_G,r_GA,C_P,C_L
-!endif
-!if (r_G < r_G_threshold) stop
-end subroutine
 
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------

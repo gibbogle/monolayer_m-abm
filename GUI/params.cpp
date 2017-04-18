@@ -587,17 +587,22 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "Nominal normal IC lactate concentration",
        "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
-       {"CO_H_1", 0.005, 0, 0,
-        "Oxygen H threshold for Ofactor",
-        "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
+//       {"CO_H_1", 0.005, 0, 0,
+//        "Oxygen H threshold for Ofactor",
+//        "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
 
-       {"CG_H_1", 0.05, 0, 0,
-        "Glucose H threshold for Gfactor",
-        "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
+//       {"CG_H_1", 0.05, 0, 0,
+//        "Glucose H threshold for Gfactor",
+//        "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
 
-      {"ATP_S_1", 0.2, 0, 0,
+      {"ATP_S_1", 0.4, 0, 0,
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
+
+       {"ATP_G_1", 0.5, 0, 0,
+       "ATP production threshold for growth (fraction of peak)",
+       "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate.\n\
+        Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below 1.5*ATP_G, to 0 when ATP rate = ATP_S."},
 
        {"ATP_MM_KM_1", 2, 0, 0,
        "ATP Michaelis-Menten Km (uM)",
@@ -672,17 +677,21 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
         "Nominal normal IC lactate concentration",
         "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
-        {"CO_H_2", 0.005, 0, 0,
-         "Oxygen H threshold for Ofactor",
-         "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
+//        {"CO_H_2", 0.005, 0, 0,
+//         "Oxygen H threshold for Ofactor",
+//         "When C_O2 < CO_H both f_G and f_P are reduced by Ofactor, which ranges from 0 to 1 when CO_L < C_O2 < CO_H.  CO_L = 0.8*CO_H"},
 
-        {"CG_H_2", 0.05, 0, 0,
-         "Glucose H threshold for Gfactor",
-         "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
+//        {"CG_H_2", 0.05, 0, 0,
+//         "Glucose H threshold for Gfactor",
+//         "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
 
        {"ATP_S_2", 0.2, 0, 0,
        "ATP production threshold for survival (fraction of peak)",
         "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
+
+        {"ATP_G_2", 0.3, 0, 0,
+        "ATP production threshold for growth (fraction of peak)",
+        "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate"},
 
         {"ATP_MM_KM_2", 2, 0, 0,
         "ATP Michaelis-Menten Km (uM)",
@@ -820,6 +829,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 
 // Time-series plots
     {"nlive",                     1, 0,1,"","Number of live cells"},
+    {"nviable",                   0, 0,1,"","Number of viable cells"},
     {"nanoxiadead",               0, 0,1,"","Total number of cells that have been killed by anoxia"},
     {"naglucosiadead",            0, 0,1,"","Total number of cells that have been killed by aglucosia"},
     {"ndrugAdead",                0, 0,1,"","Total number of cells that have been killed by drugA"},
@@ -867,8 +877,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"Prate",                     1, 0,1,"","Normalised pyruvate utilisation rate"},
     {"Arate",                     1, 0,1,"","Normalised ATP production rate"},
     {"Irate",                     1, 0,1,"","Normalised rate of production of anabolic intermediates"},
-    {"dividerate",                1, 0,1,"","# divided/hour"},
-    {"Pfraction",                 1, 0,1,"","% pyruvate utilised"},
+    {"f_G",                       0, 0,1,"","f_G"},
+    {"f_P",                       0, 0,1,"","f_P"},
+    {"HIF-1",                     1, 0,1,"","HIF-1"},
+    {"PDK1",                      1, 0,1,"","PDK1"},
+    {"dividerate",                0, 0,1,"","# divided/hour"},
 
 
 // Profile plots
