@@ -15,7 +15,12 @@ type parameter_type
 	real(REAL_KIND) :: minval, maxval
 	real(REAL_KIND) :: val(0:max_vals)
 	integer :: ival
-end type	
+end type
+
+type initial_value_type
+    character*(24) :: varID
+    real(REAL_KIND) :: val
+end type
 
 type experiment_type
 	integer :: nvars, ntimes
@@ -26,7 +31,10 @@ type experiment_type
 	logical, allocatable :: is_dose(:,:)
 	integer, allocatable :: itsim(:)
 	real(REAL_KIND), allocatable :: ysim(:,:)
+	integer :: ninitialvals
+	type(initial_value_type) :: initial_value(10)
 end type
+
 
 integer :: ncpu, Niters, Nparams, Nsims, Nexpts
 integer :: ivalmin(0:max_params),n(0:max_params)
@@ -156,10 +164,12 @@ character*(50) :: str50
 character*(12) :: str12
 character*(48) :: arg(16)
 character*(48) :: paramstr, event, drugstr
-integer :: nargs, nprot, kpar, nfnew = 20
+integer :: nargs, nprot, kpar, i, nfnew = 20
 real(REAL_KIND) :: dose, pval
-logical :: protocol, first_rad_dose, first_drug_dose, normal
+logical :: protocol, first_rad_dose, first_drug_dose, normal, is_initval
+type(experiment_type), pointer :: p
 
+p => experiment(iexp)
 open(nfin,file=old_infile,status='old')
 open(nfnew,file=new_infile,status='replace')
 protocol = .false.
@@ -181,6 +191,9 @@ do
 	endif
 	! Now see if the paramstr is in the parameter list.  
 	! In the case of protocol we need to look for a parameter ID with '_EC' appended, if it is a drug.
+	! We also need to check if paramstr corresponds to a measurement value at hour=0 for this experiment.
+	! Since there will in general be multiple experiment varIDs, and not all will need to have initial values
+	! set at hour=0, those that are excluded will have value = -1.
 	if (protocol) then
 		if (first_rad_dose .and. paramstr == 'RADIATION') then
 			normal = .false.
@@ -240,6 +253,22 @@ do
 			endif
 		endif
 	else
+	    ! First check if paramstr is in the list of initial values for this experiment.
+	    is_initval = .false.
+	    if (p%ninitialvals > 0) then
+	        do i = 1,p%ninitialvals
+!	            write(nfitlog,*) paramstr, p%initial_value(i)%varID
+	            if (trim(paramstr) == trim(p%initial_value(i)%varID)) then
+	                write(nfitlog,*) 'Initial value: ',paramstr,p%initial_value(i)%val
+	                is_initval = .true.
+	        		write(str12,'(e12.3)') p%initial_value(i)%val
+	        		str50 = adjustl(str12) // trim(arg(2))
+            		write(nfnew,'(a)') adjustl(str50)
+            	    exit
+            	endif
+            enddo
+        endif
+        if (is_initval) cycle
 		kpar = get_param_num(paramstr)
 		if (kpar >= 0) then
 			pval = param(kpar)%val(param(kpar)%ival)
@@ -265,6 +294,8 @@ end subroutine
 !	space + comma ' ,' is treated as a comma ','
 !	fields are delimitted by ','
 !	missing value ',,' is parsed to return the string ' ', which is given the floating point value -1
+! Note:
+! A measurement at hour=0 actually implies the need to set an initial value.
 !----------------------------------------------------------------------------
 subroutine read_expt(nf,filename)
 integer :: nf
@@ -272,8 +303,8 @@ character*(48) :: filename
 character*(128) :: line
 character*(48) :: arg(16)
 integer :: nargs
-integer :: iexp, it, i, k
-real(REAL_KIND) :: val
+integer :: iexp, it, i, k, ninitvals
+real(REAL_KIND) :: val, hour
 type(experiment_type), pointer :: p
 
 open(nf,file=filename,status='old')
@@ -297,7 +328,10 @@ do
 	call parse(line,', ',arg,nargs)
 	read(arg(1),'(i)') iexp
 	p => experiment(iexp)
-	p%ntimes = p%ntimes + 1
+	read(arg(2),*) hour
+	if (hour > 0) then
+    	p%ntimes = p%ntimes + 1
+    endif
 enddo
 99 continue
 close(nf)
@@ -316,6 +350,7 @@ open(nf,file=filename,status='old')
 read(nf,*)
 it = 0
 iexp = 0
+ninitvals = 0
 do
 	read(nf,'(a)',end=199) line
 	if (len(trim(line)) == 0) cycle
@@ -325,11 +360,16 @@ do
 	read(arg(1),'(i)') i
 	if (i /= iexp) then
 		it = 0
+		ninitvals = 0
 	endif
 	iexp = i
 	p => experiment(iexp)
-	it = it+1
-	read(arg(2),*) p%t(it)
+	read(arg(2),*) hour      ! if this = 0 then the corresponding initial value needs to be changed
+	if (hour > 0) then
+    	it = it+1
+    	p%t(it) = hour
+    endif
+!	read(arg(2),*) p%t(it)
 !	write(*,'(8(a,1x))') (trim(arg(k)),k=1,nargs)
 	do i = 1,p%nvars
 		if (arg(i+2) == ' ') then
@@ -337,7 +377,21 @@ do
 		else
 			read(arg(i+2),*,end=199) val
 		endif
-		p%y(it,i) = val
+		if (hour == 0) then
+		    write(nfitlog,*) 'hour = 0'
+		    if (val >= 0) then
+		        ninitvals = ninitvals + 1
+		        if (p%varID(i) == 'GLUCOSE_EC') then
+    		        p%initial_value(ninitvals)%varID = 'GLUCOSE_BDRY_CONC'
+    		    endif
+		        p%initial_value(ninitvals)%val = val
+		        p%ninitialvals = ninitvals
+		        write(nfitlog,*) p%varID(i),'  ',p%initial_value(ninitvals)%varID, '  ',val
+		    endif
+!		endif
+		else
+    		p%y(it,i) = val
+        endif
 	enddo
 enddo
 199 continue
