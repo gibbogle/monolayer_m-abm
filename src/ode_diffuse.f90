@@ -870,7 +870,7 @@ logical :: use_ATP = .true.
 
 if (use_ATP) then
 	f_ATP_L = f_ATPg(ityp)
-	f_ATP_H = 1.5*f_ATPg(ityp)
+	f_ATP_H = f_ATPramp(ityp)*f_ATPg(ityp)
 	f = mp%A_rate/r_A_norm
 	if (f > f_ATP_H) then
 		ATPfactor = 1

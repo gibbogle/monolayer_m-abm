@@ -774,6 +774,7 @@ do ityp = 1,Ncelltypes
 !	read(nf,*) CG_H(ityp)
 	read(nf,*) f_ATPs(ityp)
 	read(nf,*) f_ATPg(ityp)
+	read(nf,*) f_ATPramp(ityp)
 	read(nf,*) ATP_Km(ityp)
 	read(nf,*) K_PL(ityp)
 	read(nf,*) K_LP(ityp)

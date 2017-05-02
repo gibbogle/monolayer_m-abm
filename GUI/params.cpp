@@ -599,12 +599,19 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
-       {"ATP_G_1", 0.5, 0, 0,
+      {"ATP_G_1", 0.5, 0, 0,
        "ATP production threshold for growth (fraction of peak)",
        "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate.\n\
-        Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below 1.5*ATP_G, to 0 when ATP rate = ATP_S."},
+        Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below ATPramp*ATP_G, to 0 when ATP rate = ATP_G."},
 
-       {"ATP_MM_KM_1", 2, 0, 0,
+      {"ATP_RAMP_1", 1.5, 0, 0,
+        "Ramp factor for reducing r_G, r_P based on ATP",
+       "Fractional rates of production of intermediates from glycolysis (r_G) and pyruvate (r_P) are reduced as ATP production rate falls.\n\
+        If the normal ATP rate is r_An, and the current rate is r_A, then the fractional production rate f_A = r_A/r_An.\n\
+        A multiplying factor on both r_G and r_P, f, is calculated as a ramp from 0 - 1 as f_A varies from ATP_G - ATPramp*ATP_G\n\
+        i.e. the reduction starts when f_A = ATPramp*ATP_G (f = 1), and when f_A = ATP_G, f = 0.  f_G = f*f_Gn, f_P = f*f_Pn"},
+
+      {"ATP_MM_KM_1", 2, 0, 0,
        "ATP Michaelis-Menten Km (uM)",
        "The target ATP production rate depends on C_O2 via a Michaelis-Menten function, ensuring that the target rate -> threshold value as C_O2 -> 0"},
 
@@ -692,6 +699,13 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
         {"ATP_G_2", 0.3, 0, 0,
         "ATP production threshold for growth (fraction of peak)",
         "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate"},
+
+        {"ATP_RAMP_2", 1.5, 0, 0,
+          "Ramp factor for reducing r_G, r_P based on ATP",
+         "Fractional rates of production of intermediates from glycolysis (r_G) and pyruvate (r_P) are reduced as ATP production rate falls.\n\
+          If the normal ATP rate is r_An, and the current rate is r_A, then the fractional production rate f_A = r_A/r_An.\n\
+          A multiplying factor on both r_G and r_P, f, is calculated as a ramp from 0 - 1 as f_A varies from ATP_G - ATPramp*ATP_G\n\
+          i.e. the reduction starts when f_A = ATPramp*ATP_G (f = 1), and when f_A = ATP_G, f = 0.  f_G = f*f_Gn, f_P = f*f_Pn"},
 
         {"ATP_MM_KM_2", 2, 0, 0,
         "ATP Michaelis-Menten Km (uM)",
