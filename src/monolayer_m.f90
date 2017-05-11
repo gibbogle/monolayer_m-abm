@@ -699,7 +699,9 @@ Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
 write(logmsg,'(a,2i6,f6.0)') 'nsteps, NT_CONC, DELTA_T: ',nsteps,NT_CONC,DELTA_T
 call logger(logmsg)
 
-call DetermineKd	! Kd is now set or computed in the GUI 
+if (.not.use_new_drugdata) then
+	call DetermineKd	! Kd is now set or computed in the GUI 
+endif
 ndivided = 0
 Ncells_dying = 0
 ok = .true.
@@ -839,6 +841,9 @@ do idrug = 1,Ndrugs_used
             read(nf,*) drug(idrug)%SER_KO2(ictyp,im)
             read(nf,*) drug(idrug)%n_O2(ictyp,im)
             read(nf,*) drug(idrug)%death_prob(ictyp,im)
+            if (use_new_drugdata) then
+	            read(nf,*) drug(idrug)%Kd(ictyp,im)
+	        endif
             read(nf,*) ival
             drug(idrug)%kills(ictyp,im) = (ival == 1)
             read(nf,*) ival

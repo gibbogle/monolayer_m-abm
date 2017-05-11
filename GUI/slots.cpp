@@ -363,3 +363,5 @@ void MainWindow::clickedGraph(QMouseEvent *event)
         colony_plot->savePng(fileName);
     }
 }
+
+

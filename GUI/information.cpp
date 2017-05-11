@@ -20,6 +20,8 @@ void QMyLabel::mousePressEvent (QMouseEvent *event) {
         QString tag = objName.mid(10);
         parm->infoLabelInfo(tag,&text);
         if (text != "") {
+            LOG_QMSG("mousePressEvent: " + objName);
+            LOG_QMSG(tag);
             emit labelClicked(text);
         }
         return;

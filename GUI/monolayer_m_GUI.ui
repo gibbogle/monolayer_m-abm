@@ -79,7 +79,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>3</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -3489,7 +3489,7 @@ padding: 8px
               <x>580</x>
               <y>10</y>
               <width>561</width>
-              <height>461</height>
+              <height>481</height>
              </rect>
             </property>
             <property name="title">
@@ -3501,11 +3501,11 @@ padding: 8px
                <x>10</x>
                <y>50</y>
                <width>541</width>
-               <height>401</height>
+               <height>421</height>
               </rect>
              </property>
-             <layout class="QGridLayout" name="gridLayout_GL12" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
-              <item row="1" column="0">
+             <layout class="QGridLayout" name="gridLayout_GL12" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">
+              <item row="2" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_0">
                 <property name="minimumSize">
                  <size>
@@ -3524,7 +3524,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
+              <item row="3" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_1">
                 <property name="maximumSize">
                  <size>
@@ -3537,7 +3537,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="0">
+              <item row="4" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_2">
                 <property name="maximumSize">
                  <size>
@@ -3550,7 +3550,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="2">
+              <item row="2" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_0">
                 <property name="minimumSize">
                  <size>
@@ -3575,7 +3575,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
+              <item row="2" column="1">
                <widget class="QLabel" name="units_KMET0_3">
                 <property name="maximumSize">
                  <size>
@@ -3588,14 +3588,14 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
+              <item row="4" column="1">
                <widget class="QLabel" name="units_KO2_3">
                 <property name="text">
                  <string>uM</string>
                 </property>
                </widget>
               </item>
-              <item row="7" column="0">
+              <item row="8" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_5">
                 <property name="maximumSize">
                  <size>
@@ -3665,7 +3665,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="9" column="0">
+              <item row="10" column="0">
                <widget class="QLabel" name="alabel_NIM_KILL">
                 <property name="maximumSize">
                  <size>
@@ -3684,7 +3684,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="0">
+              <item row="12" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_6">
                 <property name="maximumSize">
                  <size>
@@ -3697,14 +3697,14 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="1">
+              <item row="12" column="1">
                <widget class="QLabel" name="units_KILL_O2_CONC_3">
                 <property name="text">
                  <string>mM      </string>
                 </property>
                </widget>
               </item>
-              <item row="12" column="0">
+              <item row="13" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_7">
                 <property name="maximumSize">
                  <size>
@@ -3717,14 +3717,14 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="1">
+              <item row="13" column="1">
                <widget class="QLabel" name="units_KILL_DRUG_CONC_3">
                 <property name="text">
                  <string>mM</string>
                 </property>
                </widget>
               </item>
-              <item row="13" column="0">
+              <item row="14" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_8">
                 <property name="maximumSize">
                  <size>
@@ -3737,14 +3737,14 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="13" column="1">
+              <item row="14" column="1">
                <widget class="QLabel" name="units_KILL_DURATION_3">
                 <property name="text">
                  <string>min</string>
                 </property>
                </widget>
               </item>
-              <item row="14" column="0">
+              <item row="15" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_9">
                 <property name="maximumSize">
                  <size>
@@ -3833,7 +3833,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="0">
+              <item row="6" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_3">
                 <property name="maximumSize">
                  <size>
@@ -3846,7 +3846,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="0">
+              <item row="7" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_4">
                 <property name="maximumSize">
                  <size>
@@ -3859,28 +3859,28 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="1">
+              <item row="6" column="1">
                <widget class="QLabel" name="units_NIM_Vmax">
                 <property name="text">
                  <string>mM/min</string>
                 </property>
                </widget>
               </item>
-              <item row="6" column="1">
+              <item row="7" column="1">
                <widget class="QLabel" name="units_NIM_Km">
                 <property name="text">
                  <string>mM</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="1">
+              <item row="3" column="1">
                <widget class="QLabel" name="alabel_10">
                 <property name="text">
                  <string>(0-1)</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="2">
+              <item row="3" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_1">
                 <property name="minimumSize">
                  <size>
@@ -3905,7 +3905,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="2">
+              <item row="4" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_2">
                 <property name="minimumSize">
                  <size>
@@ -3930,7 +3930,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="2">
+              <item row="6" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_3">
                 <property name="minimumSize">
                  <size>
@@ -3955,7 +3955,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="2">
+              <item row="7" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_4">
                 <property name="minimumSize">
                  <size>
@@ -3980,7 +3980,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="2">
+              <item row="8" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_5">
                 <property name="minimumSize">
                  <size>
@@ -4005,7 +4005,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="2">
+              <item row="12" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_6">
                 <property name="minimumSize">
                  <size>
@@ -4030,33 +4030,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="2">
-               <widget class="QLineEdit" name="line_PARENT_CT1_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="2">
-               <widget class="QLineEdit" name="line_PARENT_CT1_8">
+               <widget class="QLineEdit" name="line_PARENT_CT1_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -4081,6 +4059,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="2">
+               <widget class="QLineEdit" name="line_PARENT_CT1_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_9">
                 <property name="minimumSize">
                  <size>
@@ -4105,21 +4108,21 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="10" column="0">
-               <widget class="QMyLabel" name="infolabel_PARENT_CT1_15">
+              <item row="11" column="0">
+               <widget class="QMyLabel" name="infolabel_PARENT_CT1_16">
                 <property name="text">
                  <string>Kills?</string>
                 </property>
                </widget>
               </item>
-              <item row="10" column="2">
-               <widget class="QCheckBox" name="cbox_PARENT_CT1_15">
+              <item row="11" column="2">
+               <widget class="QCheckBox" name="cbox_PARENT_CT1_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="1" column="3">
+              <item row="2" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_0">
                 <property name="minimumSize">
                  <size>
@@ -4144,7 +4147,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="3">
+              <item row="3" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_1">
                 <property name="minimumSize">
                  <size>
@@ -4169,7 +4172,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="3">
+              <item row="4" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_2">
                 <property name="minimumSize">
                  <size>
@@ -4194,7 +4197,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="3">
+              <item row="6" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_3">
                 <property name="minimumSize">
                  <size>
@@ -4219,7 +4222,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="3">
+              <item row="7" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_4">
                 <property name="minimumSize">
                  <size>
@@ -4244,7 +4247,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="3">
+              <item row="8" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_5">
                 <property name="minimumSize">
                  <size>
@@ -4269,7 +4272,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="3">
+              <item row="12" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_6">
                 <property name="minimumSize">
                  <size>
@@ -4294,33 +4297,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="3">
-               <widget class="QLineEdit" name="line_PARENT_CT2_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="3">
-               <widget class="QLineEdit" name="line_PARENT_CT2_8">
+               <widget class="QLineEdit" name="line_PARENT_CT2_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -4345,6 +4326,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="3">
+               <widget class="QLineEdit" name="line_PARENT_CT2_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_9">
                 <property name="minimumSize">
                  <size>
@@ -4369,7 +4375,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="4">
+              <item row="2" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_0">
                 <property name="minimumSize">
                  <size>
@@ -4394,7 +4400,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="5">
+              <item row="2" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_0">
                 <property name="minimumSize">
                  <size>
@@ -4419,7 +4425,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="6">
+              <item row="2" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_0">
                 <property name="minimumSize">
                  <size>
@@ -4444,7 +4450,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="1" column="7">
+              <item row="2" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_0">
                 <property name="minimumSize">
                  <size>
@@ -4469,7 +4475,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="4">
+              <item row="3" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_1">
                 <property name="minimumSize">
                  <size>
@@ -4494,7 +4500,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="4">
+              <item row="4" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_2">
                 <property name="minimumSize">
                  <size>
@@ -4519,7 +4525,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="4">
+              <item row="6" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_3">
                 <property name="minimumSize">
                  <size>
@@ -4544,7 +4550,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="4">
+              <item row="7" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_4">
                 <property name="minimumSize">
                  <size>
@@ -4569,7 +4575,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="4">
+              <item row="8" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_5">
                 <property name="minimumSize">
                  <size>
@@ -4594,7 +4600,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="4">
+              <item row="12" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_6">
                 <property name="minimumSize">
                  <size>
@@ -4619,33 +4625,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="4">
-               <widget class="QLineEdit" name="line_METAB1_CT1_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="4">
-               <widget class="QLineEdit" name="line_METAB1_CT1_8">
+               <widget class="QLineEdit" name="line_METAB1_CT1_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -4670,6 +4654,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="4">
+               <widget class="QLineEdit" name="line_METAB1_CT1_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_9">
                 <property name="minimumSize">
                  <size>
@@ -4694,7 +4703,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="5">
+              <item row="3" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_1">
                 <property name="minimumSize">
                  <size>
@@ -4719,7 +4728,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="5">
+              <item row="4" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_2">
                 <property name="minimumSize">
                  <size>
@@ -4744,7 +4753,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="5">
+              <item row="6" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_3">
                 <property name="minimumSize">
                  <size>
@@ -4769,7 +4778,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="5">
+              <item row="7" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_4">
                 <property name="minimumSize">
                  <size>
@@ -4794,7 +4803,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="5">
+              <item row="8" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_5">
                 <property name="minimumSize">
                  <size>
@@ -4819,7 +4828,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="5">
+              <item row="12" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_6">
                 <property name="minimumSize">
                  <size>
@@ -4844,33 +4853,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="5">
-               <widget class="QLineEdit" name="line_METAB1_CT2_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="5">
-               <widget class="QLineEdit" name="line_METAB1_CT2_8">
+               <widget class="QLineEdit" name="line_METAB1_CT2_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -4895,6 +4882,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="5">
+               <widget class="QLineEdit" name="line_METAB1_CT2_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_9">
                 <property name="minimumSize">
                  <size>
@@ -4919,7 +4931,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="6">
+              <item row="3" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_1">
                 <property name="minimumSize">
                  <size>
@@ -4944,7 +4956,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="6">
+              <item row="4" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_2">
                 <property name="minimumSize">
                  <size>
@@ -4969,7 +4981,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="6">
+              <item row="6" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_3">
                 <property name="minimumSize">
                  <size>
@@ -4994,7 +5006,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="6">
+              <item row="7" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_4">
                 <property name="minimumSize">
                  <size>
@@ -5019,7 +5031,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="6">
+              <item row="8" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_5">
                 <property name="minimumSize">
                  <size>
@@ -5044,7 +5056,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="6">
+              <item row="12" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_6">
                 <property name="minimumSize">
                  <size>
@@ -5069,33 +5081,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="6">
-               <widget class="QLineEdit" name="line_METAB2_CT1_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="6">
-               <widget class="QLineEdit" name="line_METAB2_CT1_8">
+               <widget class="QLineEdit" name="line_METAB2_CT1_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5120,6 +5110,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="6">
+               <widget class="QLineEdit" name="line_METAB2_CT1_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_9">
                 <property name="minimumSize">
                  <size>
@@ -5144,7 +5159,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="2" column="7">
+              <item row="3" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_1">
                 <property name="minimumSize">
                  <size>
@@ -5169,7 +5184,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="3" column="7">
+              <item row="4" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_2">
                 <property name="minimumSize">
                  <size>
@@ -5194,7 +5209,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="5" column="7">
+              <item row="6" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_3">
                 <property name="minimumSize">
                  <size>
@@ -5219,7 +5234,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="6" column="7">
+              <item row="7" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_4">
                 <property name="minimumSize">
                  <size>
@@ -5244,7 +5259,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="7" column="7">
+              <item row="8" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_5">
                 <property name="minimumSize">
                  <size>
@@ -5269,7 +5284,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="11" column="7">
+              <item row="12" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_6">
                 <property name="minimumSize">
                  <size>
@@ -5294,33 +5309,11 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="12" column="7">
-               <widget class="QLineEdit" name="line_METAB2_CT2_7">
-                <property name="minimumSize">
-                 <size>
-                  <width>45</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>45</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="baseSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                </property>
-               </widget>
-              </item>
               <item row="13" column="7">
-               <widget class="QLineEdit" name="line_METAB2_CT2_8">
+               <widget class="QLineEdit" name="line_METAB2_CT2_7">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5345,6 +5338,31 @@ padding: 8px
                </widget>
               </item>
               <item row="14" column="7">
+               <widget class="QLineEdit" name="line_METAB2_CT2_8">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="15" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_9">
                 <property name="minimumSize">
                  <size>
@@ -5369,43 +5387,43 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="10" column="3">
-               <widget class="QCheckBox" name="cbox_PARENT_CT2_15">
+              <item row="11" column="3">
+               <widget class="QCheckBox" name="cbox_PARENT_CT2_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="10" column="4">
-               <widget class="QCheckBox" name="cbox_METAB1_CT1_15">
+              <item row="11" column="4">
+               <widget class="QCheckBox" name="cbox_METAB1_CT1_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="10" column="5">
-               <widget class="QCheckBox" name="cbox_METAB1_CT2_15">
+              <item row="11" column="5">
+               <widget class="QCheckBox" name="cbox_METAB1_CT2_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="10" column="6">
-               <widget class="QCheckBox" name="cbox_METAB2_CT1_15">
+              <item row="11" column="6">
+               <widget class="QCheckBox" name="cbox_METAB2_CT1_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="10" column="7">
-               <widget class="QCheckBox" name="cbox_METAB2_CT2_15">
+              <item row="11" column="7">
+               <widget class="QCheckBox" name="cbox_METAB2_CT2_16">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
-              <item row="16" column="0">
-               <widget class="QMyLabel" name="infolabel_PARENT_CT1_16">
+              <item row="17" column="0">
+               <widget class="QMyLabel" name="infolabel_PARENT_CT1_17">
                 <property name="maximumSize">
                  <size>
                   <width>130</width>
@@ -5417,8 +5435,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="2">
-               <widget class="QLineEdit" name="line_PARENT_CT1_16">
+              <item row="17" column="2">
+               <widget class="QLineEdit" name="line_PARENT_CT1_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5442,8 +5460,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="3">
-               <widget class="QLineEdit" name="line_PARENT_CT2_16">
+              <item row="17" column="3">
+               <widget class="QLineEdit" name="line_PARENT_CT2_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5467,8 +5485,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="4">
-               <widget class="QLineEdit" name="line_METAB1_CT1_16">
+              <item row="17" column="4">
+               <widget class="QLineEdit" name="line_METAB1_CT1_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5492,8 +5510,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="5">
-               <widget class="QLineEdit" name="line_METAB1_CT2_16">
+              <item row="17" column="5">
+               <widget class="QLineEdit" name="line_METAB1_CT2_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5517,8 +5535,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="6">
-               <widget class="QLineEdit" name="line_METAB2_CT1_16">
+              <item row="17" column="6">
+               <widget class="QLineEdit" name="line_METAB2_CT1_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5542,8 +5560,8 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="16" column="7">
-               <widget class="QLineEdit" name="line_METAB2_CT2_16">
+              <item row="17" column="7">
+               <widget class="QLineEdit" name="line_METAB2_CT2_17">
                 <property name="minimumSize">
                  <size>
                   <width>45</width>
@@ -5567,21 +5585,21 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="0">
+              <item row="5" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_13">
                 <property name="text">
                  <string>n_O2</string>
                 </property>
                </widget>
               </item>
-              <item row="8" column="0">
+              <item row="9" column="0">
                <widget class="QMyLabel" name="infolabel_PARENT_CT1_14">
                 <property name="text">
                  <string>Death prob</string>
                 </property>
                </widget>
               </item>
-              <item row="4" column="2">
+              <item row="5" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_13">
                 <property name="minimumSize">
                  <size>
@@ -5606,7 +5624,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="3">
+              <item row="5" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_13">
                 <property name="minimumSize">
                  <size>
@@ -5631,7 +5649,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="4">
+              <item row="5" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_13">
                 <property name="minimumSize">
                  <size>
@@ -5656,7 +5674,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="5">
+              <item row="5" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_13">
                 <property name="minimumSize">
                  <size>
@@ -5681,7 +5699,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="6">
+              <item row="5" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_13">
                 <property name="minimumSize">
                  <size>
@@ -5706,7 +5724,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="4" column="7">
+              <item row="5" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_13">
                 <property name="minimumSize">
                  <size>
@@ -5731,7 +5749,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="2">
+              <item row="9" column="2">
                <widget class="QLineEdit" name="line_PARENT_CT1_14">
                 <property name="minimumSize">
                  <size>
@@ -5756,7 +5774,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="3">
+              <item row="9" column="3">
                <widget class="QLineEdit" name="line_PARENT_CT2_14">
                 <property name="minimumSize">
                  <size>
@@ -5781,7 +5799,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="4">
+              <item row="9" column="4">
                <widget class="QLineEdit" name="line_METAB1_CT1_14">
                 <property name="minimumSize">
                  <size>
@@ -5806,7 +5824,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="5">
+              <item row="9" column="5">
                <widget class="QLineEdit" name="line_METAB1_CT2_14">
                 <property name="minimumSize">
                  <size>
@@ -5831,7 +5849,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="6">
+              <item row="9" column="6">
                <widget class="QLineEdit" name="line_METAB2_CT1_14">
                 <property name="minimumSize">
                  <size>
@@ -5856,7 +5874,7 @@ padding: 8px
                 </property>
                </widget>
               </item>
-              <item row="8" column="7">
+              <item row="9" column="7">
                <widget class="QLineEdit" name="line_METAB2_CT2_14">
                 <property name="minimumSize">
                  <size>
@@ -5878,6 +5896,175 @@ padding: 8px
                 </property>
                 <property name="alignment">
                  <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QLineEdit" name="line_PARENT_CT1_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="3">
+               <widget class="QLineEdit" name="line_PARENT_CT2_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="4">
+               <widget class="QLineEdit" name="line_METAB1_CT1_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="5">
+               <widget class="QLineEdit" name="line_METAB1_CT2_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="6">
+               <widget class="QLineEdit" name="line_METAB2_CT1_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="7">
+               <widget class="QLineEdit" name="line_METAB2_CT2_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>45</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>45</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="baseSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QMyLabel" name="infolabel_PARENT_CT1_15">
+                <property name="minimumSize">
+                 <size>
+                  <width>40</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>130</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Kd</string>
                 </property>
                </widget>
               </item>
@@ -6882,49 +7069,49 @@ padding: 8px
                </widget>
               </item>
               <item row="1" column="0">
-               <widget class="QMyLabel" name="infolabel_PARENT_CT1_17">
+               <widget class="QMyLabel" name="infolabel_PARENT_CT1_19">
                 <property name="text">
                  <string>Sensitises?</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="2">
-               <widget class="QCheckBox" name="cbox_PARENT_CT1_17">
+               <widget class="QCheckBox" name="cbox_PARENT_CT1_18">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
               <item row="1" column="3">
-               <widget class="QCheckBox" name="cbox_PARENT_CT2_17">
+               <widget class="QCheckBox" name="cbox_PARENT_CT2_18">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
               <item row="1" column="4">
-               <widget class="QCheckBox" name="cbox_METAB1_CT1_17">
+               <widget class="QCheckBox" name="cbox_METAB1_CT1_18">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
               <item row="1" column="5">
-               <widget class="QCheckBox" name="cbox_METAB1_CT2_17">
+               <widget class="QCheckBox" name="cbox_METAB1_CT2_18">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
               <item row="1" column="6">
-               <widget class="QCheckBox" name="cbox_METAB2_CT1_17">
+               <widget class="QCheckBox" name="cbox_METAB2_CT1_18">
                 <property name="text">
                  <string/>
                 </property>
                </widget>
               </item>
               <item row="1" column="7">
-               <widget class="QCheckBox" name="cbox_METAB2_CT2_17">
+               <widget class="QCheckBox" name="cbox_METAB2_CT2_18">
                 <property name="text">
                  <string/>
                 </property>
