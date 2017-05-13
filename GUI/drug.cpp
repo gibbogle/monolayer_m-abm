@@ -34,6 +34,7 @@ void MainWindow::readDrugParams(int idrug, QString fileName)
     QString line;
     int ival;
     double dval;
+    bool ok1, ok2;
 
     line = in.readLine();
     QStringList data = line.split(" ",QString::SkipEmptyParts);
@@ -42,8 +43,26 @@ void MainWindow::readDrugParams(int idrug, QString fileName)
         for (int i=0; i<6; i++) {
             line = in.readLine();
             QStringList data = line.split(" ",QString::SkipEmptyParts);
-            if (i > 0) dval = data[0].toDouble();
+            if (i > 0) {
+                dval = data[0].toDouble(&ok1);
+                if (!ok1) {
+                    QMessageBox::warning(this, tr("Application"),
+                                         tr("Drug file %1:\n%2.")
+                                         .arg(fileName)
+                                         .arg(" has the wrong number of parameters.  Check the file format."));
+                    return;
+                }
+            }
             if (i==0) {
+                dval = data[0].toInt(&ok1, 10);
+                ival = data[0].toDouble(&ok2);
+                if (ok1 || ok2) {
+                    QMessageBox::warning(this, tr("Application"),
+                                         tr("Drug file %1:\n%2.")
+                                         .arg(fileName)
+                                         .arg(" has the wrong number of parameters.  Check the file format."));
+                    return;
+                }
                 drug[idrug].param[kset].name = data[0];
 //                qDebug() << drug[idrug].param[kset].name;
             } else {
@@ -201,7 +220,7 @@ void MainWindow::populateDrugTable(int idrug)
         for (int ictyp=0; ictyp<NCELLTYPES; ictyp++) {
             ctypstr = "CT" + QString::number(ictyp+1) + "_";
             for (int i=0; i<NDKILLPARAMS; i++) {
-                line = QString::number(drug[idrug].param[kset].kill[ictyp].dparam[i]);
+                line = QString::number(drug[idrug].param[kset].kill[ictyp].dparam[i],'g',4);
                 numstr = QString::number(i);
                 objname = "line_" + basestr + ctypstr + numstr;
                 QLineEdit* qline = this->findChild<QLineEdit*>(objname);
@@ -332,8 +351,8 @@ void MainWindow::makeDrugFileLists()
 }
 
 //--------------------------------------------------------------------------------------------------------
-// This may be superceded by a widget for selecting a file ("TPZ_..." or "DNB_..." or ...) then deducing
-// the drug name from the file name.  This will ensure that only a drug with a parameter file can be chosen.
+// The drug name is deduced from the file name.  This ensures that only a drug with a parameter file
+// can be chosen.
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::initDrugComboBoxes()
 {
@@ -341,7 +360,6 @@ void MainWindow::initDrugComboBoxes()
         comb_DRUG_A->addItem(Drug_FilesList[i]);
         comb_DRUG_B->addItem(Drug_FilesList[i]);
     }
-
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -353,6 +371,7 @@ void MainWindow::readDrugData(QTextStream *in)
 
     line = in->readLine();
     QStringList data = line.split(" ",QString::SkipEmptyParts);
+    LOG_QMSG("readDrugData: " + line);
     int ndrugs = data[0].toInt();
     if (ndrugs == 0) return;
     makeDrugFileLists();
@@ -518,7 +537,7 @@ void MainWindow::updateCkill()
     double Ckill = computeCkill(idrug, kset, ictyp);
 
     QLineEdit* qline = this->findChild<QLineEdit*>(Cobjname);
-    qline->setText(QString::number(Ckill));
+    qline->setText(QString::number(Ckill,'g',3));
 }
 
 //--------------------------------------------------------------------------------------------------------
