@@ -541,6 +541,7 @@ void MainWindow::updateCkill()
 }
 
 //--------------------------------------------------------------------------------------------------------
+// Note that calculations are done with time in seconds for consistency with the DLL code.
 //--------------------------------------------------------------------------------------------------------
 double MainWindow::computeCkill(int idrug, int kset, int ictyp)
 {
@@ -552,11 +553,11 @@ double MainWindow::computeCkill(int idrug, int kset, int ictyp)
         return 0;
     }
     killmodel = drug[idrug].param[kset].kill[ictyp].iparam[1];
-    Kmet0 = drug[idrug].param[kset].kill[ictyp].dparam[0];
+    Kmet0 = drug[idrug].param[kset].kill[ictyp].dparam[0]/60;   // /min -> /sec
     C2 = drug[idrug].param[kset].kill[ictyp].dparam[1];
     KO2 = drug[idrug].param[kset].kill[ictyp].dparam[2];
     Ckill_O2 = drug[idrug].param[kset].kill[ictyp].dparam[6];
-    T = drug[idrug].param[kset].kill[ictyp].dparam[8];
+    T = drug[idrug].param[kset].kill[ictyp].dparam[8]*60;       // min -> sec
     f = drug[idrug].param[kset].kill[ictyp].dparam[9];
     n_O2 = drug[idrug].param[kset].kill[ictyp].dparam[13];
     Kd = drug[idrug].param[kset].kill[ictyp].dparam[15];

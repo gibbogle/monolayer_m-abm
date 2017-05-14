@@ -159,22 +159,33 @@ void MainWindow::pushButton_clicked()
             plotName = "Drug Kill Fraction";
             plotwin->setWindowTitle(plotName);
             QString cellTypeStr, drugTypeStr;
+            if (radioButton_drugA->isChecked()) {
+                idrug = 0;
+            } else if (radioButton_drugB->isChecked()) {
+                idrug = 1;
+            }
             if (radioButton_drugcelltype_1->isChecked()) {
                 cellTypeStr = "CT1";
+                ictyp = 0;
             } else {
                 cellTypeStr = "CT2";
+                ictyp = 1;
             }
             if (radioButton_drugtype_1->isChecked()) {
                 drugTypeStr = "PARENT";
+                kset = 0;
             } else if (radioButton_drugtype_2->isChecked()) {
                 drugTypeStr = "METAB1";
+                kset = 1;
             } else {
                 drugTypeStr = "METAB2";
+                kset = 2;
             }
             QVector<double> x0(NPLOT), y0(NPLOT);
             double maxdrug;
             x0[0] = 1;
-            makeDrugPlot1(drugTypeStr, cellTypeStr, &maxdrug, "KF", &x0, &y0);
+//            makeDrugPlot1(drugTypeStr, cellTypeStr, &maxdrug, "KF", &x0, &y0);
+            makeDrugPlot(idrug, kset, ictyp, &maxdrug, "KF", &x0, &y0);
             if (x0[0] == 1) return; // does not kill
             // create graph and assign data to it:
             popup_plot->addGraph();
