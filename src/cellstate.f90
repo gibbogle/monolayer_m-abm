@@ -8,15 +8,18 @@ use cycle_mod
 implicit none
 
 integer :: kcell_dividing = 0
+logical :: first
 
 contains
 
 !-----------------------------------------------------------------------------------------
 ! Need to initialize site and cell concentrations when a cell divides and when there is
 ! cell death.
+! dt seconds
+! radiation dose has been separated out
 !-----------------------------------------------------------------------------------------
-subroutine GrowCells(dose,dt,ok)
-real(REAL_KIND) :: dose, dt
+subroutine GrowCells(dt,ok)
+real(REAL_KIND) :: dt
 logical :: ok
 logical :: changed
 integer :: kcell, idrug, ichemo
@@ -26,14 +29,12 @@ tnow = istep*DELTA_T
 ok = .true.
 call grower(dt,changed,ok)
 if (.not.ok) return
-if (dose > 0) then
-	call Irradiation(dose, ok)
-	if (.not.ok) return
-endif
-if (use_death) then
-	call CellDeath(dt,ok)
-	if (.not.ok) return
-endif
+!if (dose > 0) then
+!	call Irradiation(dose, ok)
+!	if (.not.ok) return
+!endif
+call CellDeath(dt,ok)
+if (.not.ok) return
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -239,6 +240,7 @@ anoxia_death = chemo(OXYGEN)%controls_death
 aglucosia_death = chemo(GLUCOSE)%controls_death
 delayed_death_prob = apoptosis_rate*DELTA_T/3600
 nlist0 = nlist
+first = .true.
 do kcell = 1,nlist
     cp => cell_list(kcell)
 	ityp = cp%celltype
@@ -253,7 +255,7 @@ do kcell = 1,nlist
 	if (use_metabolism) then
 !		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
 		if (cp%metab%A_rate < ATPs(ityp)) then
-!			write(*,'(a,2e12.3)') 'A_rate: ',cp%metab%A_rate,ATPs(ityp)
+			if (kcell == 1) write(nflog,'(a,2e12.3)') 'insufficient A_rate: ',cp%metab%A_rate,ATPs(ityp)
 !			call CellDies(kcell)
 			cp%state = DYING
 			cp%dVdt = 0
@@ -321,13 +323,15 @@ do kcell = 1,nlist
 			n_O2 = dp%n_O2(ityp,im)
 			kmet = (1 - dp%C2(ityp,im) + dp%C2(ityp,im)*dp%KO2(ityp,im)**n_O2/(dp%KO2(ityp,im)**n_O2 + C_O2**n_O2))*dp%Kmet0(ityp,im)
 			dMdt = kmet*Cdrug
+			if (first) write(nflog,'(a,4e12.3)') 'Kmet0,C_O2,kmet,Cdrug: ',dp%Kmet0(ityp,im),C_O2,kmet,Cdrug
 			call getDrugKillProb(killmodel,Kd,dMdt,Cdrug,dt,dkill_prob)
 !			kill_prob = kill_prob + dkill_prob
 			survival_prob = survival_prob*(1 - dkill_prob)
 			death_prob = max(death_prob,dp%death_prob(ityp,im))
+			first = .false.
 		enddo
 		kill_prob = 1 - survival_prob
-	    if (par_uni(kpar) < kill_prob) then		
+	    if (par_uni(kpar) < kill_prob) then	
 			cp%p_drug_death(idrug) = death_prob
 			cp%drug_tag(idrug) = .true.
             Ndrug_tag(idrug,ityp) = Ndrug_tag(idrug,ityp) + 1
@@ -341,7 +345,7 @@ end subroutine
 subroutine getDrugKillProb(kill_model,Kd,dMdt,Cdrug,dt,dkill_prob)
 integer :: kill_model
 real(REAL_KIND) :: Kd, dMdt, Cdrug, dt, dkill_prob
-real(REAL_KIND) :: SF, SF1, dtstep, kill_prob, c
+real(REAL_KIND) :: SF, dtstep, kill_prob, c
 integer :: Nsteps, istep
 
 if (kill_model == 1) then
@@ -356,7 +360,7 @@ elseif (kill_model == 5) then
 	c = Kd*Cdrug**2
 endif
 SF = exp(-c*dt)
-!write(nflog,'(a,2e12.3)') 'SF1, SF2: ',SF1, SF2
+if (first) write(nflog,'(a,5e12.3)') 'Cdrug,dMdt,c,dt,SF: ',Cdrug,dMdt,c,dt,SF
 dkill_prob = 1 - SF
 end subroutine
 

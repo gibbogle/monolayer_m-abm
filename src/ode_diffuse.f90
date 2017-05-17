@@ -642,7 +642,7 @@ endif
 end subroutine
 
 !----------------------------------------------------------------------------------
-! For phase-dependent drug, e.g. EDU, 
+! For phase-dependent drug, e.g. EDU, calls DrugPhaseSolver
 !----------------------------------------------------------------------------------
 subroutine DrugSolver(iparent,tstart,dt,idrug,ok)
 integer :: iparent, idrug
@@ -678,6 +678,7 @@ do im = 0,2
 		C(k) = chemo(ichemo)%Cmedium(i)
 	enddo
 enddo
+!write(nflog,'(a,5f12.8)') 'pre DrugSolver: C(1:5): ',C(1:5)
 
 neqn = k
 
@@ -703,6 +704,7 @@ endif
 ! This determines average cell concentrations, assumed the same for all cells
 ! Now put the concentrations into the cells 
 
+!write(nflog,'(a,5f12.8)') 'post DrugSolver: C(1:5): ',C(1:5)
 do im = 0,2
     ichemo = iparent + im
 	if (.not.chemo(ichemo)%present) cycle
@@ -743,7 +745,7 @@ real(REAL_KIND) :: Cic,Cex,average_volume,area_factor,membrane_kin,membrane_kout
 integer :: nt = 1000
 logical :: use_explicit = .false.		! The explicit approach is hopelessly unstable, even with nt = 1000
 
-!write(nflog,*) 'DrugSolver: ',istep
+!write(nflog,*) 'OGLSolver: ',istep
 ict = selected_celltype ! for now just a single cell type 
 mp => metabolic(ict)
 
@@ -757,6 +759,7 @@ do ichemo = 1,3
 		C(k) = C_OGL(ichemo,i)	! EC
 	enddo
 enddo
+!write(nflog,'(a,3e12.3)') 'pre C O2: ',C(1),C(2),C(N1D+1)
 neqn = k
 call Set_f_GP(ict,mp,C)
 !mp%A_fract = f_MM(C(1),ATP_Km(ict),1)
@@ -821,7 +824,7 @@ do ichemo = 1,3
     Caverage(MAX_CHEMO + ichemo) = C(k+1)	! not really average, this is medium at the cell layer, i.e. EC
 !	write(nflog,'(a,i3,5e12.3)') 'Cdrug: im: ',im,Cdrug(im,1:5)
 enddo
-!write(*,'(a,3e12.3)') 'C O2: ',C(1),C(2),C(N1D+1)
+!write(nflog,'(a,3e12.3)') 'post C O2: ',C(1),C(2),C(N1D+1)
 Cin(1) = C(1)
 Cin(2) = C(N1D+2)
 Cin(3) = C(2*N1D+3)

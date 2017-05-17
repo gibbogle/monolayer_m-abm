@@ -596,7 +596,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 //        "Glucose H threshold for Gfactor",
 //        "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
 
-      {"ATP_S_1", 0.4, 0, 0,
+      {"ATP_S_1", 0.3, 0, 0,
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
@@ -693,7 +693,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 //         "Glucose H threshold for Gfactor",
 //         "When C_G < CG_H f_G is reduced by Gfactor, which ranges from 0 to 1 when CG_L < C_G < CG_H.  CG_L = 0.8*CG_H"},
 
-       {"ATP_S_2", 0.2, 0, 0,
+       {"ATP_S_2", 0.3, 0, 0,
        "ATP production threshold for survival (fraction of peak)",
         "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 

@@ -1401,6 +1401,7 @@ type(event_type) :: E
 
 !write(logmsg,*) 'ProcessEvent'
 !call logger(logmsg)
+radiation_dose = 0
 do kevent = 1,Nevents
 	E = event(kevent)
 	if (t_simulation >= E%time .and. .not.E%done) then
@@ -1416,7 +1417,7 @@ do kevent = 1,Nevents
 			C(OXYGEN) = E%O2medium
 			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 			C(LACTATE) = chemo(LACTATE)%bdry_conc
-			C(DRUG_A:DRUG_A+6) = 0
+			C(DRUG_A:DRUG_A+5) = 0
 			V = E%volume
 			call MediumChange(V,C)
 		elseif (E%etype == DRUG_EVENT) then
@@ -1553,18 +1554,22 @@ Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
 !write(nflog,'(a,13e12.3)')'medium_M: ',chemo(OXYGEN+1:)%medium_M
 !write(nflog,'(a,13f8.4)') 'medium_Cext ',chemo(OXYGEN+1:)%medium_Cext 
 chemo(OXYGEN)%bdry_conc = Ce(OXYGEN)
-call SetOxygenLevels
 !Cglucose = Caverage(MAX_CHEMO+GLUCOSE)
 chemo(GLUCOSE)%Cmedium = Caverage(MAX_CHEMO+GLUCOSE)
+chemo(LACTATE)%Cmedium = Caverage(MAX_CHEMO+LACTATE)
 do idrug = 1,2
 	iparent = DRUG_A + 3*(idrug-1)
 	do im = 0,2
 		ichemo = iparent + im	
 		chemo(ichemo)%Cmedium = Caverage(MAX_CHEMO+ichemo)
-!		Cdrug(im,:) = Caverage(MAX_CHEMO+DRUG_A+im)
 	enddo
 enddo
-write(nflog,'(a,2e12.3)') 'Drug Cmedium: ',Caverage(MAX_CHEMO+DRUG_A:MAX_CHEMO+DRUG_A+1)
+call SetOxygenLevels	! also sets drug levels in cells
+do ichemo = 1,3
+	C_OGL(ichemo,:) = chemo(ichemo)%Cmedium(:)
+enddo
+write(nflog,'(a,3e12.3)') 'Const Cmedium: ',Caverage(MAX_CHEMO+1:MAX_CHEMO+3)
+write(nflog,'(a,2e12.3)') 'Drug Cmedium:  ',Caverage(MAX_CHEMO+DRUG_A:MAX_CHEMO+DRUG_A+1)
 t_lastmediumchange = istep*DELTA_T
 medium_change_step = .true.
 end subroutine
@@ -1577,8 +1582,8 @@ end subroutine
 ! => Cex = (A.Kd.Cbnd/d + Ncells.Kout.Cin)/(A.Kd/d + Ncells.Kin) 
 !-----------------------------------------------------------------------------------------
 subroutine SetOxygenLevels
-integer :: ichemo, k
-real(REAL_KIND) :: Kin, Kout, Kd, Cex, Cin, Cbnd, A, d, flux, Cin_prev
+integer :: ichemo, k, kcell, idrug, iparent, im
+real(REAL_KIND) :: Kin, Kout, Kd, Cex, Cin, Cbnd, A, d, flux, Cin_prev, alpha
 real(REAL_KIND) :: tol = 1.0e-6
 
 ichemo = OXYGEN
@@ -1606,6 +1611,22 @@ else
 endif
 Caverage(OXYGEN) = Cin
 Caverage(MAX_CHEMO+OXYGEN) = Cex
+do k = 1,N1D
+	alpha = real(k-1)/(N1D-1)
+	chemo(OXYGEN)%Cmedium(k) = alpha*chemo(ichemo)%bdry_conc + (1-alpha)*Cex
+enddo
+do kcell = 1,nlist
+    if (cell_list(kcell)%state == DEAD) cycle
+    cell_list(kcell)%Cin(ichemo) = Cin
+	do idrug = 1,2
+		iparent = DRUG_A + 3*(idrug-1)
+		do im = 0,2
+			ichemo = iparent + im
+			if (.not.chemo(ichemo)%present) cycle
+			cell_list(kcell)%Cin(ichemo) = chemo(ichemo)%Cmedium(1)		! set IC conc to initial medium conc
+		enddo
+	enddo
+enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1704,14 +1725,20 @@ call CheckDrugConcs
 call CheckDrugPresence
 
 enddo
+
 DELTA_T = DELTA_T_save
 medium_change_step = .false.
 
 istep = istep + 1
 t_simulation = (istep-1)*DELTA_T	! seconds
-!if (use_metabolism) then	! compute all average rates, which apply to all cells
-!	call update_metabolism
-!endif
+
+!write(nflog,*) 'GrowCells'
+call GrowCells(DELTA_T,ok)
+!write(nflog,*) 'did GrowCells'
+if (.not.ok) then
+	res = 3
+	return
+endif
 
 radiation_dose = 0
 if (use_treatment) then     ! now we use events
@@ -1723,13 +1750,11 @@ endif
 if (radiation_dose > 0) then
 	write(logmsg,'(a,f6.1)') 'Radiation dose: ',radiation_dose
 	call logger(logmsg)
-endif
-if (dbug) write(nflog,*) 'GrowCells'
-call GrowCells(radiation_dose,DELTA_T,ok)
-if (dbug) write(nflog,*) 'did GrowCells'
-if (.not.ok) then
-	res = 3
-	return
+	call Irradiation(radiation_dose, ok)
+	if (.not.ok) then
+		res = 3
+		return
+	endif
 endif
 
 res = 0

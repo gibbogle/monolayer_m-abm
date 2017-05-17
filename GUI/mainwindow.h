@@ -140,7 +140,6 @@ private slots:
     void on_pushButton_savedrugdata_clicked();
 
     void ConnectKillParameterSignals();
-//    double computeCkill(QString basestr, QString ctypstr);
     double computeCkill(int idrug, int kset, int ictyp);
 
 public slots:
