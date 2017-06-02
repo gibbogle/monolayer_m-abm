@@ -186,7 +186,7 @@ integer :: TNanoxia_dead, TNaglucosia_dead, TNradiation_dead, TNdrug_dead(2),  T
            TNtagged_anoxia, TNtagged_aglucosia, TNtagged_radiation, TNtagged_drug(2)
 integer :: ityp, i, im, idrug
 real(REAL_KIND) :: hour, plate_eff(MAX_CELLTYPES), divide_fraction, P_utilisation, doubling_time
-real(REAL_KIND) :: r_G, r_P, r_A, r_I, hypoxic_percent, clonohypoxic_percent, growth_percent, Tplate_eff
+real(REAL_KIND) :: r_G, r_P, r_A, r_I, hypoxic_percent, clonohypoxic_fraction(3), growth_percent, Tplate_eff
 real(REAL_KIND) :: medium_oxygen, medium_glucose, medium_lactate, medium_drug(2,0:2)
 real(REAL_KIND) :: IC_oxygen, IC_glucose, IC_lactate, IC_pyruvate, IC_drug(2,0:2)
 real(REAL_KIND) :: EC(MAX_CHEMO), cmedium(MAX_CHEMO)
@@ -219,7 +219,12 @@ TNviable = sum(Nviable(1:Ncelltypes))
 call getHypoxicCount(nhypoxic)
 hypoxic_percent = (100.*nhypoxic(i_hypoxia_cutoff))/Ncells
 call getClonoHypoxicCount(nclonohypoxic)
-clonohypoxic_percent = (100.*nclonohypoxic(i_hypoxia_cutoff))/TNviable
+!clonohypoxic_percent = (100.*nclonohypoxic(i_hypoxia_cutoff))/TNviable
+if (TNviable > 0) then
+	clonohypoxic_fraction = nclonohypoxic(:)/real(TNviable)
+else
+	clonohypoxic_fraction = 0
+endif		
 call getGrowthCount(ngrowth)
 growth_percent = (100.*ngrowth(i_growth_cutoff))/Ncells
 do ityp = 1,Ncelltypes
@@ -286,7 +291,7 @@ endif
 summaryData(1:55) = [ rint(istep), rint(Ncells), rint(TNviable) , rint(TNanoxia_dead), rint(TNaglucosia_dead), &
 	rint(TNdrug_dead(1)), rint(TNdrug_dead(2)), rint(TNradiation_dead), &
     rint(TNtagged_anoxia), rint(TNtagged_aglucosia), rint(TNtagged_drug(1)), rint(TNtagged_drug(2)), rint(TNtagged_radiation), &
-	hypoxic_percent, clonohypoxic_percent, growth_percent, Tplate_eff, &
+	hypoxic_percent, 100*clonohypoxic_fraction(i_hypoxia_cutoff), growth_percent, Tplate_eff, &
 	EC(OXYGEN), EC(GLUCOSE), EC(LACTATE), EC(DRUG_A:DRUG_A+2), EC(DRUG_B:DRUG_B+2), &
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
@@ -297,7 +302,7 @@ write(nfres,'(a,a,2a12,i8,e12.4,22i7,46e12.4)') trim(header),' ',gui_run_version
     Ndrug_dead(2,1:2), Nradiation_dead(1:2), &
     Ntagged_anoxia(1:2), Ntagged_aglucosia(1:2), Ntagged_drug(1,1:2), &
     Ntagged_drug(2,1:2), Ntagged_radiation(1:2), &
-	nhypoxic(:)/real(Ncells), nclonohypoxic(:)/real(TNviable), ngrowth(:)/real(Ncells), plate_eff(1:2), &
+	nhypoxic(:)/real(Ncells), clonohypoxic_fraction(:), ngrowth(:)/real(Ncells), plate_eff(1:2), &
 	EC(OXYGEN), EC(GLUCOSE), EC(LACTATE), EC(DRUG_A:DRUG_A+2), EC(DRUG_B:DRUG_B+2), &
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &

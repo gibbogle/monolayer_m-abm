@@ -1729,7 +1729,7 @@ enddo
 DELTA_T = DELTA_T_save
 medium_change_step = .false.
 
-istep = istep + 1
+!istep = istep + 1
 t_simulation = (istep-1)*DELTA_T	! seconds
 
 !write(nflog,*) 'GrowCells'
@@ -1781,6 +1781,9 @@ if (dbug .or. mod(istep,nthour) == 0) then
 !	endif
 endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
+
+istep = istep + 1
+
 end subroutine
 
 !-----------------------------------------------------------------------------------------
