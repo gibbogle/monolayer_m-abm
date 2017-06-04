@@ -696,7 +696,11 @@ write(logmsg,*) 'Opened nfout: ',trim(outputfile)
 call logger(logmsg)
 
 Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
+NT_DISPLAY = 2
+DT_DISPLAY = NT_DISPLAY*DELTA_T
 write(logmsg,'(a,2i6,f6.0)') 'nsteps, NT_CONC, DELTA_T: ',nsteps,NT_CONC,DELTA_T
+call logger(logmsg)
+write(logmsg,'(a,i6,f6.0)') 'NT_DISPLAY, DT_DISPLAY: ',NT_DISPLAY, DT_DISPLAY
 call logger(logmsg)
 
 if (.not.use_new_drugdata) then
