@@ -15,34 +15,29 @@ type parameter_type
 	real(REAL_KIND) :: minval, maxval
 	real(REAL_KIND) :: val(0:max_vals)
 	integer :: ival
-end type
-
-type initial_value_type
-    character*(24) :: varID
-    real(REAL_KIND) :: val
-end type
+end type	
 
 type experiment_type
 	integer :: nvars, ntimes
-	character*(24), allocatable :: varID(:)		! this must agree with size in monolayer_m > transfer.f90 > subroutine get_values
+	character*(24), allocatable :: varID(:)		! this must agree with size in monolayer > transfer.f90 > subroutine get_values
 	integer, allocatable :: varnum(:)
 	real(REAL_KIND), allocatable :: t(:)
 	real(REAL_KIND), allocatable :: y(:,:)
+	real(REAL_KIND), allocatable :: ymax(:)
 	logical, allocatable :: is_dose(:,:)
 	integer, allocatable :: itsim(:)
 	real(REAL_KIND), allocatable :: ysim(:,:)
-	integer :: ninitialvals
-	type(initial_value_type) :: initial_value(10)
+	real(REAL_KIND), allocatable :: ysim_opt(:,:)
 end type
-
 
 integer :: ncpu, Niters, Nparams, Nsims, Nexpts
 integer :: ivalmin(0:max_params),n(0:max_params)
 real(REAL_KIND) :: val(0:max_params,0:max_vals)
-character*(48) :: template_infile, infile, outfile, logfile, paramfile, exptfile
+character*(128) :: template_infile, infile, outfile, logfile, paramfile, exptfile
 
 type(experiment_type), allocatable, target :: experiment(:)
 type(parameter_type), target :: param(0:max_params)
+real(REAL_KIND) :: weight(10)	! we assume nvars <= 10
 
 contains
 
@@ -59,7 +54,8 @@ logical :: is_drug
 is_drug = .false.
 expstr = str
 if (str /= 'RADIATION') then
-	expstr = trim(str)//'_EC'
+!	expstr = trim(str)//'_EC'
+	expstr = 'DRUG_A_EC'
 	is_drug = .true.
 endif
 kvar = 0
@@ -119,10 +115,14 @@ integer :: iparam, k
 real(REAL_KIND) :: dval
 
 do iparam = 0,Nparams-1
-	dval = (param(iparam)%maxval - param(iparam)%minval)/(param(iparam)%nvals-1)
-	do k = 0,param(iparam)%nvals-1
-		param(iparam)%val(k) = param(iparam)%minval + k*dval
-	enddo
+	if (param(iparam)%nvals == 1) then
+		param(iparam)%val(0) = param(iparam)%minval
+	else
+		dval = (param(iparam)%maxval - param(iparam)%minval)/(param(iparam)%nvals-1)
+		do k = 0,param(iparam)%nvals-1
+			param(iparam)%val(k) = param(iparam)%minval + k*dval
+		enddo
+	endif
 enddo
 end subroutine
 
@@ -163,13 +163,11 @@ character*(128) :: line
 character*(50) :: str50
 character*(12) :: str12
 character*(48) :: arg(16)
-character*(48) :: paramstr, event, drugstr
-integer :: nargs, nprot, kpar, i, nfnew = 20
+character*(48) :: paramstr, event, drugstr, drugname
+integer :: nargs, nprot, kpar, nfnew = 20
 real(REAL_KIND) :: dose, pval
-logical :: protocol, first_rad_dose, first_drug_dose, normal, is_initval
-type(experiment_type), pointer :: p
+logical :: protocol, first_rad_dose, first_drug_dose, normal
 
-p => experiment(iexp)
 open(nfin,file=old_infile,status='old')
 open(nfnew,file=new_infile,status='replace')
 protocol = .false.
@@ -183,17 +181,18 @@ do
 	str50 = line(1:50)
 	call parse(str50,' ',arg,nargs)
 	if (nargs == 1) then
-!		write(*,'(a)') str50
 		protocol = .true.
 		paramstr = arg(1)
 	else
 		paramstr = arg(2)
 	endif
 	! Now see if the paramstr is in the parameter list.  
-	! In the case of protocol we need to look for a parameter ID with '_EC' appended, if it is a drug.
-	! We also need to check if paramstr corresponds to a measurement value at hour=0 for this experiment.
-	! Since there will in general be multiple experiment varIDs, and not all will need to have initial values
-	! set at hour=0, those that are excluded will have value = -1.
+	! In the case of protocol:
+	! The parameter ID will be of the form "DRUG_A_EC", "DRUG_A_METAB1_EC" etc
+	! In fact the protocol drug name will be something like "SN30000", "PR104A" etc
+	! We need to be able to associate the drug name with the drug dose line in the expt data
+	! If we assume that only a single drug will ever be used in these experiments, then
+	! we just need to look for "DRUG_A_EC"
 	if (protocol) then
 		if (first_rad_dose .and. paramstr == 'RADIATION') then
 			normal = .false.
@@ -223,12 +222,12 @@ do
 		endif
 		if (first_rad_dose .and. event == 'RADIATION' .and. nprot == 3) then
 			!dose = radiation dose for experiment(iexp)
-			write(paramstr,'(f8.3)') dose
+			write(paramstr,'(f9.3)') dose
 			paramstr = adjustl(paramstr)
 		endif
 		if (first_drug_dose .and. event == 'DRUG' .and. nprot == 8) then
 			!dose = drug dose for experiment(iexp)
-			write(paramstr,'(f8.3)') dose
+			write(paramstr,'(f9.5)') dose
 			paramstr = adjustl(paramstr)
 		endif
 		if (normal) then
@@ -253,22 +252,6 @@ do
 			endif
 		endif
 	else
-	    ! First check if paramstr is in the list of initial values for this experiment.
-	    is_initval = .false.
-	    if (p%ninitialvals > 0) then
-	        do i = 1,p%ninitialvals
-!	            write(nfitlog,*) paramstr, p%initial_value(i)%varID
-	            if (trim(paramstr) == trim(p%initial_value(i)%varID)) then
-	                write(nfitlog,*) 'Initial value: ',paramstr,p%initial_value(i)%val
-	                is_initval = .true.
-	        		write(str12,'(e12.3)') p%initial_value(i)%val
-	        		str50 = adjustl(str12) // trim(arg(2))
-            		write(nfnew,'(a)') adjustl(str50)
-            	    exit
-            	endif
-            enddo
-        endif
-        if (is_initval) cycle
 		kpar = get_param_num(paramstr)
 		if (kpar >= 0) then
 			pval = param(kpar)%val(param(kpar)%ival)
@@ -276,6 +259,7 @@ do
 			str50 = adjustl(str12) // trim(arg(2))
 		endif
 		write(nfnew,'(a)') adjustl(str50)
+!		write(nfitlog,'(a,a)') 'parameter set: ',adjustl(str50)
 	endif
 enddo
 99 continue
@@ -294,17 +278,15 @@ end subroutine
 !	space + comma ' ,' is treated as a comma ','
 !	fields are delimitted by ','
 !	missing value ',,' is parsed to return the string ' ', which is given the floating point value -1
-! Note:
-! A measurement at hour=0 actually implies the need to set an initial value.
 !----------------------------------------------------------------------------
 subroutine read_expt(nf,filename)
 integer :: nf
 character*(48) :: filename
 character*(128) :: line
 character*(48) :: arg(16)
-integer :: nargs
-integer :: iexp, it, i, k, ninitvals
-real(REAL_KIND) :: val, hour
+integer :: nargs, nvarsmax
+integer :: iexp, it, i, k
+real(REAL_KIND) :: val
 type(experiment_type), pointer :: p
 
 open(nf,file=filename,status='old')
@@ -313,6 +295,7 @@ read(nf,'(a)',end=99) line
 call parse(line,', ',arg,nargs)
 read(arg(1),'(i)') Nexpts
 allocate(experiment(Nexpts))
+nvarsmax = 0
 do iexp = 1,Nexpts
 	p => experiment(iexp)
 	p%nvars = nargs - 2
@@ -321,17 +304,16 @@ do iexp = 1,Nexpts
 	do i = 1,p%nvars
 		p%varID(i) = arg(i+2)
 	enddo
+	nvarsmax = max(nvarsmax,p%nvars)
 enddo
+read(nf,*) weight(1:nvarsmax)
 do
 	read(nf,'(a)',end=99) line
 	if (len(trim(line)) == 0) cycle
 	call parse(line,', ',arg,nargs)
 	read(arg(1),'(i)') iexp
 	p => experiment(iexp)
-	read(arg(2),*) hour
-	if (hour > 0) then
-    	p%ntimes = p%ntimes + 1
-    endif
+	p%ntimes = p%ntimes + 1
 enddo
 99 continue
 close(nf)
@@ -340,17 +322,19 @@ do iexp = 1,Nexpts
 	p => experiment(iexp)
 	allocate(p%t(p%ntimes))
 	allocate(p%y(p%ntimes,p%nvars))
+	allocate(p%ymax(p%nvars))
 	allocate(p%is_dose(p%ntimes,p%nvars))
 	allocate(p%itsim(p%ntimes))
 	allocate(p%ysim(p%ntimes,p%nvars))
+	allocate(p%ysim_opt(p%ntimes,p%nvars))
 	p%is_dose = .false.
 enddo
 
 open(nf,file=filename,status='old')
-read(nf,*)
+read(nf,*)	! varIDs
+read(nf,*)	! weights
 it = 0
 iexp = 0
-ninitvals = 0
 do
 	read(nf,'(a)',end=199) line
 	if (len(trim(line)) == 0) cycle
@@ -360,16 +344,11 @@ do
 	read(arg(1),'(i)') i
 	if (i /= iexp) then
 		it = 0
-		ninitvals = 0
 	endif
 	iexp = i
 	p => experiment(iexp)
-	read(arg(2),*) hour      ! if this = 0 then the corresponding initial value needs to be changed
-	if (hour > 0) then
-    	it = it+1
-    	p%t(it) = hour
-    endif
-!	read(arg(2),*) p%t(it)
+	it = it+1
+	read(arg(2),*) p%t(it)
 !	write(*,'(8(a,1x))') (trim(arg(k)),k=1,nargs)
 	do i = 1,p%nvars
 		if (arg(i+2) == ' ') then
@@ -377,26 +356,22 @@ do
 		else
 			read(arg(i+2),*,end=199) val
 		endif
-		if (hour == 0) then
-		    write(nfitlog,*) 'hour = 0'
-		    if (val >= 0) then
-		        ninitvals = ninitvals + 1
-		        if (p%varID(i) == 'GLUCOSE_EC') then
-    		        p%initial_value(ninitvals)%varID = 'GLUCOSE_BDRY_CONC'
-    		    endif
-		        p%initial_value(ninitvals)%val = val
-		        p%ninitialvals = ninitvals
-		        write(nfitlog,*) p%varID(i),'  ',p%initial_value(ninitvals)%varID, '  ',val
-		    endif
-!		endif
-		else
-    		p%y(it,i) = val
-        endif
+		p%y(it,i) = val
 	enddo
 enddo
 199 continue
 close(nf)
 
+do iexp = 1,Nexpts
+	p => experiment(iexp)
+	do i = 1,p%nvars
+		p%ymax(i) = 0
+		do it = 1,p%ntimes
+			p%ymax(i) = max(p%ymax(i),p%y(it,i))
+		enddo
+		write(nfitlog,*) 'iexp,ivar,ymax: ',iexp,i,p%ymax(i)
+	enddo
+enddo
 end subroutine
 
 !----------------------------------------------------------------------------
@@ -428,13 +403,22 @@ endif
 ! Set up sampling time steps, nearest DELTA_T
 do i = 1,pexp%ntimes
 	it = (60*60*pexp%t(i))/DELTA_T + 0.5
-	pexp%itsim(i) = max(it,1)
+	pexp%itsim(i) = it		!max(it,1)
 enddo
 ! Run the simulation
 t1 = wtime()
 nsumm_interval = (60*60)/DELTA_T   ! number of time steps per hour
 !write(*,*) 'nsumm_interval: ',nsumm_interval
-do jstep = 1,Nsteps
+do jstep = 0,Nsteps-1
+	do i = 1,pexp%ntimes
+		if (pexp%itsim(i) == jstep) then
+			call get_values(pexp%nvars,pexp%varID(:),pexp%ysim(i,:))
+!			write(nfitlog,'(a,2i4,f8.2)') 'time: ',i,jstep,pexp%itsim(i)*DELTA_T/(60*60)
+!			do k = 1,pexp%nvars
+!				write(nfitlog,'(i3,a32,e12.3)') k,pexp%varID(k),pexp%ysim(i,k)
+!			enddo
+		endif
+	enddo
 	call simulate_step(res)
 	if (mod(jstep,nsumm_interval) == 0) then
 		call get_summary(summarydata,i_hypoxia_cutoff,i_growth_cutoff)
@@ -443,16 +427,8 @@ do jstep = 1,Nsteps
 		write(*,*) 'Error exit: ',res
 		stop
 	endif
-	do i = 1,pexp%ntimes
-		if (pexp%itsim(i) == jstep) then
-			call get_values(pexp%nvars,pexp%varID(:),pexp%ysim(i,:))
-!			write(nfitlog,'(a,i4,f8.2)') 'time: ',jstep,pexp%itsim(i)*DELTA_T/(60*60)
-!			do k = 1,pexp%nvars
-!				write(nfitlog,'(i3,a32,e12.3)') k,pexp%varID(k),pexp%ysim(i,k)
-!			enddo
-		endif
-	enddo
 enddo
+
 !if (simulate_colony) then
 !	call make_colony_distribution(colony_days,dist,ddist,ndist)
 !	do idist = 1,ndist
@@ -469,35 +445,70 @@ end subroutine
 subroutine quantify(iexp,dfobj)
 integer :: iexp
 real(REAL_KIND) :: dfobj
-real(REAL_KIND) :: dv, dv2
+real(REAL_KIND) :: fscale, dv, dv2
 integer :: it, ivar
 type(experiment_type), pointer :: pexp
+logical :: use_abs = .true.
+logical :: use_ysim = .true.
 
 pexp => experiment(iexp)
 
+write(nfitlog,*) 'quantify: iexp: ',iexp
 dfobj = 0
 do it = 1,pexp%ntimes
 	do ivar = 1,pexp%nvars
+		if (weight(ivar) == 0) cycle
 		if (pexp%y(it,ivar) == -1 .or. pexp%ysim(it,ivar) == -1) cycle	! missing value
 		if (pexp%is_dose(it,ivar)) cycle
+		fscale = pexp%ysim(it,ivar)/pexp%ymax(ivar)
 		dv = pexp%y(it,ivar) - pexp%ysim(it,ivar)
-!		write(*,'(2i4,3e12.3)') it,ivar,pexp%y(it,ivar),pexp%ysim(it,ivar),dv
-		if (pexp%y(it,ivar) == 0) then
-			if (pexp%ysim(it,ivar) /= 0) then
-				dv2 = dv*dv/pexp%ysim(it,ivar)
+		write(nfitlog,'(2i4,4e12.3)') it,ivar,pexp%y(it,ivar),pexp%ysim(it,ivar),dv,abs(dv/pexp%y(it,ivar))
+		if (use_ysim) then		
+			if (pexp%ysim(it,ivar) == 0) then
+				if (pexp%y(it,ivar) /= 0) then
+					if (use_abs) then
+						dv2 = abs(dv/pexp%y(it,ivar))
+					else
+						dv2 = (dv/pexp%y(it,ivar))**2
+					endif
+				else
+					dv2 = 0
+				endif
 			else
-				dv2 = 0
+				if (use_abs) then
+					dv2 = abs(dv/pexp%ysim(it,ivar))
+				else
+					dv2 = (dv/pexp%ysim(it,ivar))**2
+				endif
 			endif
 		else
-			dv2 = dv*dv/pexp%y(it,ivar)
+			if (pexp%y(it,ivar) == 0) then
+				if (pexp%ysim(it,ivar) /= 0) then
+					if (use_abs) then
+						dv2 = abs(dv/pexp%ysim(it,ivar))
+					else
+!						dv2 = dv*dv/pexp%ysim(it,ivar)
+						dv2 = (dv/pexp%ysim(it,ivar))**2
+					endif
+				else
+					dv2 = 0
+				endif
+			else
+				if (use_abs) then
+					dv2 = abs(dv/pexp%y(it,ivar))
+				else
+!					dv2 = dv*dv/pexp%y(it,ivar)
+					dv2 = (dv/pexp%y(it,ivar))**2
+				endif
+			endif
 		endif
-		if (isnan(dv2)) then
-			write(*,'(2i4,3e12.3)') it,ivar,pexp%y(it,ivar),pexp%ysim(it,ivar),dv2
-			write(*,*) 'Bad dv2'
-			write(nfitlog,*) 'Bad dv2'
-			stop
-		endif
-		dfobj = dfobj + dv2
+!		if (isnan(dv2)) then
+!			write(*,'(2i4,3e12.3)') it,ivar,pexp%y(it,ivar),pexp%ysim(it,ivar),dv2
+!			write(*,*) 'Bad dv2'
+!			write(nfitlog,*) 'Bad dv2'
+!			stop
+!		endif
+		dfobj = dfobj + fscale*weight(ivar)*dv2
 	enddo
 enddo
 end subroutine
@@ -513,6 +524,7 @@ integer :: iter, iparam, isim, iexp, istart, imin, i, k, res
 real(REAL_KIND) :: dfobj, fobj, fmin
 logical :: ok
 type(experiment_type), pointer :: pexp
+character*(24), allocatable :: head(:)
 
 integer :: status, nlen, cnt
 character*(128) :: b, c, progname
@@ -529,7 +541,7 @@ call get_command (b, nlen, status)
 if (status .ne. 0) then
     write (*,*) 'get_command failed with status = ', status
     stop
-end if
+endif
 !write (*,*) 'command line = ', b(1:len)
 call get_command_argument (0, c, nlen, status)
 if (status .ne. 0) then
@@ -638,6 +650,11 @@ do iter = 1,Niters
 			fmin = fobj
 			imin = isim
 			ivalmin(:) = param(:)%ival
+			write(nfitlog,*) 'Better fmin: isim,ivalmin,fmin: ',isim,ivalmin,fmin
+			do iexp = 1,Nexpts
+				pexp => experiment(iexp)
+				pexp%ysim_opt = pexp%ysim
+			enddo
 		endif
 	enddo
 	write(nfitlog,*)
@@ -653,6 +670,25 @@ do iter = 1,Niters
 	do k = 0,Nparams-1
 		write(nfitlog,'(i2,2x,a48,e12.3)') k,param(k)%ID,param(k)%val(ivalmin(k))
 	enddo
+	
+	pexp => experiment(1)
+	allocate(head(2*pexp%nvars + 3))
+!	head(1) = 'experiment'
+!	head(2) = 'point'
+!	head(3) = 'hour'
+	do i = 1,pexp%nvars
+		head(2*i-1) = trim(pexp%varID(i))//'-exp'
+		head(2*i) = trim(pexp%varID(i))//'-sim'
+	enddo
+	write(nfitlog,*)
+	write(nfitlog,'(a,10(a,1x))') 'experiment point hour ',(trim(head(i)),i=1,2*pexp%nvars)
+	do iexp = 1,Nexpts
+		pexp => experiment(iexp)
+		do k = 1,pexp%ntimes
+			write(nfitlog,'(2i4,f6.2,10e12.3)') iexp,k,pexp%t(k),(pexp%y(k,i),pexp%ysim_opt(k,i),i=1,pexp%nvars)
+		enddo
+	enddo
+	deallocate(head)
 	
 	do k = 0,Nparams-1
 		param(k)%minval = param(k)%val(max(0,ivalmin(k)-1))
