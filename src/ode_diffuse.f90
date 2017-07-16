@@ -761,7 +761,9 @@ do ichemo = 1,3
 enddo
 !write(nflog,'(a,3e12.3)') 'pre C O2: ',C(1),C(2),C(N1D+1)
 neqn = k
-call Set_f_GP(ict,mp,C)
+
+call Set_f_GP(ict,mp,C)		! TRY removing this
+
 !mp%A_fract = f_MM(C(1),ATP_Km(ict),1)
 !write(nflog,'(a,3e12.3)') 'A_fract: ',mp%A_fract
 if (.not.use_explicit) then		! RKC solver
@@ -857,10 +859,14 @@ membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
 end subroutine
 
 !----------------------------------------------------------------------------------
+! With lactate:
 ! When C_O2 < CO_H both f_G and f_P are reduced, to 0 when C_O2 <= CO_L
 ! When C_G < CG_H f_G is reduced, to 0 when C_G <= CG_L
 ! When both concentrations are below the H threshold the reduction factors are 
 ! multiplied for f_G
+!
+! Without lactate:
+! 
 !----------------------------------------------------------------------------------
 subroutine Set_f_GP(ityp,mp,C)
 integer :: ityp
@@ -868,9 +874,56 @@ type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C(:)
 real(REAL_KIND) :: C_O2, C_G, Ofactor, Gfactor, ATPfactor
 real(REAL_KIND) :: CO_L, CG_L, f_ATP_H, f_ATP_L, f
+real(REAL_KIND) :: f_G, f_P, r_P, r_G, r_GI, r_GA, r_PI, r_PA, fPDK, Km_O2, MM_O2, f_PA
+integer :: N_O2
 real(REAL_KIND) :: alfa = 0.2
 logical :: use_ATP = .true.
 
+if (ityp /= 1) then
+	write(logmsg,*) 'Currently the metabolism model is set up for a single cell type'
+	call logger(logmsg)
+	write(*,*) logmsg
+	stop
+endif
+if (.not.chemo(LACTATE)%used) then
+!	f_G = f_G_norm
+!	f_P = f_P_norm
+	f_G = mp%f_G
+	f_P = mp%f_P
+	C_O2 = C(1)
+	C_G = C(N1D+2)
+	N_O2 = Hill_N_O2
+	Km_O2 = Hill_Km_O2
+	f_PA = N_PA(ityp)
+	MM_O2 = f_MM(C_O2,Km_O2,N_O2)
+	r_G = MM_O2*get_glycosis_rate(ityp,mp%HIF1,C_G)
+	fPDK = mp%PDK1
+
+	r_P = fPDK*2*(1 - f_G)*r_G
+	r_GI = r_G - r_P/2
+	r_PI = f_P*r_P
+	r_GA = r_P
+	r_PA = f_PA*(1 - f_P)*r_P
+	!write(*,'(a,3e12.3)') 'r_GA, r_PA, ATPg(ityp): ',r_GA,r_PA,ATPg(ityp)
+	if (r_GA + r_PA < ATPg(ityp)) then	! adjust f_P to maintain ATPg
+		! r_GA+r_PA = r_P*(f_P + f_PA*(1 - f_P)) = ATPg(ityp)
+		! => f_P = (ATPg/r_P - f_PA)/(1 - f_PA) 
+		f_P = (ATPg(ityp)/r_P - f_PA)/(1 - f_PA)
+		f_P = alfa*f_P + (1-alfa)*mp%f_P
+		f_P = min(f_P,1.0)
+		if (f_P < 0) then
+			f_P = 0
+			f_G = 1 - ATPg(ityp)/(fPDK*2*r_G*(1 + f_PA))
+			f_G = alfa*f_G + (1-alfa)*mp%f_G
+			f_G = min(f_G,1.0)
+			f_G = max(f_G,0.0)
+		endif
+	endif
+	mp%f_G = f_G
+	mp%f_P = f_P
+!	write(nflog,'(a,2f8.3)') 'f_P, f_G: ',f_P,f_G
+	return
+endif
 if (use_ATP) then
 	f_ATP_L = f_ATPg(ityp)
 	f_ATP_H = f_ATPramp(ityp)*f_ATPg(ityp)

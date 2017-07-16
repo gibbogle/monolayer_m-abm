@@ -291,9 +291,9 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Hill function N",
  "Glucose uptake rate Hill function N"},
 
-//    {"USE_LACTATE", 1, 0, 1,
-//    "Use Lactate?",
-//    "Lactate is simulated"},
+{"USE_LACTATE", 0, 0, 1,
+"Use Lactate?",
+"Lactate is simulated"},
 
 //    {"LACTATE_GROWTH", 1, 0, 1,
 //    "Lactate growth?",
@@ -544,11 +544,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP moles produced per pyruvate mole",
       "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
-      {"N_GI_1", 0.4, 0, 0,
+      {"N_GI_1", 0.6, 0, 0,
       "Intermediate moles produced per glucose mole",
       "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
 
-      {"N_PI_1", 0.4, 0, 0,
+      {"N_PI_1", 0.6, 0, 0,
       "Intermediate moles produced per pyruvate mole",
       "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
 
@@ -601,7 +601,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
-      {"ATP_G_1", 0.5, 0, 0,
+      {"ATP_G_1", 0.55, 0, 0,
        "ATP production threshold for growth (fraction of peak)",
        "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate.\n\
         Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below ATPramp*ATP_G, to 0 when ATP rate = ATP_G."},
@@ -641,11 +641,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "ATP moles produced per pyruvate mole",
        "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
-       {"N_GI_2", 0.4, 0, 0,
+       {"N_GI_2", 0.6, 0, 0,
        "Intermediate moles produced per glucose mole",
        "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
 
-       {"N_PI_2", 0.4, 0, 0,
+       {"N_PI_2", 0.6, 0, 0,
        "Intermediate moles produced per pyruvate mole",
        "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
 
@@ -698,7 +698,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "ATP production threshold for survival (fraction of peak)",
         "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
-        {"ATP_G_2", 0.3, 0, 0,
+        {"ATP_G_2", 0.55, 0, 0,
         "ATP production threshold for growth (fraction of peak)",
         "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate"},
 

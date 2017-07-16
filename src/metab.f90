@@ -41,6 +41,7 @@ real(REAL_KIND) :: C_O2_norm(MAX_CELLTYPES)
 real(REAL_KIND) :: C_G_norm(MAX_CELLTYPES)
 real(REAL_KIND) :: C_L_norm(MAX_CELLTYPES)
 real(REAL_KIND) :: O2_baserate(MAX_CELLTYPES)
+real(REAL_KIND) :: G_baserate(MAX_CELLTYPES)
 real(REAL_KIND) :: K_PL(MAX_CELLTYPES)     ! P -> L
 real(REAL_KIND) :: K_LP(MAX_CELLTYPES)     ! L -> P
 real(REAL_KIND) :: Apoptosis_rate(MAX_CELLTYPES)     
@@ -63,7 +64,9 @@ real(REAL_KIND) :: dA_threshold = 1.0e-18
 contains
 
 !--------------------------------------------------------------------------
-! This is the normalised rate
+! This is NOT the normalised rate
+! H = HIF1
+! G = glucose concentration
 !--------------------------------------------------------------------------
 function get_glycosis_rate(ityp, H, G) result(rate)
 integer :: ityp
@@ -97,8 +100,6 @@ Hill_N_O2 = chemo(OXYGEN)%Hill_N
 Hill_Km_G = chemo(GLUCOSE)%MM_C0
 Hill_N_G = chemo(GLUCOSE)%Hill_N
 Hill_N_P = 1
-N_PO = 3
-ityp = 1
 V = Vcell_cm3
 
 metabolic%HIF1 = 0
@@ -124,6 +125,7 @@ do ityp = 1,1
 	C_L = C_L_norm(ityp)
 	C_P = C_L
 
+	if (chemo(LACTATE)%used) then
 	do it = 1,10	! new method, set f_G, f_P
 		MM_P = f_MM(C_P,Km_P,N_P)
 		r_Gn = get_glycosis_rate(ityp,0.0d0,C_G_norm(ityp))
@@ -140,6 +142,18 @@ do ityp = 1,1
 			stop
 		endif
 	enddo
+	else
+		! We need r_O2 = O2_maxrate = f_PO*2*(1 - f_Gn)*(1 - f_Pn)*G_maxrate
+		write(nflog,'(a,2f8.4)') 'O2_maxrate/G_maxrate, f_PO*2*(1 - f_Gn)*(1 - f_Pn): ',O2_maxrate/G_maxrate, f_PO*2*(1 - f_Gn)*(1 - f_Pn)
+		f_Pn = 1 - O2_maxrate/(G_maxrate*f_PO*2*(1 - f_Gn))
+		write(nflog,'(a,f8.3,a,f8.3)') 'reset f_Pn to: ',f_Pn,'  f_PO: ',f_PO
+		r_Gn = get_glycosis_rate(ityp,0.0d0,C_G_norm(ityp))
+		r_Ln = 0
+		r_Pn = 2*(1-f_Gn)*r_Gn
+		r_An = 2*(1-f_Gn)*r_Gn + f_PA*(1-f_Pn)*r_Pn
+		r_In = f_Gn*r_Gn + f_Pn*r_Pn
+		C_P = 0
+	endif
 
 	f_G_norm = f_Gn
 	f_P_norm = f_Pn
@@ -157,8 +171,10 @@ do ityp = 1,1
 	mp%I_rate = r_I_norm
 	mp%G_rate = r_G_norm
 	mp%A_fract = 0
+	O2_baserate(ityp) = 0.0*O2_maxrate
+	G_baserate(ityp) = 0.0*G_maxrate
+	write(nflog,'(a,3e12.3)') 'f_G_norm,f_P_norm,ATPg: ',f_G_norm,f_P_norm,ATPg(ityp)
 enddo
-
 end subroutine
 
 !!--------------------------------------------------------------------------
@@ -284,7 +300,7 @@ end subroutine
 
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
-subroutine f_metab(ityp, mp, C_O2_, C_G_, C_L_)
+subroutine f_metab_prev(ityp, mp, C_O2_, C_G_, C_L_)
 integer :: ityp
 type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C_O2_, C_G_, C_L_
@@ -293,6 +309,7 @@ real(REAL_KIND) :: r_G, fPDK
 real(REAL_KIND) :: f_G, f_P, r_P, r_A, r_I, r_L, f_PO, f_PA
 real(REAL_KIND) :: K1, K2, C_P
 real(REAL_KIND) :: r_GP, r_GA, r_PA, r_Pm, V, Km_O2, Km_P, q, a, b, c, d, e, MM_P, MM_O2
+real(REAL_KIND) :: r_GI, r_PI, r_O2
 real(REAL_KIND) :: r_Pm_base
 integer :: N_O2, N_P, it
 
@@ -316,6 +333,8 @@ mp%G_rate = get_glycosis_rate(ityp,mp%HIF1,C_G)
 r_G = mp%G_rate
 fPDK = mp%PDK1
 MM_O2 = f_MM(C_O2,Km_O2,N_O2)
+
+if (chemo(LACTATE)%used) then
 !r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added as needed
 r_Pm_base = fPDK*MM_O2*O2_maxrate/f_PO	! note that MM_P is not here, since it varies it is added as needed
 
@@ -334,8 +353,113 @@ mp%P_rate = r_P									! utilisation
 mp%O_rate = f_PO*r_P*(1-f_P)					! consumption
 mp%L_rate = V*(K1*C_P - K2*C_L)					! production
 mp%C_P = C_P
+
+else
+	r_P = fPDK*MM_O2*2*(1 - f_G)*r_G
+	r_GI = r_G - r_P/2
+	r_GA = r_P
+	! Need to adjust f_P to maintain r_A at r_A_norm = 2*(1-f_Gn)*r_Gn + f_PA*(1-f_Pn)*r_Pn
+	! r_A_norm = 2*(1-f_G)*r_G + f_PA*(1-f_P)*r_P
+	f_P = 1 - (r_A_norm - 2*(1-f_G)*r_G)/(f_PA*r_P)
+	f_P = max(f_P,0.0)
+	f_P = min(f_P,1.0)
+	r_PI = f_P*r_P
+	r_PA = f_PA*(1 - f_P)*r_P
+	r_O2 = f_PO*(1 - f_P)*r_P
+	mp%A_rate = r_GA + r_PA
+	mp%I_rate = r_GI + r_PI
+	mp%P_rate = r_P
+	mp%O_rate = r_O2
+	mp%L_rate = 0
+	mp%C_P = 0
+endif
+	
 ! Add base rate correction
 mp%O_rate = mp%O_rate + O2_baserate(ityp)
+mp%G_rate = mp%G_rate + G_baserate(ityp)
+end subroutine
+
+!--------------------------------------------------------------------------
+! Only for no lactate
+!--------------------------------------------------------------------------
+subroutine f_metab(ityp, mp, C_O2_, C_G_, C_L_)
+integer :: ityp
+type(metabolism_type), pointer :: mp
+real(REAL_KIND) :: C_O2_, C_G_, C_L_
+real(REAL_KIND) :: C_O2, C_G, C_L
+real(REAL_KIND) :: r_G, fPDK
+real(REAL_KIND) :: f_G, f_P, r_P, r_A, r_I, r_L, f_PO, f_PA
+real(REAL_KIND) :: K1, K2, C_P
+real(REAL_KIND) :: r_GP, r_GA, r_PA, r_Pm, V, Km_O2, Km_P, q, a, b, c, d, e, MM_P, MM_O2
+real(REAL_KIND) :: r_GI, r_PI, r_O2
+real(REAL_KIND) :: r_Pm_base
+integer :: N_O2, N_P, it
+
+C_O2 = max(0.0,C_O2_)
+C_G = max(0.0,C_G_)
+C_L = max(0.0,C_L_)
+
+N_O2 = Hill_N_O2
+Km_O2 = Hill_Km_O2
+N_P = 1
+Km_P = Hill_Km_P(ityp)
+f_PO = N_PO(ityp)
+f_PA = N_PA(ityp)
+f_G = mp%f_G
+f_P = mp%f_P
+
+MM_O2 = f_MM(C_O2,Km_O2,N_O2)
+mp%G_rate = MM_O2*get_glycosis_rate(ityp,mp%HIF1,C_G)
+r_G = mp%G_rate
+fPDK = mp%PDK1
+
+r_G = r_G
+r_P = fPDK*2*(1 - f_G)*r_G
+!r_GI = r_G - r_P/2
+r_GI = f_G*r_G		! This implies glucose disappears when fPDK < 1
+!r_P = 2*(r_G - r_GI)
+r_PI = f_P*r_P
+r_GA = r_P
+r_PA = f_PA*(1 - f_P)*r_P
+
+! Now f_G and f_P are computed before the time step solve
+if (.false.) then
+
+!write(*,'(a,3e12.3)') 'r_GA, r_PA, ATPg(ityp): ',r_GA,r_PA,ATPg(ityp)
+if (r_GA + r_PA < ATPg(ityp)) then	! adjust f_P to maintain ATPg
+	! r_GA+r_PA = r_P*(f_P + f_PA*(1 - f_P)) = ATPg(ityp)
+	! => f_P = (ATPg/r_P - f_PA)/(1 - f_PA)
+	f_P = (ATPg(ityp)/r_P - f_PA)/(1 - f_PA)
+	f_P = min(f_P,1.0)
+	if (f_P < 0) then
+		f_P = 0
+		f_G = 1 - ATPg(ityp)/(fPDK*2*r_G*(1 + f_PA))
+		f_G = max(f_G,0.0)
+	endif
+!	write(nflog,'(a,2f8.3)') 'f_P, f_G: ',f_P,f_G
+!	stop
+	r_P = fPDK*2*(1 - f_G)*r_G
+	r_GI = r_G - r_P/2
+	r_GA = r_P
+	r_PI = f_P*r_P
+	r_PA = f_PA*(1 - f_P)*r_P
+endif
+
+endif
+
+r_O2 = f_PO*(1 - f_P)*r_P
+mp%A_rate = r_GA + r_PA
+mp%I_rate = r_GI + r_PI
+mp%P_rate = r_P
+mp%O_rate = r_O2
+mp%L_rate = 0
+mp%G_rate = r_GI + 0.5*r_P	! this ensures mass conservation when fPDK < 1
+mp%C_P = 0
+mp%f_G = f_G
+mp%f_P = f_P
+! Add base rate correction
+mp%O_rate = mp%O_rate + O2_baserate(ityp)
+mp%G_rate = mp%G_rate + G_baserate(ityp)
 end subroutine
 
 !--------------------------------------------------------------------------

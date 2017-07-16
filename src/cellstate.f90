@@ -676,10 +676,6 @@ else
 !		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
 		cp%V = cp%V + cp%dVdt*dt
 		metab = 1
-!		if (istep >= 1560 .and. kcell_now == 6) then
-!			write(nflog,'(a,i6,4e12.3)') 'dVdt: ',kcell_now,max_growthrate(ityp),cp%metab%I_rate/cp%metab%I_rate_max,cp%dVdt	!,get_dVdt(cp,metab)
-!			write(nflog,'(a,2i6,4e12.3)') 'istep,phase,V,Vdivide,I..: ', istep,cp%phase,cp%V,cp%divide_volume,cp%metab%Itotal,cp%metab%I2Divide
-!		endif
 	else
 		oxygen_growth = chemo(OXYGEN)%controls_growth
 		glucose_growth = chemo(GLUCOSE)%controls_growth

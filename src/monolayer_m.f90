@@ -455,7 +455,7 @@ chemo(GLUCOSE)%max_cell_rate = chemo(GLUCOSE)%max_cell_rate*1.0e6					! mol/cell
 read(nfcell,*) chemo(GLUCOSE)%MM_C0
 read(nfcell,*) chemo(GLUCOSE)%Hill_N
 
-!read(nfcell,*) iuse_lactate		
+read(nfcell,*) iuse_lactate		
 !read(nfcell,*) ilactategrowth
 !chemo(LACTATE)%controls_growth = (ilactategrowth == 1)
 read(nfcell,*) chemo(LACTATE)%diff_coef
@@ -601,7 +601,7 @@ hypoxia_threshold = hypoxia_threshold/1000			! uM -> mM
 !use_FD = (iuse_FD == 1)
 chemo(OXYGEN)%used = (iuse_oxygen == 1)
 chemo(GLUCOSE)%used = (iuse_glucose == 1)
-chemo(LACTATE)%used = use_metabolism
+chemo(LACTATE)%used = use_metabolism .and. (iuse_lactate == 1)
 chemo(TRACER)%used = (iuse_tracer == 1)
 chemo(OXYGEN)%MM_C0 = chemo(OXYGEN)%MM_C0/1000		! uM -> mM
 chemo(GLUCOSE)%MM_C0 = chemo(GLUCOSE)%MM_C0/1000	! uM -> mM
@@ -1622,14 +1622,14 @@ enddo
 do kcell = 1,nlist
     if (cell_list(kcell)%state == DEAD) cycle
     cell_list(kcell)%Cin(ichemo) = Cin
-	do idrug = 1,2
-		iparent = DRUG_A + 3*(idrug-1)
-		do im = 0,2
-			ichemo = iparent + im
-			if (.not.chemo(ichemo)%present) cycle
-			cell_list(kcell)%Cin(ichemo) = chemo(ichemo)%Cmedium(1)		! set IC conc to initial medium conc
-		enddo
-	enddo
+!	do idrug = 1,2
+!		iparent = DRUG_A + 3*(idrug-1)
+!		do im = 0,2
+!			ichemo = iparent + im
+!			if (.not.chemo(ichemo)%present) cycle
+!			cell_list(kcell)%Cin(ichemo) = chemo(ichemo)%Cmedium(1)		! set IC conc to initial medium conc
+!		enddo
+!	enddo
 enddo
 end subroutine
 
