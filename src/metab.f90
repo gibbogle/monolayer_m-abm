@@ -143,7 +143,7 @@ do ityp = 1,1
 		endif
 	enddo
 	else
-		! We need r_O2 = O2_maxrate = f_PO*2*(1 - f_Gn)*(1 - f_Pn)*G_maxrate
+		! We need r_O2 = O2_maxrate = f_PO*2*(1 - f_Gn)*(1 - f_Pn)*G_maxrate  
 		write(nflog,'(a,2f8.4)') 'O2_maxrate/G_maxrate, f_PO*2*(1 - f_Gn)*(1 - f_Pn): ',O2_maxrate/G_maxrate, f_PO*2*(1 - f_Gn)*(1 - f_Pn)
 		f_Pn = 1 - O2_maxrate/(G_maxrate*f_PO*2*(1 - f_Gn))
 		write(nflog,'(a,f8.3,a,f8.3)') 'reset f_Pn to: ',f_Pn,'  f_PO: ',f_PO
@@ -170,10 +170,13 @@ do ityp = 1,1
 	mp%A_rate = r_A_norm
 	mp%I_rate = r_I_norm
 	mp%G_rate = r_G_norm
+	mp%O_rate = f_PO*(1 - f_Pn)*r_Pn
 	mp%A_fract = 0
 	O2_baserate(ityp) = 0.0*O2_maxrate
 	G_baserate(ityp) = 0.0*G_maxrate
+	write(nflog,'(a,2e12.3)') 'O_rate, O2_maxrate: ',mp%O_rate, O2_maxrate
 	write(nflog,'(a,3e12.3)') 'f_G_norm,f_P_norm,ATPg: ',f_G_norm,f_P_norm,ATPg(ityp)
+	write(nflog,'(a,e12.3)') 'Km_P: ',Km_P
 enddo
 end subroutine
 
@@ -300,7 +303,7 @@ end subroutine
 
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
-subroutine f_metab_prev(ityp, mp, C_O2_, C_G_, C_L_)
+subroutine f_metab(ityp, mp, C_O2_, C_G_, C_L_)
 integer :: ityp
 type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C_O2_, C_G_, C_L_
@@ -338,7 +341,7 @@ if (chemo(LACTATE)%used) then
 !r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added as needed
 r_Pm_base = fPDK*MM_O2*O2_maxrate/f_PO	! note that MM_P is not here, since it varies it is added as needed
 
-q = 1*(1-f_G)*r_G + V*K2*C_L
+q = 2*(1-f_G)*r_G + V*K2*C_L		! Note: 2* was 1* !!!! 23/7/17
 a = V*K1
 b = r_Pm_base/(1-f_P) + Km_P*V*K1 - q
 c = -Km_P*q
@@ -382,7 +385,7 @@ end subroutine
 !--------------------------------------------------------------------------
 ! Only for no lactate
 !--------------------------------------------------------------------------
-subroutine f_metab(ityp, mp, C_O2_, C_G_, C_L_)
+subroutine f_metab_noL(ityp, mp, C_O2_, C_G_, C_L_)
 integer :: ityp
 type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C_O2_, C_G_, C_L_

@@ -202,7 +202,7 @@ elseif (phase == M_phase) then
     endif
 endif    
 if (cp%NL1 > 0) then
-    call repair(cp, ccp, dt)
+    call radiation_repair(cp, ccp, dt)
 endif
 end subroutine
 
@@ -237,7 +237,7 @@ end function
 !--------------------------------------------------------------------------
 ! Time unit = hour
 !--------------------------------------------------------------------------
-subroutine repair(cp, ccp, dt)
+subroutine radiation_repair(cp, ccp, dt)
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: dt

@@ -246,6 +246,7 @@ mp => metabolic(1)
 r_G = mp%G_rate/r_G_norm
 r_P = mp%P_rate/r_P_norm
 r_A = mp%A_rate/r_A_norm
+write(nflog,'(a,3e12.3)') 'r_A, mp%A_rate, r_A_norm: ',r_A,mp%A_rate,r_A_norm
 r_I = mp%I_rate/r_I_norm
 if (mp%G_rate > 0 .and. mp%L_rate > 0) then
 	P_utilisation = mp%P_rate/(2*(1-mp%f_G)*mp%G_rate)	!!!???

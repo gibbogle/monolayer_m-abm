@@ -291,7 +291,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Hill function N",
  "Glucose uptake rate Hill function N"},
 
-{"USE_LACTATE", 0, 0, 1,
+{"USE_LACTATE", 1, 0, 1,
 "Use Lactate?",
 "Lactate is simulated"},
 
@@ -448,11 +448,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "Cell cycle parameters determine the time spent in each phase.\n\
      In the case of G1 and G2, an exponentially distributed random delay is added"},
 
-     {"T_G1_1", 10, 0, 0,
+     {"T_G1_1", 6, 0, 0,
      "G1 phase base time (h)",
      "Deterministic component of time spent in phase G1"},
 
-     {"T_G1_2", 10, 0, 0,
+     {"T_G1_2", 6, 0, 0,
      "G1 phase base time (h)",
      "Deterministic component of time spent in phase G1"},
 
@@ -480,19 +480,19 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
      "M phase base time (h)",
      "Time spent in phase M"},
 
-     {"G1_MEAN_DELAY_1", 2.5, 0, 0,
+     {"G1_MEAN_DELAY_1", 1.5, 0, 0,
      "G1 mean delay (h)",
      "Mean of the random component of time spent in phase G1 (exponentially distributed)"},
 
-     {"G1_MEAN_DELAY_2", 2.5, 0, 0,
+     {"G1_MEAN_DELAY_2", 1.5, 0, 0,
      "G1 mean delay (h)",
      "Mean of the random component of time spent in phase G1 (exponentially distributed)"},
 
-     {"G2_MEAN_DELAY_1", 2, 0, 0,
+     {"G2_MEAN_DELAY_1", 1, 0, 0,
      "G2 mean delay (h)",
      "Mean of the random component of time spent in phase G2 (exponentially distributed)"},
 
-     {"G2_MEAN_DELAY_2", 2, 0, 0,
+     {"G2_MEAN_DELAY_2", 1, 0, 0,
      "G2 mean delay (h)",
      "Mean of the random component of time spent in phase G2 (exponentially distributed)"},
 
@@ -553,11 +553,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP moles produced per pyruvate mole",
       "Number of ATP moles produced by the oxidation of one pyruvate mole"},
 
-      {"N_GI_1", 0.6, 0, 0,
+      {"N_GI_1", 0.4, 0, 0,
       "Intermediate moles produced per glucose mole",
       "Number of moles of anabolic intermediates produced the glycolysis of one glucose mole"},
 
-      {"N_PI_1", 0.6, 0, 0,
+      {"N_PI_1", 0.4, 0, 0,
       "Intermediate moles produced per pyruvate mole",
       "Number of moles of anabolic intermediates produced the oxidation of one pyruvate mole"},
 
@@ -594,7 +594,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
        "Nominal normal IC glucose concentration",
        "Nominal normal IC glucose concentration, used to set normal metabolic rates for unconstrained growth"},
 
-       {"C_L_NORM_1", 0.0, 0, 0,
+       {"C_L_NORM_1", 1.0, 0, 0,
        "Nominal normal IC lactate concentration",
        "Nominal normal IC lactate concentration, used to set normal metabolic rates for unconstrained growth"},
 
@@ -610,23 +610,23 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
       "ATP production threshold for survival (fraction of peak)",
       "Cell death occurs when the ATP production rate falls below the fraction ATP_S of the maximum (no nutrient constraints) production rate"},
 
-      {"ATP_G_1", 0.55, 0, 0,
+      {"ATP_G_1", 0.75, 0, 0,
        "ATP production threshold for growth (fraction of peak)",
        "Cell growth stops when the ATP production rate falls below the fraction ATP_G of the maximum (no nutrient constraints) production rate.\n\
         Intermediates production from glycolysis and pyruvate ramps down when ATP rate is below ATPramp*ATP_G, to 0 when ATP rate = ATP_G."},
 
-      {"ATP_RAMP_1", 1.5, 0, 0,
+      {"ATP_RAMP_1", 1.3, 0, 0,
         "Ramp factor for reducing r_G, r_P based on ATP",
        "Fractional rates of production of intermediates from glycolysis (r_G) and pyruvate (r_P) are reduced as ATP production rate falls.\n\
         If the normal ATP rate is r_An, and the current rate is r_A, then the fractional production rate f_A = r_A/r_An.\n\
         A multiplying factor on both r_G and r_P, f, is calculated as a ramp from 0 - 1 as f_A varies from ATP_G - ATPramp*ATP_G\n\
         i.e. the reduction starts when f_A = ATPramp*ATP_G (f = 1), and when f_A = ATP_G, f = 0.  f_G = f*f_Gn, f_P = f*f_Pn"},
 
-      {"K_PL_1", 0.1, 0, 0,
+      {"K_PL_1", 0.001, 0, 0,
       "Pyruvate -> lactate rate constant",
       "The forward rate constant K_PL of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
 
-      {"K_LP_1", 0.1, 0, 0,
+      {"K_LP_1", 0.001, 0, 0,
       "Lactate -> pyruvate rate constant",
       "The reverse rate constant K_LP of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
 
@@ -710,11 +710,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
           A multiplying factor on both r_G and r_P, f, is calculated as a ramp from 0 - 1 as f_A varies from ATP_G - ATPramp*ATP_G\n\
           i.e. the reduction starts when f_A = ATPramp*ATP_G (f = 1), and when f_A = ATP_G, f = 0.  f_G = f*f_Gn, f_P = f*f_Pn"},
 
-       {"K_PL_2", 0.1, 0, 0,
+       {"K_PL_2", 0.001, 0, 0,
        "Pyruvate -> lactate rate constant",
        "The forward rate constant of the pyruvate-lactate reaction, i.e. the rate constant for conversion of pyruvate to lactate"},
 
-       {"K_LP_2", 0.1, 0, 0,
+       {"K_LP_2", 0.001, 0, 0,
        "Lactate -> pyruvate rate constant",
         "The reverse rate constant of the pyruvate-lactate reaction, i.e. the rate constant for conversion of lactate to pyruvate"},
 

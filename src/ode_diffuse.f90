@@ -859,25 +859,30 @@ membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
 end subroutine
 
 !----------------------------------------------------------------------------------
-! With lactate:
-! When C_O2 < CO_H both f_G and f_P are reduced, to 0 when C_O2 <= CO_L
-! When C_G < CG_H f_G is reduced, to 0 when C_G <= CG_L
-! When both concentrations are below the H threshold the reduction factors are 
-! multiplied for f_G
+! Assumes: 
+!	always use_ATP
+!	always use_lactate
 !
-! Without lactate:
-! 
+! mp%A_rate = 2*(1-f_G)*r_G + f_PA*(1-f_P)*r_P	! production
+! mp%I_rate = f_G*r_G + f_P*r_P					! production
+! mp%P_rate = r_P								! utilisation
+! mp%O_rate = f_PO*r_P*(1-f_P)					! consumption
+! mp%L_rate = V*(K1*C_P - K2*C_L)				! production
 !----------------------------------------------------------------------------------
 subroutine Set_f_GP(ityp,mp,C)
 integer :: ityp
 type(metabolism_type), pointer :: mp
 real(REAL_KIND) :: C(:)
-real(REAL_KIND) :: C_O2, C_G, Ofactor, Gfactor, ATPfactor
-real(REAL_KIND) :: CO_L, CG_L, f_ATP_H, f_ATP_L, f
-real(REAL_KIND) :: f_G, f_P, r_P, r_G, r_GI, r_GA, r_PI, r_PA, fPDK, Km_O2, MM_O2, f_PA
-integer :: N_O2
-real(REAL_KIND) :: alfa = 0.2
-logical :: use_ATP = .true.
+real(REAL_KIND) :: C_O2, C_G, C_L, Ofactor, Gfactor, ATPfactor, x, fmin
+real(REAL_KIND) :: CO_L, CG_L, f_ATP_H, f_ATP_L, f, f_G_H, f_G_L
+real(REAL_KIND) :: f_G, f_P, r_P, r_G, r_GI, r_GA, r_PI, r_PA, Km, C1, C2, r_L, r_A
+integer :: N_O2, N_P, n
+real(REAL_KIND) :: Km_O2, Km_P, V, f_PO, f_PA, K1, K2, MM_O2, fPDK, r_Pm_base, r_Ag
+real(REAL_KIND) :: a1, b1, a2, b2, a3, b3, c3, d
+type(metabolism_type) :: metab_save
+type(metabolism_type), pointer :: mp_save
+real(REAL_KIND) :: alfa = 0.1
+logical :: f_P_first = .true.
 
 if (ityp /= 1) then
 	write(logmsg,*) 'Currently the metabolism model is set up for a single cell type'
@@ -885,82 +890,235 @@ if (ityp /= 1) then
 	write(*,*) logmsg
 	stop
 endif
-if (.not.chemo(LACTATE)%used) then
-!	f_G = f_G_norm
-!	f_P = f_P_norm
-	f_G = mp%f_G
-	f_P = mp%f_P
-	C_O2 = C(1)
-	C_G = C(N1D+2)
-	N_O2 = Hill_N_O2
-	Km_O2 = Hill_Km_O2
-	f_PA = N_PA(ityp)
-	MM_O2 = f_MM(C_O2,Km_O2,N_O2)
-	r_G = MM_O2*get_glycosis_rate(ityp,mp%HIF1,C_G)
-	fPDK = mp%PDK1
 
-	r_P = fPDK*2*(1 - f_G)*r_G
-	r_GI = r_G - r_P/2
-	r_PI = f_P*r_P
-	r_GA = r_P
-	r_PA = f_PA*(1 - f_P)*r_P
-	!write(*,'(a,3e12.3)') 'r_GA, r_PA, ATPg(ityp): ',r_GA,r_PA,ATPg(ityp)
-	if (r_GA + r_PA < ATPg(ityp)) then	! adjust f_P to maintain ATPg
-		! r_GA+r_PA = r_P*(f_P + f_PA*(1 - f_P)) = ATPg(ityp)
-		! => f_P = (ATPg/r_P - f_PA)/(1 - f_PA) 
-		f_P = (ATPg(ityp)/r_P - f_PA)/(1 - f_PA)
-		f_P = alfa*f_P + (1-alfa)*mp%f_P
-		f_P = min(f_P,1.0)
-		if (f_P < 0) then
+!mp_save => metab_save
+!mp_save = mp
+
+C_O2 = C(1)
+C_G = C(N1D+2)
+C_L = C(2*N1D+3)
+
+N_O2 = Hill_N_O2
+Km_O2 = Hill_Km_O2
+N_P = 1
+Km_P = Hill_Km_P(ityp)
+V = Vcell_cm3		! should be actual cell volume cp%V 
+f_PO = N_PO(ityp)
+f_PA = N_PA(ityp)
+K1 = K_PL(ityp)
+K2 = K_LP(ityp)
+r_Ag = ATPg(ityp)
+r_G = get_glycosis_rate(ityp,mp%HIF1,C_G)
+fPDK = mp%PDK1
+MM_O2 = f_MM(C_O2,Km_O2,N_O2)
+r_Pm_base = fPDK*MM_O2*O2_maxrate/f_PO	! note that MM_P is not here, since it varies it is added as needed
+
+if (f_P_first) then
+	mp%f_G = f_G_norm
+	mp%f_P = 0
+	call f_metab(ityp,mp,C_O2,C_G,C_L)
+	write(nflog,'(a,4e12.3)') '(1) A_rate, r_Ag, f_ATPg, r_A_norm: ',mp%A_rate, r_Ag, f_ATPg(ityp), r_A_norm
+	if (mp%A_rate < r_Ag) then
+		! Need to set f_P = 0, reduce f_G below f_G_norm
+		mp%f_G = 0
+		call f_metab(ityp,mp,C_O2,C_G,C_L)
+		write(nflog,'(a,2e12.3)') '(2) A_rate, r_Ag: ',mp%A_rate, r_Ag
+		if (mp%A_rate < r_Ag) then
+			write(nflog,*) 'Set f_P=0, f_G=0'
+			! Need to set f_P = 0, f_G = 0
+			mp%f_P = 0
+			mp%f_G = 0
+		else
+			! Need to set f_P = 0, find level of f_G to maintain ATPg	*** (1)		! THIS IS OK
+			write(nflog,*) 'Set f_P=0, find f_G'
 			f_P = 0
-			f_G = 1 - ATPg(ityp)/(fPDK*2*r_G*(1 + f_PA))
-			f_G = alfa*f_G + (1-alfa)*mp%f_G
-			f_G = min(f_G,1.0)
-			f_G = max(f_G,0.0)
+			a1 = 2*r_G/(f_PA*(1-f_P))
+			b1 = (r_Ag - 2*r_G)/(f_PA*(1-f_P))
+			a2 = (-2*r_G - a1)/(V*K1)
+			b2 = (2*r_G + V*K2*C_L - b1)/(V*K1)
+			a3 = a1*a2
+			b3 = (a1*(Km_P + b2) + a2*b1 - r_Pm_base*a2/(1 - f_P))
+			c3 = b1*(Km_P + b2) - r_Pm_base*b2/(1 - f_P)
+			! a3.y^2 + b3.y + c3 = 0 where y = f_G
+			d = sqrt(b3*b3 - 4*a3*c3)
+			mp%f_P = f_P
+			mp%f_G = (-b3 + d)/(2*a3)
+		endif
+	else
+		mp%f_P = f_P_norm
+		call f_metab(ityp,mp,C_O2,C_G,C_L)
+		write(nflog,'(a,2e12.3)') '(3) A_rate, r_Ag: ',mp%A_rate, r_Ag
+		if (mp%A_rate < r_Ag) then
+			write(nflog,*) 'Set f_G=f_Gn, find f_P'
+			! Need to set f_G = f_G_norm, find level of f_P to maintain ATPg *** (2)
+			f_G = f_G_norm
+			r_GA = 2*(1 - f_G)*r_G
+			a1 = (r_GA - r_Ag)/(f_PA*V*K1)
+			b1 = (r_GA + V*K2*C_L)/(V*K1)
+			a2 = a1*((r_Ag - r_GA)/f_PA - r_Pm_base)
+			b2 = r_Pm_base*b1 - (Km_P + b1)*(r_Ag - r_GA)/f_PA
+			! z = 1/(1-f_P) = b2/a2, -> f_P = 1 - a2/b2
+			mp%f_G = f_G
+			mp%f_P = 1 - a2/b2
+		else
+			write(nflog,*) 'Set f_G=f_Gn, f_P=f_Pn'
+			! Need to set f_P = f_P_norm, f_G = f_G_norm
+			mp%f_P = f_P_norm
+			mp%f_G = f_G_norm
 		endif
 	endif
-	mp%f_G = f_G
-	mp%f_P = f_P
-!	write(nflog,'(a,2f8.3)') 'f_P, f_G: ',f_P,f_G
-	return
-endif
-if (use_ATP) then
-	f_ATP_L = f_ATPg(ityp)
-	f_ATP_H = f_ATPramp(ityp)*f_ATPg(ityp)
-	f = mp%A_rate/r_A_norm
-	if (f > f_ATP_H) then
-		ATPfactor = 1
-	elseif (f < f_ATP_L) then
-		ATPfactor = 0
-	else
-		ATPfactor = (f - f_ATP_L)/(f_ATP_H - f_ATP_L)
-		ATPfactor = smoothstep(ATPfactor)
-	endif
-!	write(*,'(a,2e12.3)') 'A_rate, ATPfactor: ',mp%A_rate,ATPfactor
-	mp%f_G = alfa*ATPfactor*f_G_norm + (1-alfa)*mp%f_G
-	mp%f_P = alfa*ATPfactor*f_P_norm + (1-alfa)*mp%f_P
 else
-	C_O2 = C(1)
-	C_G = C(N1D+2)
-	CO_L = 0.8*CO_H(ityp)
-	CG_L = 0.8*CG_H(ityp)
-	Ofactor = 1
-	Gfactor = 1
+	mp%f_G = 0
+	mp%f_P = f_P_norm
+	call f_metab(ityp,mp,C_O2,C_G,C_L)
+	write(nflog,'(a,4e12.3)') '(1) A_rate, r_Ag, f_ATPg, r_A_norm: ',mp%A_rate, r_Ag, f_ATPg(ityp), r_A_norm
+	if (mp%A_rate < r_Ag) then
+		! Need to set f_G = 0, reduce f_P below f_P_norm
+		mp%f_P = 0
+		call f_metab(ityp,mp,C_O2,C_G,C_L)
+		write(nflog,'(a,2e12.3)') '(2) A_rate, r_Ag: ',mp%A_rate, r_Ag
+		if (mp%A_rate < r_Ag) then
+			write(nflog,*) 'Set f_P=0, f_G=0'
+			! Need to set f_P = 0, f_G = 0
+			mp%f_P = 0
+			mp%f_G = 0
+		else
+			! Need to set f_G = 0, find level of f_P to maintain ATPg	*** (1)
+			write(nflog,*) 'Set f_G=0, find f_P'
+			f_G = 0
+			r_GA = 2*(1 - f_G)*r_G
+			a1 = (r_GA - r_Ag)/(f_PA*V*K1)
+			b1 = (r_GA + V*K2*C_L)/(V*K1)
+			a2 = a1*((r_Ag - r_GA)/f_PA - r_Pm_base)
+			b2 = r_Pm_base*b1 - (Km_P + b1)*(r_Ag - r_GA)/f_PA
+			! z = 1/(1-f_P) = b2/a2, -> f_P = 1 - a2/b2
+			mp%f_G = f_G
+			mp%f_P = 1 - a2/b2
+			
+!			a1 = 2*r_G/(f_PA*(1-f_P))
+!			b1 = (r_Ag - 2*r_G)/(f_PA*(1-f_P))
+!			a2 = (-2*r_G - a1)/(V*K1)
+!			b2 = (2*r_G + V*K2*C_L - b1)/(V*K1)
+!			a3 = a1*a2
+!			b3 = (a1*(Km_P + b2) + a2*b1 - r_Pm_base*a2/(1 - f_P))
+!			c3 = b1*(Km_P + b2) - r_Pm_base*b2/(1 - f_P)
+!			! a3.y^2 + b3.y + c3 = 0 where y = f_G
+!			d = sqrt(b3*b3 - 4*a3*c3)
+!			mp%f_P = f_P
+!			mp%f_G = (-b3 + d)/(2*a3)
+			
+		endif
+	else
+		mp%f_G = f_G_norm
+		call f_metab(ityp,mp,C_O2,C_G,C_L)
+		write(nflog,'(a,2e12.3)') '(3) A_rate, r_Ag: ',mp%A_rate, r_Ag
+		if (mp%A_rate < r_Ag) then
+			write(nflog,*) 'Set f_P=f_Pn, find f_G'
+			! Need to set f_P = f_P_norm, find level of f_G to maintain ATPg *** (2)
+			f_P = f_P_norm
+			a1 = 2*r_G/(f_PA*(1-f_P))
+			b1 = (r_Ag - 2*r_G)/(f_PA*(1-f_P))
+			a2 = (-2*r_G - a1)/(V*K1)
+			b2 = (2*r_G + V*K2*C_L - b1)/(V*K1)
+			a3 = a1*a2
+			b3 = (a1*(Km_P + b2) + a2*b1 - r_Pm_base*a2/(1 - f_P))
+			c3 = b1*(Km_P + b2) - r_Pm_base*b2/(1 - f_P)
+			! a3.y^2 + b3.y + c3 = 0 where y = f_G
+			d = sqrt(b3*b3 - 4*a3*c3)
+			mp%f_P = f_P
+			mp%f_G = (-b3 + d)/(2*a3)
+			
+!			r_GA = 2*(1 - f_G)*r_G
+!			a1 = (r_GA - r_Ag)/(f_PA*V*K1)
+!			b1 = (r_GA + V*K2*C_L)/(V*K1)
+!			a2 = a1*((r_Ag - r_GA)/f_PA - r_Pm_base)
+!			b2 = r_Pm_base*b1 - (Km_P + b1)*(r_Ag - r_GA)/f_PA
+!			! z = 1/(1-f_P) = b2/a2, -> f_P = 1 - a2/b2
+!			mp%f_P = 1 - a2/b2
 
-	if (C_O2 < CO_L) then
-		Ofactor = 0
-	elseif (C_O2 < CO_H(ityp)) then
-		Ofactor = (C_O2 - CO_L)/(CO_H(ityp) - CO_L)
+		else
+			write(nflog,*) 'Set f_G=f_Gn, f_P=f_Pn'
+			! Need to set f_P = f_P_norm, f_G = f_G_norm
+			mp%f_P = f_P_norm
+			mp%f_G = f_G_norm
+		endif
 	endif
-	if (C_G < CG_L) then
-		Gfactor = 0
-	elseif (C_G < CG_H(ityp)) then
-		Gfactor = (C_G - CG_L)/(CG_H(ityp) - CG_L)
-	endif
-	mp%f_G = Gfactor*Ofactor*f_G_norm
-	mp%f_P = Ofactor*f_P_norm
-!	write(*,'(a,6f8.4)') 'G, Ofactor: ',Gfactor, Ofactor, C_G, C_O2, mp%f_G, mp%f_P
+
 endif
+write(nflog,'(a,2e12.3)') 'f_P,f_G: ',mp%f_P,mp%f_G
+write(nflog,*)
+return
+
+f_ATP_L = f_ATPg(ityp)
+f_ATP_H = min(f_ATPramp(ityp)*f_ATPg(ityp),1.0)
+f = mp%A_rate/r_A_norm
+if (f > f_ATP_H) then
+	ATPfactor = 1
+elseif (f < f_ATP_L) then
+	ATPfactor = 0
+else
+	ATPfactor = (f - f_ATP_L)/(f_ATP_H - f_ATP_L)
+!		ATPfactor = smoothstep(ATPfactor)
+endif
+!	f_G_L = f_ATPg(ityp)
+!	f_G_H = min(f_ATPramp(ityp)*f_ATPg(ityp),1.0)
+x = mp%G_rate/r_G_norm
+C1 = 1
+C2 = 0
+n = 1
+if (x > C1) then
+	Gfactor = 1
+elseif (x < C2) then
+	Gfactor = 0
+else
+	x = (x-C2)/(C1-C2)
+	Gfactor = x**n
+endif
+!	if (f > f_G_H) then
+!		Gfactor = 1
+!	elseif (f < f_G_L) then
+!		Gfactor = 0
+!	else
+!		Gfactor = (f - f_G_L)/(f_G_H - f_G_L)
+!	endif
+!	write(*,'(a,2e12.3)') 'A_rate, ATPfactor: ',mp%A_rate,ATPfactor
+!	r_G = mp%G_rate
+!	r_L = mp%L_rate
+!	f_G = f_G_norm
+!	r_P = 2*(1 - f_G)*r_G - r_L
+!	f_PA = N_PA(ityp)
+C_O2 = C(1)
+C1 = 0.10	! C_O2_norm(ityp)
+C2 = 0
+n = 5
+fmin = 0.3
+if (C_O2 > C1) then
+	Ofactor = 1 - fmin
+!		f_P = f_P_norm
+elseif (C_O2 < C2) then
+	Ofactor = 0
+!		f_P = 0
+else
+	x = (C_O2 - C2)/(C1 - C2)
+	Ofactor = x**n*(1-fmin)
+!		f_P = f_P_norm*(C_O2 - C2)/(C1 - C2)
+endif
+Ofactor = Ofactor + fmin
+f_P = Ofactor*f_P_norm
+f_G = Ofactor*f_G_norm
+!	if (mp%A_rate/r_A_norm > f_ATPg(ityp)) then 
+!!		ATPfactor = (mp%A_rate/r_A_norm - f_ATPg(ityp))/(1 - f_ATPg(ityp))
+!!		ATPfactor = min(ATPfactor, 1.0)
+!		ATPfactor = 1
+!	else
+!		ATPfactor = 0
+!	endif
+
+ATPfactor = Gfactor*ATPfactor		!!!!!! TRY THIS !!!!!
+
+mp%f_P = alfa*ATPfactor*f_P + (1-alfa)*mp%f_P
+mp%f_G = alfa*ATPfactor*f_G + (1-alfa)*mp%f_G
+write(nflog,'(a,4e12.3)') 'mp%A_rate/r_A_norm,ATPfactor,mp%f_G,mp%f_P: ',mp%A_rate/r_A_norm,ATPfactor,mp%f_G,mp%f_P
 end subroutine
 
 !----------------------------------------------------------------------------------
@@ -1265,5 +1423,191 @@ Caverage(ichemo+1) = Clabel/n
 Caverage(MAX_CHEMO + ichemo) = Cex
 end subroutine
 
+
+!----------------------------------------------------------------------------------
+! With lactate:
+! When C_O2 < CO_H both f_G and f_P are reduced, to 0 when C_O2 <= CO_L 
+! When C_G < CG_H f_G is reduced, to 0 when C_G <= CG_L
+! When both concentrations are below the H threshold the reduction factors are 
+! multiplied for f_G
+!
+! Without lactate:
+! 
+!----------------------------------------------------------------------------------
+subroutine Set_f_GP_1(ityp,mp,C)
+integer :: ityp
+type(metabolism_type), pointer :: mp
+real(REAL_KIND) :: C(:)
+real(REAL_KIND) :: C_O2, C_G, Ofactor, Gfactor, ATPfactor, x, fmin
+real(REAL_KIND) :: CO_L, CG_L, f_ATP_H, f_ATP_L, f, f_G_H, f_G_L
+real(REAL_KIND) :: f_G, f_P, r_P, r_G, r_GI, r_GA, r_PI, r_PA, fPDK, Km_O2, MM_O2, f_PA, Km, C1, C2, r_L, r_A
+integer :: N_O2, n
+real(REAL_KIND) :: alfa = 0.1
+logical :: use_ATP = .true.
+
+if (ityp /= 1) then
+	write(logmsg,*) 'Currently the metabolism model is set up for a single cell type'
+	call logger(logmsg)
+	write(*,*) logmsg
+	stop
+endif
+if (.not.chemo(LACTATE)%used) then
+!	f_G = f_G_norm
+!	f_P = f_P_norm
+	f_G = mp%f_G
+	f_P = mp%f_P
+	C_O2 = C(1)
+	C_G = C(N1D+2)
+	N_O2 = Hill_N_O2
+	Km_O2 = Hill_Km_O2
+	f_PA = N_PA(ityp)
+	MM_O2 = f_MM(C_O2,Km_O2,N_O2)
+	r_G = MM_O2*get_glycosis_rate(ityp,mp%HIF1,C_G)
+	fPDK = mp%PDK1
+
+	r_P = fPDK*2*(1 - f_G)*r_G
+	r_GI = r_G - r_P/2
+	r_PI = f_P*r_P
+	r_GA = r_P
+	r_PA = f_PA*(1 - f_P)*r_P
+	!write(*,'(a,3e12.3)') 'r_GA, r_PA, ATPg(ityp): ',r_GA,r_PA,ATPg(ityp) 
+	if (r_GA + r_PA < ATPg(ityp)) then	! adjust f_P to maintain ATPg
+		! r_GA+r_PA = r_P*(f_P + f_PA*(1 - f_P)) = ATPg(ityp)
+		f_P = (ATPg(ityp)/r_P - f_PA)/(1 - f_PA)
+		f_P = alfa*f_P + (1-alfa)*mp%f_P
+		f_P = min(f_P,1.0)
+		if (f_P < 0) then
+			f_P = 0
+			f_G = 1 - ATPg(ityp)/(fPDK*2*r_G*(1 + f_PA))
+			f_G = alfa*f_G + (1-alfa)*mp%f_G
+			f_G = min(f_G,1.0)
+			f_G = max(f_G,0.0)
+		endif
+	endif
+	mp%f_G = f_G
+	mp%f_P = f_P
+!	write(nflog,'(a,2f8.3)') 'f_P, f_G: ',f_P,f_G
+	return
+endif
+
+if (use_ATP) then
+	f_ATP_L = f_ATPg(ityp)
+	f_ATP_H = min(f_ATPramp(ityp)*f_ATPg(ityp),1.0)
+	f = mp%A_rate/r_A_norm
+	if (f > f_ATP_H) then
+		ATPfactor = 1
+	elseif (f < f_ATP_L) then
+		ATPfactor = 0
+	else
+		ATPfactor = (f - f_ATP_L)/(f_ATP_H - f_ATP_L)
+!		ATPfactor = smoothstep(ATPfactor)
+	endif
+!	f_G_L = f_ATPg(ityp)
+!	f_G_H = min(f_ATPramp(ityp)*f_ATPg(ityp),1.0)
+	x = mp%G_rate/r_G_norm
+	C1 = 1
+	C2 = 0
+	n = 1
+	if (x > C1) then
+		Gfactor = 1
+	elseif (x < C2) then
+		Gfactor = 0
+	else
+		x = (x-C2)/(C1-C2)
+		Gfactor = x**n
+	endif
+!	if (f > f_G_H) then
+!		Gfactor = 1
+!	elseif (f < f_G_L) then
+!		Gfactor = 0
+!	else
+!		Gfactor = (f - f_G_L)/(f_G_H - f_G_L)
+!	endif
+!	write(*,'(a,2e12.3)') 'A_rate, ATPfactor: ',mp%A_rate,ATPfactor
+!	r_G = mp%G_rate
+!	r_L = mp%L_rate
+!	f_G = f_G_norm
+!	r_P = 2*(1 - f_G)*r_G - r_L
+!	f_PA = N_PA(ityp)
+	C_O2 = C(1)
+	C1 = 0.10	! C_O2_norm(ityp)
+	C2 = 0
+	n = 5
+	fmin = 0.3
+	if (C_O2 > C1) then
+		Ofactor = 1 - fmin
+!		f_P = f_P_norm
+	elseif (C_O2 < C2) then
+		Ofactor = 0
+!		f_P = 0
+	else
+		x = (C_O2 - C2)/(C1 - C2)
+		Ofactor = x**n*(1-fmin)
+!		f_P = f_P_norm*(C_O2 - C2)/(C1 - C2)
+	endif
+	Ofactor = Ofactor + fmin
+	f_P = Ofactor*f_P_norm
+	f_G = Ofactor*f_G_norm
+!	if (mp%A_rate/r_A_norm > f_ATPg(ityp)) then 
+!!		ATPfactor = (mp%A_rate/r_A_norm - f_ATPg(ityp))/(1 - f_ATPg(ityp))
+!!		ATPfactor = min(ATPfactor, 1.0)
+!		ATPfactor = 1
+!	else
+!		ATPfactor = 0
+!	endif
+
+	ATPfactor = Gfactor*ATPfactor		!!!!!! TRY THIS !!!!!
+	
+	mp%f_P = alfa*ATPfactor*f_P + (1-alfa)*mp%f_P
+	mp%f_G = alfa*ATPfactor*f_G + (1-alfa)*mp%f_G
+	write(nflog,'(a,4e12.3)') 'mp%A_rate/r_A_norm,ATPfactor,mp%f_G,mp%f_P: ',mp%A_rate/r_A_norm,ATPfactor,mp%f_G,mp%f_P
+!	r_A = 2*(1 - f_G)*r_G + f_PA*(1 - f_P)*r_P
+
+!	if (r_A < ATPg(ityp)) then
+!		f_G = 1 - (ATPg(ityp) - f_PA*(1 - f_P)*r_P)/(2*r_G)
+!		f_G = max(f_G,0.0)
+!	endif
+
+!	mp%f_G = alfa*ATPfactor*f_G_norm + (1-alfa)*mp%f_G
+	
+!	Km = 0.06
+!	if (C_O2 < Km) then
+!		ATPfactor = ATPfactor*C_O2/Km
+!		mp%f_G = alfa*ATPfactor*f_G_norm + (1-alfa)*mp%f_G
+!		mp%f_P =(1-alfa)*mp%f_P
+!	endif
+!	mp%f_G = alfa*ATPfactor*f_G_norm + (1-alfa)*mp%f_G
+!	mp%f_P = alfa*ATPfactor*f_P_norm + (1-alfa)*mp%f_P
+!	if (C(1) < 0.05) then
+!		mp%f_G = 0	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!		mp%f_P = 0	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!	endif
+!	if (C_O2 < 0.05) then
+!		mp%f_P = 0	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!		mp%f_G = mp%f_G*f_MM(C_O2,0.05d0,1)
+!	endif
+else
+	C_O2 = C(1)
+	C_G = C(N1D+2)
+	CO_L = 0.8*CO_H(ityp)
+	CG_L = 0.8*CG_H(ityp)
+	Ofactor = 1
+	Gfactor = 1
+
+	if (C_O2 < CO_L) then
+		Ofactor = 0
+	elseif (C_O2 < CO_H(ityp)) then
+		Ofactor = (C_O2 - CO_L)/(CO_H(ityp) - CO_L)
+	endif
+	if (C_G < CG_L) then
+		Gfactor = 0
+	elseif (C_G < CG_H(ityp)) then
+		Gfactor = (C_G - CG_L)/(CG_H(ityp) - CG_L)
+	endif
+	mp%f_G = Gfactor*Ofactor*f_G_norm
+	mp%f_P = Ofactor*f_P_norm
+!	write(*,'(a,6f8.4)') 'G, Ofactor: ',Gfactor, Ofactor, C_G, C_O2, mp%f_G, mp%f_P
+endif
+end subroutine
 end module
 

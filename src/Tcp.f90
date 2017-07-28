@@ -22,7 +22,7 @@ contains
 ! Time unit = hour, convert Tcp to seconds
 ! Note: Krepair, Kmisrepair are Curtis's epsilon_PL, epsilon_2PL
 !--------------------------------------------------------------------------
-subroutine makeTCP(Tcp, np, epsilon_PL, epsilon_2PL, Kcp_set)
+subroutine makeTCPradiation(Tcp, np, epsilon_PL, epsilon_2PL, Kcp_set)
 real(REAL_KIND) :: Tcp(0:np)
 integer :: np
 real(REAL_KIND) :: epsilon_PL, epsilon_2PL(2), Kcp_set

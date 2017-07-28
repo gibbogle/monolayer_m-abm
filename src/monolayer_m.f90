@@ -555,9 +555,9 @@ if (use_events) then
 	use_treatment = .false.
 endif
 if (is_radiation) then
-    call logger('makeTCP')
-    call makeTCP(ccp%tcp,NTCP,ccp%Krepair_base,ccp%Kmisrepair,ccp%Kcp) ! set checkpoint repair time limits 
-    call logger('did makeTCP')
+    call logger('makeTCPradiation')
+    call makeTCPradiation(ccp%tcp,NTCP,ccp%Krepair_base,ccp%Kmisrepair,ccp%Kcp) ! set checkpoint repair time limits 
+    call logger('did makeTCPradiation')
 endif
 
 close(nfcell)
@@ -788,7 +788,6 @@ do ityp = 1,Ncelltypes
 	read(nf,*) K_LP(ityp)
 	read(nf,*) Hill_Km_P(ityp)
 enddo
-PDKmin(:) = 0.3
 Hill_N_P = 1
 Hill_Km_P = Hill_Km_P/1000		! uM -> mM
 !ATP_Km = ATP_Km/1000			! uM -> mM

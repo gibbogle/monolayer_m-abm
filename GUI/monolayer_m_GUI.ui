@@ -1643,7 +1643,7 @@ padding: 8px
               <item row="1" column="5">
                <widget class="QMyCheckBox" name="cbox_USE_LACTATE">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="maximumSize">
                  <size>
@@ -1655,7 +1655,7 @@ padding: 8px
                  <string/>
                 </property>
                 <property name="checked">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>

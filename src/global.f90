@@ -194,6 +194,7 @@ type cycle_parameters_type
     real(REAL_KIND) :: T_G1(MAX_CELLTYPES), T_S(MAX_CELLTYPES), T_G2(MAX_CELLTYPES), T_M(MAX_CELLTYPES)
     real(REAL_KIND) :: G1_mean_delay(MAX_CELLTYPES), G2_mean_delay(MAX_CELLTYPES)
     real(REAL_KIND) :: Pk_G1(MAX_CELLTYPES), Pk_G2(MAX_CELLTYPES)
+    ! Radiation damage/repair
     real(REAL_KIND) :: eta_PL, eta_L(2), Kcp
     real(REAL_KIND) :: Krepair_base, Krepair_max, Kmisrepair(2)
     real(REAL_KIND) :: Tcp(0:NTCP)
