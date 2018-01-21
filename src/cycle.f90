@@ -25,6 +25,20 @@ contains
 ! Damage from radiation dose following Curtis1986
 ! dose is the Gy received, tmin is the duration (min) over which it is delivered.
 ! Krepair, Kmisrepair are Curtis's epsilon_PL, epsilon_2PL
+! As modified according to Bill Wilson:
+! There are three classes of lesions:
+!	%NL1 = number of potentially lethal (i.e. repairable) lesions = Curtis's n_PL
+!	%NL2(1) = number of lethal lesions of type b
+!	%NL2(2) = number of lethal lesions of type c
+! During the radiation exposure, damage of different kinds occurs at a rate
+! that is given by the product dose intensity (Gy/h), eta, and SER_OER.
+! eta_PL and eta_L(:) are the rate constants for PL and L lesions
+! SER_OER is the product of the SER and OER, where
+! SER = Sensitivity Enhancement Ratio which is drug dependent
+! OER = Oxygen Enhancement Ratio which is a function of intracellular O2 conc.
+! (Note: OER for PL uses OER_alpha, for L uses OER_beta)
+! Over the duration of the exposure repair is also occurring (this will be
+! insignificant if the duration is very short).
 !--------------------------------------------------------------------------
 subroutine radiation_damage(cp, ccp, dose, SER_OER, tmin)
 type(cell_type), pointer :: cp
@@ -61,15 +75,13 @@ do it = 1,nt
 enddo
 n = rnPL
 dr = rnPL - n
-!call random_number(R)
 R = par_uni(kpar)
 dn = 0
 if (R < dr) dn = 1
 cp%NL1 = cp%NL1 + n + dn
-do k = 1,3
+do k = 1,2
     n = rnL(k)
     dr = rnL(k) - n
-!    call random_number(R)
     R = par_uni(kpar)
     dn = 0
     if (R < dr) dn = 1
@@ -92,12 +104,9 @@ logical :: switch
 
 phase = cp%phase
 if (cp%dVdt == 0) then
-!    write(*,*) 'timestep: dVdt=0: '
-!    stop
-	return
+	if (phase == G1_phase .or. phase == S_phase .or. phase == G2_phase) return
 endif
 ityp = cp%celltype
-
 if (.not.use_metabolism) then
 	if (.not.colony_simulation .and. (phase == Checkpoint1)) then    ! check for starvation arrest
 		cf_O2 = cp%Cin(OXYGEN)/anoxia_threshold
@@ -108,7 +117,6 @@ if (.not.use_metabolism) then
 		if (pcp_starvation == 0) then
 			return
 		elseif (pcp_starvation < 1) then
-	!        call random_number(R)
 			R = par_uni(kpar)
 			if (R < pcp_starvation) return
 		endif
@@ -123,12 +131,10 @@ if (phase == G1_phase) then
     if (switch) then
         cp%phase = Checkpoint1
         cp%G1_flag = .false.
-        cp%G1S_flag = .false.
         cp%G1S_time = tnow + ccp%Tcp(cp%NL1)
     endif
 elseif (phase == Checkpoint1) then  ! this checkpoint combines the release from G1 delay and the G1S repair check
     if (.not.cp%G1_flag) then
-!        call random_number(R)
         R = par_uni(kpar)
         cp%G1_flag = (R < ccp%Pk_G1(ityp)*dt)
     endif
@@ -136,10 +142,6 @@ elseif (phase == Checkpoint1) then  ! this checkpoint combines the release from 
     if (use_metabolism) then
 		cp%G1S_flag = cp%G1S_flag .and. (cp%metab%A_rate > ATPg(ityp))
 	endif
-!    if (kcell_now == 6) then
-!		write(*,'(a,2L2,i6,3e12.3)') 'CP1: ',cp%G1_flag,cp%G1S_flag,cp%NL1,tnow - cp%G1S_time,cp%metab%A_rate,ATPg(ityp)
-!		write(nflog,'(a,2L2,i6,3e12.3)') 'CP1: ',cp%G1_flag,cp%G1S_flag,cp%NL1,tnow - cp%G1S_time,cp%metab%A_rate,ATPg(ityp)
-!	endif
     if (cp%G1_flag .and. cp%G1S_flag) then
         cp%phase = S_phase
 ! Note: now %I_rate has been converted into equivalent %dVdt, to simplify code
@@ -178,12 +180,10 @@ elseif (phase == G2_phase) then
     if (switch) then
         cp%phase = Checkpoint2
         cp%G2_flag = .false.
-        cp%G2M_flag = .false.
         cp%G2M_time = tnow + ccp%Tcp(cp%NL1)
     endif
 elseif (phase == Checkpoint2) then ! this checkpoint combines the release from G2 delay and the G2M repair check
     if (.not.cp%G2_flag) then
-!        call random_number(R)
         R = par_uni(kpar)
         cp%G2_flag = (R < ccp%Pk_G2(ityp)*dt)
     endif
@@ -236,6 +236,9 @@ end function
 
 !--------------------------------------------------------------------------
 ! Time unit = hour
+! This may need to be changed, because it implicitly assumes that no more
+! than one repair and one misrepair of each type can occur within a time step.
+! The fix would be to subdivide the time step, as in the damage subroutine.
 !--------------------------------------------------------------------------
 subroutine radiation_repair(cp, ccp, dt)
 type(cell_type), pointer :: cp
@@ -258,14 +261,12 @@ else
     endif
     Krepair = ccp%Krepair_base + fraction*(ccp%Krepair_max - ccp%Krepair_base)
 endif
-!call random_number(R)
 R = par_uni(kpar)
 if (R < cp%NL1*Krepair*dthour) then
     cp%NL1 = cp%NL1 - 1
     if (cp%NL1 == 0) return
 endif
 do i = 1,2
-!    call random_number(R)
     R = par_uni(kpar)
     if (R < cp%NL1**2*ccp%Kmisrepair(i)*dthour) then
         cp%NL1 = cp%NL1 - 1

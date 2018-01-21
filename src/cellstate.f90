@@ -27,7 +27,7 @@ integer :: kcell, idrug, ichemo
 !call logger('GrowCells: ')
 tnow = istep*DELTA_T
 ok = .true.
-call grower(dt,changed,ok)
+call new_grower(dt,changed,ok)
 if (.not.ok) return
 !if (dose > 0) then
 !	call Irradiation(dose, ok)
@@ -455,6 +455,219 @@ integer :: kcell, kpar=0
 
 kcell = random_int(1,nlist,kpar)
 call divider(kcell,ok)
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Cell growth, death and division are handled here.  Division occurs when cell volume 
+! exceeds the divide volume. 
+! As the cell grows we need to adjust both Cin and Cex to maintain mass conservation.
+! GROWTH DELAY
+! When a cell has received a dose of radiation (or possibly drug - not yet considered)
+! the cycle time is increased by an amount that depends on the dose.  The delay may be
+! transmitted to progeny cells.
+! 
+! NOTE: now the medium concentrations are not affected by cell growth
+!-----------------------------------------------------------------------------------------
+subroutine new_grower(dt, changed, ok)
+real(REAL_KIND) :: dt
+logical :: changed, ok
+integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
+type(cell_type), pointer :: cp
+type(cycle_parameters_type), pointer :: ccp
+real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum
+integer, parameter :: MAX_DIVIDE_LIST = 10000
+integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
+logical :: drugkilled
+logical :: mitosis_entry, in_mitosis, divide, tagged
+
+ok = .true.
+changed = .false.
+ccp => cc_parameters
+nlist0 = nlist
+ndivide = 0
+!tnow = istep*DELTA_T !+ t_fmover
+!if (colony_simulation) write(*,*) 'grower: ',nlist0,use_volume_method,tnow
+
+do kcell = 1,nlist0
+	kcell_now = kcell
+	if (colony_simulation) then
+	    cp => ccell_list(kcell)
+	else
+    	cp => cell_list(kcell)
+    endif
+	if (cp%state == DEAD) cycle
+	ityp = cp%celltype
+	divide = .false.
+	mitosis_entry = .false.
+	in_mitosis = .false.
+	tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
+	if (tagged) then
+		cp%dVdt = 0
+	endif
+	if (use_volume_method) then
+!        if (colony_simulation) then
+!            write(*,'(a,i6,L2,2e12.3)') 'kcell: ',kcell,cp%Iphase,cp%V,cp%divide_volume
+!        endif
+	    if (cp%Iphase) then
+		    call growcell(cp,dt)
+		    if (cp%V > cp%divide_volume) then	! time to enter mitosis
+!    	        mitosis_entry = .true.
+!				cp%Iphase = .false.
+	            in_mitosis = .true.
+!				cp%mitosis = 0
+!				cp%t_start_mitosis = tnow
+				
+				cp%Iphase = .false.
+				cp%mitosis = 0
+				cp%t_start_mitosis = tnow
+				ncells_mphase = ncells_mphase + 1
+				
+#ifdef SIMULATE_FORCES
+! The following are applicable when cell-cell forces are relevant
+				cp%nspheres = 2
+				call get_random_vector3(rr)	! set initial axis direction
+				cp%d = 0.1*small_d
+				c = cp%centre(:,1)
+				cp%centre(:,1) = c + (cp%d/2)*rr
+				cp%centre(:,2) = c - (cp%d/2)*rr
+				cp%d_divide = 2.0**(2./3)*cp%radius(1)
+#endif				
+	        endif
+	    else
+	        in_mitosis = .true.
+	    endif
+	else
+	    prev_phase = cp%phase
+!	    if (cp%dVdt == 0) then
+!			write(nflog,*) 'dVdt=0: kcell, phase: ',kcell,cp%phase 
+!		endif
+        call timestep(cp, ccp, dt)
+        if (.not.cp%radiation_tag .and.(cp%NL2(1) > 0 .or. cp%NL2(2) > 0)) then	! irrepairable damage
+			! For now, tag for death at mitosis
+			cp%radiation_tag = .true.	! new_grower
+		    Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
+!			write(*,*) 'Tagged with NL2: ',istep,cp%NL2,Nradiation_tag(ityp)
+		endif
+        if (cp%phase >= M_phase) then
+            if (prev_phase == Checkpoint2) then		! this is mitosis entry
+!				write(*,*) 'mitosis_entry: kcell,istep: ',kcell,istep
+                if (.not.cp%radiation_tag .and. cp%NL1 > 0) then		! lesions still exist, no time for repair
+					cp%radiation_tag = .true.
+				    Nradiation_tag(ityp) = Nradiation_tag(ityp) + 1
+!				    write(*,*) 'Tagged with NL1: ',istep,cp%NL1,Nradiation_tag(ityp)
+				endif
+				
+				cp%Iphase = .false.
+				cp%mitosis = 0
+				cp%t_start_mitosis = tnow
+				ncells_mphase = ncells_mphase + 1
+#ifdef SIMULATE_FORCES
+				cp%nspheres = 2
+				call get_random_vector3(rr)	! set initial axis direction
+				rrsum = rrsum + rr
+				cp%d = 0.1*small_d
+				c = cp%centre(:,1)
+				cp%centre(:,1) = c + (cp%d/2)*rr
+				cp%centre(:,2) = c - (cp%d/2)*rr
+				cp%d_divide = 2.0**(2./3)*cp%radius(1)
+#endif			
+            endif
+            in_mitosis = .true.
+        endif
+		if (cp%phase < Checkpoint2 .and. cp%phase /= Checkpoint1) then
+		    call growcell(cp,dt)
+		endif	
+	endif
+!	if (mitosis_entry) then
+	if (in_mitosis) then
+		drugkilled = .false.
+		do idrug = 1,ndrugs_used
+			if (cp%drug_tag(idrug)) then
+				call CellDies(kcell)
+				changed = .true.
+				Ndrug_dead(idrug,ityp) = Ndrug_dead(idrug,ityp) + 1
+				drugkilled = .true.
+				exit
+			endif
+		enddo
+		if (drugkilled) cycle
+
+		cp%mitosis = (tnow - cp%t_start_mitosis)/mitosis_duration
+!		d_desired = max(cp%mitosis*cp%d_divide,small_d)
+!		rr = cp%centre(:,2) - cp%centre(:,1)
+!		cp%d = sqrt(dot_product(rr,rr))
+!		c = (cp%centre(:,1) + cp%centre(:,2))/2
+!		cp%site = c/DELTA_X + 1
+!		call cubic_solver(d_desired,cp%V,rad)
+!		cp%radius = rad
+!		if (cp%d > 2*rad) then	! completion of mitosis - note that this overrides cp%phase
+!			write(logmsg,'(a,i6,2e12.3,f7.3)') 'divides: d > 2*rad: ',kcell,cp%d,rad,cp%mitosis
+!			call logger(logmsg)
+!			divide = .true.
+!		endif
+			
+		if (use_volume_method) then
+			if (cp%growth_delay) then
+				if (cp%G2_M) then
+					if (tnow > cp%t_growth_delay_end) then
+						cp%G2_M = .false.
+					else
+						cycle
+					endif
+				else
+					cp%t_growth_delay_end = tnow + cp%dt_delay
+					cp%G2_M = .true.
+					cycle
+				endif
+			endif
+			! try moving death prob test to here
+			if (cp%radiation_tag) then
+				R = par_uni(kpar)
+				if (R < cp%p_rad_death) then
+					call CellDies(kcell)
+					changed = .true.
+					Nradiation_dead(ityp) = Nradiation_dead(ityp) + 1
+					cycle
+				endif
+			endif		
+		else
+		    ! Check for cell death by radiation lesions
+!		    if (cp%NL1 > 0 .or. cp%NL2(2) > 0) then
+			if (cp%radiation_tag) then
+				call CellDies(kcell)
+				changed = .true.
+				Nradiation_dead(ityp) = Nradiation_dead(ityp) + 1
+				cycle
+			endif		        
+		endif
+		
+!		write(*,*) 'istep, kcell, mitosis: ',istep,kcell,cp%mitosis
+        if (cp%mitosis >= 1) then
+			divide = .true.
+		endif
+	endif
+	if (divide) then
+		ndivide = ndivide + 1
+		if (ndivide > MAX_DIVIDE_LIST) then
+		    write(logmsg,*) 'Error: growcells: MAX_DIVIDE_LIST exceeded: ',MAX_DIVIDE_LIST
+		    call logger(logmsg)
+		    ok = .false.
+		    return
+		endif
+		divide_list(ndivide) = kcell
+	endif
+enddo
+do k = 1,ndivide
+	changed = .true.
+	kcell = divide_list(k)
+	if (colony_simulation) then
+	    cp => ccell_list(kcell)
+	else
+    	cp => cell_list(kcell)
+    endif
+	call divider(kcell, ok)
+	if (.not.ok) return
+enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------

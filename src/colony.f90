@@ -143,7 +143,7 @@ dt = DELTA_T
 nlist = 1
 do while (tnow < tend)
 	tnow = tnow + dt
-    call grower(dt,changed,ok)
+    call new_grower(dt,changed,ok)
 enddo
 !write(*,*) nlist,ccell_list(nlist)%dVdt,max_growthrate(1),ccell_list(nlist)%V
 n = 0
