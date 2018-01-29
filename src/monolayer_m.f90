@@ -342,6 +342,7 @@ integer :: iuse_oxygen, iuse_glucose, iuse_lactate, iuse_tracer, iuse_drug, iuse
 integer :: ictype, idisplay, isconstant, ioxygengrowth, iglucosegrowth, ilactategrowth, ioxygendeath, iglucosedeath
 integer :: iuse_drop, iconstant, isaveprofiledata, isaveslicedata, iusecellcycle, iusemetabolism, ityp, ifullymixed
 logical :: use_metabolites
+integer :: isaveFACSdata
 real(REAL_KIND) :: days, bdry_conc, percent, d_n_limit
 real(REAL_KIND) :: sigma(2), DXmm, anoxia_tag_hours, anoxia_death_hours, aglucosia_tag_hours, aglucosia_death_hours
 character*(12) :: drug_name
@@ -523,6 +524,7 @@ read(nfcell,*) growthcutoff(2)
 read(nfcell,*) growthcutoff(3)
 read(nfcell,*) Cthreshold
 read(nfcell,*) spcrad_value
+
 !read(nfcell,*) iuse_extra
 !read(nfcell,*) iuse_relax
 !read(nfcell,*) iuse_par_relax
@@ -549,6 +551,13 @@ read(nfcell,*) Ndrugs_used
 if (Ndrugs_used > 0) then
     call ReadDrugData(nfcell)
 endif
+
+read(nfcell,*) isaveFACSdata
+read(nfcell,*) saveFACS%filebase
+read(nfcell,*) saveFACS%tstart
+read(nfcell,*) saveFACS%dt
+read(nfcell,*) saveFACS%nt
+
 is_radiation = .false.
 if (use_events) then
 	call ReadProtocol(nfcell)
@@ -652,6 +661,10 @@ total_volume = medium_volume0
 !saveslice%active = (isaveslicedata == 1)
 !saveslice%it = 1
 !saveslice%dt = 60*saveslice%dt			! mins -> seconds
+saveFACS%active = (isaveFACSdata == 1)
+saveFACS%it = 1
+saveFACS%dt = 60*saveFACS%dt			! mins -> seconds
+saveFACS%tstart = 60*saveFACS%tstart	! mins -> seconds
 
 !use_dropper = (iuse_drop == 1)
 
@@ -1770,6 +1783,16 @@ res = 0
 !endif
 
 call getNviable
+
+if (saveFACS%active) then
+	if (istep*DELTA_T >= saveFACS%tstart + (saveFACS%it-1)*saveFACS%dt) then
+		call WriteFACSData
+		saveFACS%it = saveFACS%it + 1
+		if (saveFACS%it > saveFACS%nt) then
+			saveFACS%active = .false.
+		endif
+	endif
+endif
 
 if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)

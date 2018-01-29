@@ -371,4 +371,40 @@ void MainWindow::clickedGraph(QMouseEvent *event)
     }
 }
 
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::on_pushButton_update_FACS_Histo_clicked()
+{
+    if (paused || exthread->paused || exthread->stopped) {
+        LOG_MSG("call getFACS");
+        exthread->getFACS();
+        LOG_MSG("emit facs_update");
+        emit facs_update();
+        LOG_MSG("call getHisto");
+        exthread->getHisto();
+        LOG_MSG("emit histo_update");
+        emit histo_update();
+    }
+}
 
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::on_checkBox_volume_scaling_toggled(bool checked)
+{
+    if (checked) {
+        Global::volume_scaling = 1;
+        LOG_MSG("volume_scaling: on");
+    } else {
+        Global::volume_scaling = 0;
+        LOG_MSG("volume_scaling: off");
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow:: on_cbox_SAVE_FACS_DATA_toggled(bool checked)
+{
+    text_SAVE_FACS_DATA_FILE_NAME->setEnabled(checked);
+    line_SAVE_FACS_DATA_INTERVAL->setEnabled(checked);
+    line_SAVE_FACS_DATA_NUMBER->setEnabled(checked);
+}

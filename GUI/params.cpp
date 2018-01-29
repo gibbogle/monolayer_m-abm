@@ -760,6 +760,27 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Spectral radius",
 "Spectral radius value used by RKC solver"},
 
+ {"SAVE_FACS_DATA",0,0,1,
+  "Save FACS data",
+  "Save data for FACS at a specified interval"},
+
+ {"SAVE_FACS_DATA_FILE_NAME",0,0,0,
+  "facs_data",
+  "Base file name for saving FACS data"},
+
+ {"SAVE_FACS_DATA_TSTART",0,0,0,
+  "Start time",
+  "Start time for saving FACS data"},
+
+ {"SAVE_FACS_DATA_INTERVAL",0,0,0,
+  "Interval",
+  "Time interval for saving FACS data"},
+
+ {"SAVE_FACS_DATA_NUMBER",1,0,0,
+  "Number",
+  "Number of times to save FACS data"},
+
+
 //{"USE_EXTRA", 0, 0, 1,
 //"Use extra conc",
 //"Use extracellular O2 and glucose concentrations to determine cell death"},

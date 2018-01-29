@@ -395,6 +395,12 @@ GRAPH_SET tsGraphSet[] = {
     "Drug_B_metab2 description",
     DRUG_B_METAB_2, false, 0, 1, 0, PROF_TYPE},
 
+    {"PI",
+    "PI fixed fluorescence",
+    "",
+    "PI fluorescence description",
+    PI_DEAD, false, 0, 1, 0, PROF_TYPE},
+
 /*
 // Intracellular profiles
 

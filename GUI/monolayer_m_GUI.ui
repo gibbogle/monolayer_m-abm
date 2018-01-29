@@ -79,7 +79,7 @@ padding: 8px
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>5</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideNone</enum>
@@ -7623,6 +7623,177 @@ padding: 8px
              <string>Profile Plots</string>
             </property>
            </widget>
+           <widget class="QGroupBox" name="groupBox_save">
+            <property name="geometry">
+             <rect>
+              <x>1150</x>
+              <y>30</y>
+              <width>161</width>
+              <height>151</height>
+             </rect>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <widget class="QLineEdit" name="line_SAVE_FACS_DATA_NUMBER">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>80</x>
+               <y>120</y>
+               <width>31</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="text_SAVE_FACS_DATA_FILE_NAME">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>80</x>
+               <y>30</y>
+               <width>71</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>facs_data</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="line_SAVE_FACS_DATA_INTERVAL">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>80</x>
+               <y>90</y>
+               <width>31</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+            <widget class="QMyCheckBox" name="cbox_SAVE_FACS_DATA">
+             <property name="geometry">
+              <rect>
+               <x>40</x>
+               <y>10</y>
+               <width>111</width>
+               <height>18</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Save FACS data?</string>
+             </property>
+            </widget>
+            <widget class="QMyLabel" name="label_SAVE_FACS_DATA_NUMBER">
+             <property name="geometry">
+              <rect>
+               <x>30</x>
+               <y>120</y>
+               <width>51</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Number</string>
+             </property>
+            </widget>
+            <widget class="QMyLabel" name="label_SAVE_FACS_DATA_INTERVAL">
+             <property name="geometry">
+              <rect>
+               <x>30</x>
+               <y>90</y>
+               <width>51</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Interval</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="alabel_mins_4">
+             <property name="geometry">
+              <rect>
+               <x>120</x>
+               <y>90</y>
+               <width>21</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>mins</string>
+             </property>
+            </widget>
+            <widget class="QMyLabel" name="label_SAVE_FACS_DATA_FILE">
+             <property name="geometry">
+              <rect>
+               <x>5</x>
+               <y>30</y>
+               <width>71</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Base file name</string>
+             </property>
+            </widget>
+            <widget class="QLabel" name="alabel_mins_7">
+             <property name="geometry">
+              <rect>
+               <x>120</x>
+               <y>60</y>
+               <width>21</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>mins</string>
+             </property>
+            </widget>
+            <widget class="QMyLabel" name="label_SAVE_FACS_DATA_TSTART">
+             <property name="geometry">
+              <rect>
+               <x>30</x>
+               <y>60</y>
+               <width>51</width>
+               <height>21</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>Start time</string>
+             </property>
+            </widget>
+            <widget class="QLineEdit" name="line_SAVE_FACS_DATA_TSTART">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="geometry">
+              <rect>
+               <x>80</x>
+               <y>60</y>
+               <width>31</width>
+               <height>20</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>0</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </widget>
           </widget>
           <widget class="QWidget" name="tab_run">
            <attribute name="title">
@@ -9564,7 +9735,34 @@ padding: 8px
         </property>
        </widget>
       </widget>
-      <widget class="QWidget" name="page_FACS"/>
+      <widget class="QWidget" name="page_FACS">
+       <widget class="QCheckBox" name="checkBox_volume_scaling">
+        <property name="geometry">
+         <rect>
+          <x>950</x>
+          <y>0</y>
+          <width>111</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Use C*V for drugs</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_update_FACS_Histo">
+        <property name="geometry">
+         <rect>
+          <x>840</x>
+          <y>0</y>
+          <width>75</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Refresh</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -9685,7 +9883,7 @@ padding: 8px
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/001_29.png</normaloff>:/icons/001_29.png</iconset>
    </property>
    <property name="text">
@@ -9700,7 +9898,7 @@ padding: 8px
   </action>
   <action name="action_run">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/001_59.png</normaloff>:/icons/001_59.png</iconset>
    </property>
    <property name="text">
@@ -9712,7 +9910,7 @@ padding: 8px
   </action>
   <action name="action_inputs">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/001_45.png</normaloff>:/icons/001_45.png</iconset>
    </property>
    <property name="text">
@@ -9724,7 +9922,7 @@ padding: 8px
   </action>
   <action name="action_outputs">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/Display2.png</normaloff>:/icons/Display2.png</iconset>
    </property>
    <property name="text">
@@ -9739,7 +9937,7 @@ padding: 8px
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/cell2.png</normaloff>:/icons/cell2.png</iconset>
    </property>
    <property name="text">
@@ -9751,7 +9949,7 @@ padding: 8px
   </action>
   <action name="action_pause">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/001_07.png</normaloff>:/icons/001_07.png</iconset>
    </property>
    <property name="text">
@@ -9836,7 +10034,7 @@ padding: 8px
   </action>
   <action name="action_field">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/color.jpg</normaloff>:/icons/color.jpg</iconset>
    </property>
    <property name="text">
@@ -9853,7 +10051,7 @@ padding: 8px
   </action>
   <action name="action_FACS">
    <property name="icon">
-    <iconset resource="../../vspheroid-abm/GUI/icons.qrc">
+    <iconset resource="../../spheroid-abm/GUI/icons.qrc">
      <normaloff>:/icons/FACS_234.png</normaloff>:/icons/FACS_234.png</iconset>
    </property>
    <property name="text">

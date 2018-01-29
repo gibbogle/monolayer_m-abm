@@ -1325,7 +1325,7 @@ real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, 
 real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd
 real(REAL_KIND) :: average_volume = 1.2
 real(REAL_KIND), dimension(:), pointer :: Cmedium
-logical :: use_average_volume = .true.
+logical :: use_average_volume = .false.
 integer :: nt = 20
 integer :: ndt = 20
 
@@ -1350,12 +1350,16 @@ n_S_phase = 0
 totalflux = 0
 do kcell = 1,nlist
    	cp => cell_list(kcell)
-   	tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
-	if (cp%state == DEAD) cycle	
+!   	tagged = cp%anoxia_tag .or. cp%aglucosia_tag .or. (cp%state == DYING)
+	if (cp%state == DEAD) cycle
+	if (.not.use_average_volume) then
+		vol_cm3 = cp%V
+		area_factor = (vol_cm3/Vcell_cm3)**(2./3.)
+	endif
 	ict = cp%celltype
 	CO2 = cp%Cin(OXYGEN)
 	active = drug(idrug)%active_phase(cp%phase)
-	if (active .and. .not.tagged) then
+	if (active) then	! .and. .not.tagged) then
 		n_S_phase = n_S_phase + 1
 	endif
 !	do it = 1,nt
@@ -1363,12 +1367,18 @@ do kcell = 1,nlist
 		C = cp%Cin(ichemo)
 		Clabel = cp%Cin(ichemo+1)
 		membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*C)
-		if (active .and. .not.tagged) then
+		if (active) then	! .and. .not.tagged) then
 			KmetC = dp%Kmet0(ict,0)*C
 			if (dp%Vmax(ict,0) > 0) then
 				KmetC = KmetC + dp%Vmax(ict,0)*C/(dp%Km(ict,0) + C)
 			endif
 			dCreact = -(1 - dp%C2(ict,0) + dp%C2(ict,0)*dp%KO2(ict,0)**n_O2/(dp%KO2(ict,0)**n_O2 + CO2**n_O2))*KmetC
+			if (trim(dp%name) == 'EDU') then
+				dCreact = dCreact*cp%dVdt/max_growthrate(ict)
+			endif
+			if (trim(dp%name) == 'PI_LIVE') then
+			
+			endif
 			cp%dCdt(ichemo) = dCreact + membrane_flux/vol_cm3 - C*decay_rate
 			cp%dCdt(ichemo+1) = -dCreact
 !			write(*,*) 'kcell: ',kcell

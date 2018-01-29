@@ -248,8 +248,11 @@ void ExecThread::run()
 //            get_oxyprob(&Global::oxy_nv, &Global::oxy_v0, &Global::oxy_dv, Global::oxyProb);
 //            get_distdata(&Global::dist_nv, Global::distParams, Global::distData);
             get_concdata(&Global::conc_nvars, &Global::conc_nc_ex, &Global::conc_dx_ex, Global::concData);
+            get_pi_dist(PI_NBINS, Global::PI_fract, &Global::PI_max_fract, &Global::PI_max_fluor);
 //            get_ic_concdata(&Global::conc_nvars, &Global::conc_nc_ic, &Global::conc_dx_ic, Global::IC_concData);
 
+// The problem is that getFACS takes a long time when the simulation is running and the number of cells is large.
+// Now getFACS and showFACS are executed only when the simulation is paused or stopped, with the refresh button.
 //            if (Global::showingFACS || Global::recordingFACS) {
 //                getFACS();
 //            }
@@ -360,15 +363,23 @@ void ExecThread::getProfiles()
 //-----------------------------------------------------------------------------------------
 void ExecThread::getFACS()
 {
-//    LOG_MSG("get_nfacs");
+    LOG_MSG("get_nfacs");
     get_nfacs(&Global::nFACS_cells);
+    sprintf(msg,"nFACS_cells: %d",Global::nFACS_cells);
+    LOG_MSG(msg);
     if (!Global::FACS_data || Global::nFACS_cells*Global::nvars_used > Global::nFACS_dim) {
-        if (Global::FACS_data) free(Global::FACS_data);
-        Global::nFACS_dim = 3*Global::nFACS_cells*Global::nvars_used;   // 3* to avoid excessive malloc/free
+        if (Global::FACS_data) {
+            LOG_MSG("Free FACS_data");
+            free(Global::FACS_data);
+        }
+        Global::nFACS_dim = Global::nFACS_cells*Global::nvars_used;   // was 3* to avoid excessive malloc/free
         Global::FACS_data = (double *)malloc(Global::nFACS_dim*sizeof(double));
+        sprintf(msg,"Allocated FACS_data: %d",Global::nFACS_dim);
+        LOG_MSG(msg);
     }
-//    LOG_MSG("get_facs");
+    LOG_MSG("get_facs");
     get_facs(Global::FACS_data);
+    LOG_MSG("did get_facs");
 }
 
 //-----------------------------------------------------------------------------------------
@@ -376,17 +387,20 @@ void ExecThread::getFACS()
 //-----------------------------------------------------------------------------------------
 void ExecThread::getHisto()
 {
+    LOG_MSG("getHisto");
     if (!Global::histo_data || Global::nhisto_bins*Global::nvars_used > Global::nhisto_dim) {
         if (Global::histo_data) free(Global::histo_data);
         if (Global::histo_data_log) free(Global::histo_data_log);
         Global::nhisto_dim = 6*Global::nhisto_bins*Global::nvars_used;   // 2*3 to avoid excessive malloc/free (only 3* used)
         Global::histo_data = (double *)malloc(Global::nhisto_dim*sizeof(double));
         Global::histo_data_log = (double *)malloc(Global::nhisto_dim*sizeof(double));
+        sprintf(msg,"Allocated histo_data: %d",Global::nhisto_dim);
+        LOG_MSG(msg);
     }
-//    LOG_MSG("get_histo");
+    LOG_MSG("get_histo");
     get_histo(Global::nhisto_bins, Global::histo_data, Global::histo_vmin, Global::histo_vmax,
               Global::histo_data_log, Global::histo_vmin_log, Global::histo_vmax_log);
-//    LOG_MSG("did get_histo");
+    LOG_MSG("did get_histo");
 }
 
 //-----------------------------------------------------------------------------------------

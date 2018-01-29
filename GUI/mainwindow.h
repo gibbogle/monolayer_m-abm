@@ -196,6 +196,9 @@ public slots:
     void processGroupBoxClick(QString);
 
     void zzzgetFACS();
+    void on_pushButton_update_FACS_Histo_clicked();
+    void on_checkBox_volume_scaling_toggled(bool checked);
+    void on_cbox_SAVE_FACS_DATA_toggled(bool checked);
 
 signals:
     void facs_update();

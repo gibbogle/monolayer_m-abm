@@ -26,6 +26,7 @@ void get_concdata(int *, int *, double *, double *);
 //void get_ic_concdata(int *, int *, double *, double *);
 //void get_volprob(int *, double *, double *, double*);
 //void get_oxyprob(int *, double *, double *, double *);
+void get_pi_dist(int, double *, double *, double *);
 
 void get_string(char **);
 

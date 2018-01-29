@@ -21,6 +21,8 @@
 #define O2_BY_VOL 13
 #define CYCLE_PHASE 14
 
+#define PI_DEAD 15
+
 // The intracellular (IC) dataIndex is the same as extracellular, from the tag determine which
 #define IC_MULTI -1
 #define IC_CFSE 0
@@ -40,6 +42,7 @@
 #define IC_CYCLE_PHASE 14
 
 #define DIST_NV 20
+#define PI_NBINS 100
 
 #define MAX_CELLS 200000
 #define N_CELLINFO 7
@@ -143,6 +146,11 @@ namespace Global
     extern double ddist;
     extern int ndist;
 
+    extern double PI_fract[PI_NBINS];
+    extern double PI_max_fract;
+    extern double PI_max_fluor;
+
+    extern int volume_scaling;
 
 } // namespace Global
 

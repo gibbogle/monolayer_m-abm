@@ -273,6 +273,7 @@ void MainWindow::createFACSPage()
     QHBoxLayout *biglayout = new QHBoxLayout;
     biglayout->addWidget(groupBox_FACS,1);
     biglayout->addWidget(groupBox_Histo,1);
+    biglayout->setMargin(25);
     page_FACS->setLayout(biglayout);
 
     qpFACS->clear();
@@ -637,17 +638,18 @@ void MainWindow:: drawDistPlots()
 void MainWindow::showFACS()
 {
     double xmin, xmax, ymin, ymax, x, y, xscale, yscale;
-    int i, ivar, kvar_x, kvar_y, ichemo;
+    int i, ivar, kvar_x, kvar_y, ichemox, ichemoy;
     bool x_logscale, y_logscale;
     QString xlabel, ylabel;
     QRadioButton *rb;
     QTime t;
 
-    if (!paused) return;
+    if (!paused && !exthread->stopped) return;
+    LOG_MSG("showFACS");
     t.start();
-    zzzgetFACS();
-    LOG_QMSG("getFACS time: " + QString::number(t.elapsed()));
-    LOG_QMSG("showFACS: nvars_used: " + QString::number(Global::nvars_used));
+//    zzzgetFACS();
+//    LOG_QMSG("getFACS time: " + QString::number(t.elapsed()));
+//    LOG_QMSG("showFACS: nvars_used: " + QString::number(Global::nvars_used));
 //    if (Global::showingFACS) LOG_MSG("showingFACS");
 //    if (recordingFACS) LOG_MSG("recordingFACS");
 //    qpFACS = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_FACS");
@@ -661,12 +663,12 @@ void MainWindow::showFACS()
     for (ivar=0; ivar<Global::nvars_used; ivar++) {
         rb = FACS_x_vars_rb_list[ivar];
         if (rb->isChecked()) {
-            ichemo = Global::GUI_to_DLL_index[ivar];
+            ichemox = Global::GUI_to_DLL_index[ivar];
             break;
         }
     }
     kvar_x = ivar;
-    switch(ichemo) {
+    switch(ichemox) {
     case CFSE:
         xscale = 1000;
         xlabel = "CFSE";
@@ -733,12 +735,12 @@ void MainWindow::showFACS()
     for (ivar=0; ivar<Global::nvars_used; ivar++) {
         rb = FACS_y_vars_rb_list[ivar];
         if (rb->isChecked()) {
-            ichemo = Global::GUI_to_DLL_index[ivar];
+            ichemoy = Global::GUI_to_DLL_index[ivar];
             break;
         }
     }
     kvar_y = ivar;
-    switch(ichemo) {
+    switch(ichemoy) {
     case CFSE:
         yscale = 1000;
         ylabel = "CFSE";
@@ -807,10 +809,24 @@ void MainWindow::showFACS()
     t.start();
     x_logscale = checkBox_FACS_log_x->isChecked();
     y_logscale = checkBox_FACS_log_y->isChecked();
-    double cfse_min = 1.0e20;
+
+    double cfse_max = 0;
+    if (ichemox == CFSE || ichemoy == CFSE) {
+        for (i=0; i<Global::nFACS_cells; i++) {
+            if (ichemox == CFSE) {
+                x = Global::FACS_data[Global::nvars_used*i+kvar_x];
+                cfse_max = max(cfse_max,xscale*x);
+            } else {
+                y = Global::FACS_data[Global::nvars_used*i+kvar_y];
+                cfse_max = max(cfse_max,yscale*y);
+            }
+        }
+    }
+    if (ichemox == CFSE) xmax = cfse_max;
+    if (ichemoy == CFSE) ymax = cfse_max;
+
     for (i=0; i<Global::nFACS_cells; i++) {
         x = Global::FACS_data[Global::nvars_used*i+kvar_x];
-        cfse_min = MIN(x,cfse_min);
         y = Global::FACS_data[Global::nvars_used*i+kvar_y];
         x = xscale*x;
         y = yscale*y;
@@ -1770,7 +1786,7 @@ void MainWindow::goToFACS()
     Global::showingFACS = true;
     Global::showingField = false;
     emit histo_update();
-    emit facs_update();
+//    emit facs_update();
 //    showHisto();
 //    if (paused) {
 //        LOG_MSG("gotoFACS: paused is true");
@@ -2318,6 +2334,7 @@ void MainWindow::showSummary(int hr)
 
 //--------------------------------------------------------------------------------------------------------
 // nvars = 1 + Global::MAX_CHEMO + Global::N_EXTRA;
+// Need to special-case the PI distribution plot
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::updateProfilePlots()
 {
@@ -2325,11 +2342,23 @@ void MainWindow::updateProfilePlots()
     int ivar = 0;
     for (int i=0; i<nGraphs; i++) {
         if (!grph->isActive(i)) continue;
-        if (Global::conc_nc_ex > 0 && grph->isProfile(i)) {
+        int k = grph->get_dataIndex(i);
+        QString tag = grph->get_tag(i);
+        if (grph->isProfile(i) && k == PI_DEAD) {
+            double x[PI_NBINS];
+            for (int j=0; j<PI_NBINS; j++) {
+                x[j] = j*Global::PI_max_fluor/PI_NBINS + 0.5;
+            }
+            double yscale = pGraph[i]->calc_yscale(Global::PI_max_fract);
+            pGraph[i]->setAxisScale(QwtPlot::xBottom, 0, Global::PI_max_fluor, 0);
+            pGraph[i]->setAxisScale(QwtPlot::yLeft, 0, yscale, 0);
+            pGraph[i]->setAxisTitle(QwtPlot::xBottom, "Fluorescence");
+            pGraph[i]->setAxisTitle(QwtPlot::yLeft, grph->get_yAxisTitle(i));
+            pGraph[i]->redraw(x,Global::PI_fract, PI_NBINS, Global::casename, tag, yscale, true);
+        } else if (Global::conc_nc_ex > 0 && grph->isProfile(i)) {
             int nc;
             double x[100], y[100], dx;
             double xscale, yscale;
-            QString tag = grph->get_tag(i);
 //            bool IC = tag.contains("IC_");    // Note: error
 //            if (IC) {
 //                nc = Global::conc_nc_ex;
@@ -2341,7 +2370,6 @@ void MainWindow::updateProfilePlots()
             bool IC = false;
             nc = Global::conc_nc_ex;
             dx = Global:: conc_dx_ex;
-            int k = grph->get_dataIndex(i);
             if (k == MULTI) {
                 if (IC) {
                     ivar = field->cell_constituent;

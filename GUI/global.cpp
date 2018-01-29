@@ -84,4 +84,10 @@ namespace Global
     double ddist = 50;
     int ndist = 40;
 
+    double PI_fract[PI_NBINS];
+    double PI_max_fract;
+    double PI_max_fluor;
+
+    int volume_scaling;
+
 } // namespace Global

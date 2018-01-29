@@ -31,7 +31,7 @@ integer, parameter :: DIVIDE_ALWAYS_PUSH  = 1
 integer, parameter :: DIVIDE_USE_CLEAR_SITE  = 2
 integer, parameter :: DIVIDE_USE_CLEAR_SITE_RANDOM  = 3
 
-integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfprofile=17, nfslice=18
+integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfFACS=17
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 
 integer, parameter :: CFSE = 0
@@ -297,7 +297,7 @@ end type
 type savedata_type
     logical :: active
     character*(128) :: filebase
-    real(REAL_KIND) :: dt
+    real(REAL_KIND) :: dt, tstart
     integer :: nt, it
 end type
 
@@ -332,7 +332,7 @@ type(cycle_parameters_type), target :: cc_parameters    ! possibly varies by cel
 logical :: drug_gt_cthreshold(MAX_DRUGTYPES)
 real(REAL_KIND) :: Cthreshold
 
-!type(savedata_type) :: saveprofile, saveslice
+type(savedata_type) :: saveFACS	!, saveprofile, saveslice
 
 integer :: istep, nsteps, it_solve, NT_CONC, NT_GUI_OUT, show_progeny, ichemo_curr, NT_DISPLAY
 integer :: Mnodes, ncpu_input

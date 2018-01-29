@@ -635,7 +635,7 @@ type(cell_type), pointer :: cp
 !real(REAL_KIND) :: vmin_log(100), vmax_log(100)
 !real(REAL_KIND),allocatable :: histo_data_log(:)
 
-!call logger('get_histo')
+call logger('get_histo')
 nvars = 1	! CFSE
 var_index(nvars) = 0
 do ichemo = 1,MAX_CHEMO
@@ -715,7 +715,7 @@ enddo
 
 dv = (valmax - valmin)/nhisto
 !write(nflog,*) 'dv'
-!write(nflog,'(e12.3)') dv
+!write(nflog,'(e12.3)') dv 
 dv_log = (valmax_log - valmin_log)/nhisto
 !write(nflog,*) 'dv_log'
 !write(nflog,'(e12.3)') dv_log
@@ -808,6 +808,7 @@ deallocate(cnt_log)
 deallocate(dv_log)
 deallocate(valmin_log)
 deallocate(valmax_log)
+call logger('did get_histo')
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -911,6 +912,126 @@ do ivar = 1,nvars
 		stop
 	endif
 enddo
+end subroutine
+
+!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+subroutine WriteFACSData
+character*(128) :: filename
+character*(6) :: mintag
+type(cell_type), pointer :: cp
+real(REAL_KIND) :: hour, fluor, facs_data(32)
+integer :: kcell, ivar, nvars, ict
+character*(24) :: var_name(32)
+
+hour = istep*DELTA_T/3600.
+nvars = 1	! CFSE
+var_name(nvars) = 'CFSE'
+nvars = nvars + 1
+var_name(nvars) = 'phase'
+nvars = nvars + 1
+var_name(nvars) = 'GROWTH_RATE'
+nvars = nvars + 1
+var_name(nvars) = 'CELL_VOLUME'
+nvars = nvars + 1
+var_name(nvars) = 'PI_DEAD'
+if (chemo(DRUG_A)%used) then
+	if (trim(drug(DRUG_A)%name) == 'EDU') then
+		nvars = nvars + 1
+		var_name(nvars) = 'EDU'
+	elseif (trim(drug(DRUG_A)%name) == 'PI') then
+		nvars = nvars + 1
+		var_name(nvars) = 'PI_LIVE'
+	endif
+endif
+if (chemo(DRUG_B)%used) then
+	if (trim(drug(DRUG_B)%name) == 'EDU') then
+		nvars = nvars + 1
+		var_name(nvars) = 'EDU'
+	elseif (trim(drug(DRUG_B)%name) == 'PI') then
+		nvars = nvars + 1
+		var_name(nvars) = 'PI_LIVE'
+	endif
+endif
+	
+! Remove time tag from the filename for download from NeSI
+write(mintag,'(i6)') int(istep*DELTA_T/60)
+filename = saveFACS%filebase
+filename = trim(filename)//'_'
+filename = trim(filename)//trim(adjustl(mintag))
+filename = trim(filename)//'min.dat'
+open(nfFACS,file=filename,status='replace')
+write(nfFACS,'(a,a,2a12,a,i8,a,f8.2)') trim(header),' ',gui_run_version, dll_run_version, ' step: ',istep, ' hour: ',hour
+do ivar = 1,nvars
+	write(nfFACS,'(a14,$)') trim(var_name(ivar))
+enddo
+write(nfFACS,*)
+do kcell = 1,nlist
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+	ict = cp%celltype
+	facs_data(1) = cp%CFSE
+	facs_data(2) = cp%phase
+	facs_data(3) = cp%dVdt/max_growthrate(ict)
+	facs_data(4) = cp%V/Vcell_cm3
+	
+	if (cp%phase <= Checkpoint1) then
+		fluor = 1
+	elseif (cp%phase == S_phase) then
+		fluor = 1 + min((tnow - cp%G1S_time)/(cp%S_time - cp%G1S_time), 1.0)
+	else
+		fluor = 2
+	endif
+	fluor = fluor*facs_data(4)
+	facs_data(5) = fluor
+	if (nvars >= 6) then
+		facs_data(6) = facs_data(4)*cp%Cin(DRUG_A)
+	endif
+	if (nvars == 7) then
+		facs_data(7) = facs_data(4)*cp%Cin(DRUG_B)
+	endif
+	write(nfFACS,'(32e14.5)') facs_data(1:nvars)
+enddo
+close(nfFACS)
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+! Computes the fluorescence distribution that would result if cells were killed and stained
+! with propidium iodide (PI).
+! What should be done with cells that are already dead?
+!-----------------------------------------------------------------------------------------
+subroutine get_PI_dist(nbins, fract, max_fract, max_fluor) bind(C)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_pi_dist
+use, intrinsic :: iso_c_binding
+integer(c_int), value :: nbins
+real(c_double) :: fract(*), max_fract, max_fluor
+integer :: kcell, i
+real :: fluor, dfluor, maxf
+type(cell_type), pointer :: cp
+
+maxf = 0
+max_fluor = 4
+dfluor = max_fluor/nbins
+fract(1:nbins) = 0
+do kcell = 1,nlist
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) cycle
+	if (cp%phase <= Checkpoint1) then
+		fluor = 1
+	elseif (cp%phase == S_phase) then
+		fluor = 1 + min((tnow - cp%G1S_time)/(cp%S_time - cp%G1S_time), 1.0)
+	else
+		fluor = 2
+	endif
+	fluor = fluor*cp%V/Vcell_cm3
+	maxf = max(maxf,fluor)
+	i = min(int(fluor/dfluor + 1),nbins)
+	fract(i) = fract(i) + 1
+enddo
+fract(1:nbins) = fract(1:nbins)/sum(fract(1:nbins))
+max_fract = maxval(fract(1:nbins))
+write(nflog,*) 'get_PI_dist: max_fract, maxf: ',max_fract, maxf
+!write(nflog,'(10f7.4)') fract(1:nbins)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
