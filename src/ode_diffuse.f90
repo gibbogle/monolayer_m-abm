@@ -1312,15 +1312,16 @@ end subroutine
 ! exist in free form in the cell, and metabolite "concentration" in actuality
 ! represents metabolite that has been incorporated into DNA.
 ! For now only a single metabolite is simulated.
+! Note: ichemo = iparent = parent drug
 !-----------------------------------------------------------------------------------------
-subroutine DrugPhaseSolver(iparent,tstart,dt,idrug,ok)
-integer :: iparent, idrug
+subroutine DrugPhaseSolver(ichemo,tstart,dt,idrug,ok)
+integer :: ichemo, idrug
 real(REAL_KIND) :: tstart, dt
 logical :: ok
 logical :: tagged, active
 type(cell_type), pointer :: cp
 type(drug_type), pointer :: dp
-integer :: ict, n_O2, ichemo, kcell, it, k, i, n_S_phase, n
+integer :: ict, n_O2, kcell, it, k, i, n_S_phase, n
 real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, Cex, vol_cm3, area_factor
 real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd
 real(REAL_KIND) :: average_volume = 1.2
@@ -1333,7 +1334,6 @@ integer :: ndt = 20
 dtt = dt/nt
 dp => drug(idrug)
 n_O2 = dp%n_O2(ict,0)
-ichemo = iparent
 decay_rate = chemo(ichemo)%decay_rate
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out

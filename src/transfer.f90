@@ -916,7 +916,7 @@ end subroutine
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
-subroutine WriteFACSData
+subroutine WriteFACSData 
 character*(128) :: filename
 character*(6) :: mintag
 type(cell_type), pointer :: cp
@@ -925,10 +925,10 @@ integer :: kcell, ivar, nvars, ict
 character*(24) :: var_name(32)
 
 hour = istep*DELTA_T/3600.
-nvars = 1	! CFSE
-var_name(nvars) = 'CFSE'
-nvars = nvars + 1
+nvars = 1
 var_name(nvars) = 'phase'
+nvars = nvars + 1
+var_name(nvars) = 'CFSE'
 nvars = nvars + 1
 var_name(nvars) = 'GROWTH_RATE'
 nvars = nvars + 1
@@ -936,10 +936,10 @@ var_name(nvars) = 'CELL_VOLUME'
 nvars = nvars + 1
 var_name(nvars) = 'PI_DEAD'
 if (chemo(DRUG_A)%used) then
-	if (trim(drug(DRUG_A)%name) == 'EDU') then
+	if (trim(chemo(DRUG_A)%name) == 'EDU') then
 		nvars = nvars + 1
 		var_name(nvars) = 'EDU'
-	elseif (trim(drug(DRUG_A)%name) == 'PI') then
+	elseif (trim(chemo(DRUG_A)%name) == 'PI') then
 		nvars = nvars + 1
 		var_name(nvars) = 'PI_LIVE'
 	endif
@@ -970,8 +970,8 @@ do kcell = 1,nlist
 	cp => cell_list(kcell)
 	if (cp%state == DEAD) cycle
 	ict = cp%celltype
-	facs_data(1) = cp%CFSE
-	facs_data(2) = cp%phase
+	facs_data(1) = cp%phase
+	facs_data(2) = cp%CFSE
 	facs_data(3) = cp%dVdt/max_growthrate(ict)
 	facs_data(4) = cp%V/Vcell_cm3
 	
@@ -985,12 +985,12 @@ do kcell = 1,nlist
 	fluor = fluor*facs_data(4)
 	facs_data(5) = fluor
 	if (nvars >= 6) then
-		facs_data(6) = facs_data(4)*cp%Cin(DRUG_A)
+		facs_data(6) = facs_data(4)*cp%Cin(DRUG_A+1)
 	endif
 	if (nvars == 7) then
-		facs_data(7) = facs_data(4)*cp%Cin(DRUG_B)
+		facs_data(7) = max(0.0,facs_data(4)*cp%Cin(DRUG_B+1))
 	endif
-	write(nfFACS,'(32e14.5)') facs_data(1:nvars)
+	write(nfFACS,'(i14,32e14.5)') int(facs_data(1)),facs_data(2:nvars)
 enddo
 close(nfFACS)
 end subroutine
