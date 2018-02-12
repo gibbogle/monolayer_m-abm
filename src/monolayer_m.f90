@@ -589,11 +589,11 @@ if (chemo(OXYGEN)%Hill_N /= 1 .and. chemo(OXYGEN)%Hill_N /= 2) then
 	ok = .false.
 	return
 endif
-if (chemo(GLUCOSE)%Hill_N /= 1 .and. chemo(GLUCOSE)%Hill_N /= 2) then
-	call logger('Error: GLUCOSE_HILL_N must be 1 or 2')
-	ok = .false.
-	return
-endif
+!if (chemo(GLUCOSE)%Hill_N /= 1 .and. chemo(GLUCOSE)%Hill_N /= 2) then
+!	call logger('Error: GLUCOSE_HILL_N must be 1 or 2')
+!	ok = .false.
+!	return
+!endif
 if (chemo(LACTATE)%Hill_N /= 1 .and. chemo(LACTATE)%Hill_N /= 2) then
 	call logger('Error: LACTATE_HILL_N must be 1 or 2')
 	ok = .false.
@@ -1670,7 +1670,9 @@ type(metabolism_type), pointer :: mp
 logical :: ok = .true.
 logical :: dbug
 
-!write(*,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
+!call testmetab2	! oxygen dependence
+!call testmetab3		! glucose dependence
+!!write(*,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
 !write(nflog,'(a,f8.3)') 'simulate_step: time: ',wtime()-start_wtime
 dbug = .false.
 Nlivecells = Ncells - (Ncells_dying(1) + Ncells_dying(2))

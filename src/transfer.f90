@@ -843,7 +843,7 @@ end subroutine
 ! DRUG_B = DNB_DRUG e.g. PR104A 
 !
 ! IC = average intracellular concentration
-! EC = average medium concentration
+! EC = average medium concentration <<<<< NOTE
 !-----------------------------------------------------------------------------------------
 subroutine get_values(nvars,varID,ysim)
 !DEC$ ATTRIBUTES DLLEXPORT :: get_values
@@ -860,6 +860,7 @@ do ivar = 1,nvars
 		ysim(ivar) = Cmediumave(OXYGEN)
 	elseif (varID(ivar) == 'GLUCOSE_EC') then
 		ysim(ivar) = Cmediumave(GLUCOSE)
+		write(*,*) 'get_values: GLUCOSE_EC: ',ivar,ysim(ivar)
 	elseif (varID(ivar) == 'LACTATE_EC') then
 		ysim(ivar) = Cmediumave(LACTATE)
 	elseif (varID(ivar) == 'DRUG_A_EC') then

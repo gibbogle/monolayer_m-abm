@@ -40,7 +40,7 @@ type(experiment_type), allocatable, target :: experiment(:)
 type(parameter_type), target :: param(0:max_params)
 real(REAL_KIND) :: weight(10)	! we assume nvars <= 10
 logical :: input_varID(10)
-logical :: use_log
+logical :: use_log, use_abs
 
 contains
 
@@ -300,7 +300,7 @@ do
 		! Need to check if a varID is also an input, if so need to set the input value to the first time value y(1,k)
 		call checkvarID(p, paramstr, ivar)
 		if (ivar > 0) then	! parameter is a varID
-			write(*,*) 'input_varID true: ',ivar
+			write(*,*) 'input_varID true: ',paramstr,ivar
 			input_varID(ivar) = .true.
 			pval = p%y(1,ivar)
 			write(str12,'(e12.3)') pval
@@ -354,9 +354,12 @@ write(*,*) 'line: ',line
 call parse(line,', ',arg,nargs)
 !read(arg(1),'(i)') Nexpts
 use_log = (arg(1) == 'Y' .or. arg(1) == 'y')
-nvars = nargs - 3
+use_abs = (arg(2) == 'Y' .or. arg(2) == 'y')
+write(nfitlog,*) 'use_log, use_abs: ',use_log, '  ',use_abs
+nvars = nargs - 4
+write(*,*) 'nargs, nvars: ',nargs,nvars
 do i = 1, nvars
-	varID(i) = arg(i+3)
+	varID(i) = arg(i+4)
 enddo
 read(nf,*)
 ! Now determine Nexpts
@@ -562,7 +565,7 @@ real(REAL_KIND) :: dfobj
 real(REAL_KIND) :: fscale, dv, dv2, y, ysim
 integer :: it, ivar
 type(experiment_type), pointer :: pexp
-logical :: use_abs = .true.
+!logical :: use_abs = .true.
 logical :: use_ysim = .true.
 
 pexp => experiment(iexp)
@@ -834,6 +837,8 @@ do iter = 1,Niters
 	do k = 0,Nparams-1
 		write(nfitlog,'(a48,e12.3)') param(k)%ID,param(k)%val(ivalmin(k))
 	enddo
+	write(nfitlog,*)
+	write(nfitlog,'(a,e12.3)') 'Objective_function ',fmin
 	
 	pexp => experiment(1)
 	allocate(head(2*pexp%nvars + 3))
