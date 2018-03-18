@@ -137,7 +137,6 @@ chemo(TRACER)%decay_rate = 0
 do ichemo = 1,MAX_CHEMO
 	chemo(ichemo)%present = .false.
 	if (chemo(ichemo)%used) then
-!		chemo(ichemo)%medium_dlayer = d_layer	! for now, using the same unstirred layer thickness for all constituents
 		if (ichemo == OXYGEN .or. ichemo == GLUCOSE .or. ichemo == LACTATE .or. ichemo == TRACER) then
 			chemo(ichemo)%present = .true.
 		endif

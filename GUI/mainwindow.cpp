@@ -2088,7 +2088,7 @@ void MainWindow::runServer()
 	started = true;
 	exthread = new ExecThread(inputFile);
 //	connect(exthread, SIGNAL(display()), this, SLOT(displayScene()));
-    connect(exthread, SIGNAL(summary(int)), this, SLOT(showSummary(int)));
+    connect(exthread, SIGNAL(summary(double)), this, SLOT(showSummary(double)));
     connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()));
     connect(this, SIGNAL(facs_update()), this, SLOT(showFACS()));
     connect(exthread, SIGNAL(histo_update()), this, SLOT(showHisto()));
@@ -2287,14 +2287,12 @@ void MainWindow::displayScene()
 //--------------------------------------------------------------------------------------------------------
 // Currently summaryData[] holds istep,ntot,nborn.  Hourly intervals, i.e. every 240 timesteps
 //--------------------------------------------------------------------------------------------------------
-void MainWindow::showSummary(int hr)
+void MainWindow::showSummary(double hr)
 {
     double val;
     int n, res;
     QString tag;
 
-//    sprintf(msg,"showSummary: step: %d",step);
-//    LOG_MSG(msg);
     step++;
     if (step > newR->nsteps) {
         LOG_MSG("ERROR: step > nsteps");
@@ -2302,15 +2300,18 @@ void MainWindow::showSummary(int hr)
 		return;
 	}
     hour = hr;
+    sprintf(msg,"showSummary: step: %d hour: %f",step,hour);
+    LOG_MSG(msg);
 
     progress = int(100.*hour/hours);
 	progressBar->setValue(progress);
-	QString hourstr = QString::number(int(hour));
-	hour_display->setText(hourstr);
+    QString hourstr = QString::number(hour);
+//    QString hourstr = QString::number(int(hour));
+    hour_display->setText(hourstr);
 
     Global::casename = newR->casename;
     double dtstep = Global::NT_DISPLAY*Global::DELTA_T;
-    newR->tnow[step] = step*dtstep/3600;    // tnow in hours
+    newR->tnow[step] = hour;    //step*dtstep/3600;    // tnow in hours
 
     // TS plots
 	for (int i=0; i<nGraphs; i++) {
@@ -2318,11 +2319,15 @@ void MainWindow::showSummary(int hr)
         if (!grph->isActive(i)) continue;
 		int k = grph->get_dataIndex(i);
         val = Global::summaryData[k];
-//        newR->pData[i][step] = val*grph->get_scaling(i);
         newR->pData[i][step] = val;
         tag = grph->get_tag(i);
         double yscale = grph->get_yscale(i);
         pGraph[i]->redraw(newR->tnow, newR->pData[i], step+1, Global::casename, tag, yscale, false);
+        if (k == 27) {
+            LOG_QMSG(tag);
+            sprintf(msg,"Glucose: i: %d step: %d tnow: %f pData[i]: %f val: %f",i,step,newR->tnow[step],newR->pData[i][step],val);
+            LOG_MSG(msg);
+        }
     }
 
     // Profile plots
@@ -2833,8 +2838,8 @@ void MainWindow::changeParam()
 //                groupBox_radiation_LQ->setEnabled(!ch);
                 qwtPlot_DIVIDE_TIME_1->setEnabled(!ch);
                 qwtPlot_DIVIDE_TIME_2->setEnabled(!ch);
-                groupBox_volumemethod->setEnabled(!ch);
-                groupBox_divisiondistributions->setEnabled(!ch);
+//                groupBox_volumemethod->setEnabled(!ch);
+//                groupBox_divisiondistributions->setEnabled(!ch);
             }
 
             if (checkBox->isChecked()) {

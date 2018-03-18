@@ -45,6 +45,7 @@ if (cnt < 3) then
     stop
 endif
 
+PEST_parfile = ''
 do i = 1, cnt
     call get_command_argument (i, c, nlen, status)
     if (status .ne. 0) then
@@ -65,6 +66,15 @@ do i = 1, cnt
         simulate_colony = (colony_days > 0)
     endif
 end do
+if (cnt == 5) then
+    call get_command_argument (4, c, nlen, status)
+    PEST_parfile = c(1:nlen)																! --> PEST_parfile
+    call get_command_argument (5, c, nlen, status)
+    PEST_outputfile = c(1:nlen)	
+elseif (cnt /= 3) then
+	write(*,*) 'Error: wrong number of arguments'
+	stop															! --> PEST_outputfile
+endif
 
 !call get_dimensions(NX,NY,NZ,nsteps,DELTA_T, MAX_CHEMO, cused);
 i_hypoxia_cutoff = 3

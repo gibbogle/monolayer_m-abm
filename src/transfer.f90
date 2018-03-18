@@ -246,7 +246,7 @@ mp => metabolic(1)
 r_G = mp%G_rate/r_G_norm
 r_P = mp%P_rate/r_P_norm
 r_A = mp%A_rate/r_A_norm
-write(nflog,'(a,3e12.3)') 'r_A, mp%A_rate, r_A_norm: ',r_A,mp%A_rate,r_A_norm
+!write(nflog,'(a,4e12.3)') 'r_G, r_A, mp%A_rate, r_A_norm: ',r_G,r_A,mp%A_rate,r_A_norm
 r_I = mp%I_rate/r_I_norm
 if (mp%G_rate > 0 .and. mp%L_rate > 0) then
 	P_utilisation = mp%P_rate/(2*(1-mp%f_G)*mp%G_rate)	!!!???
@@ -255,26 +255,26 @@ else
 endif
 
 call getMediumConc(EC,cmedium)
-medium_oxygen = cmedium(OXYGEN)
-medium_glucose = cmedium(GLUCOSE)
-medium_lactate = cmedium(LACTATE)
-do i = 1,2
-	do im = 0,2
-		idrug = DRUG_A + 3*(i-1)
-		medium_drug(i,im) = cmedium(idrug+im)
-	enddo
-enddo
-IC_oxygen = caverage(OXYGEN)
-IC_glucose = caverage(GLUCOSE)
-IC_lactate = caverage(LACTATE)
-IC_pyruvate = mp%C_P
-do i = 1,2
-	do im = 0,2
-		idrug = DRUG_A + 3*(i-1)
-		IC_drug(i,im) = caverage(idrug+im)
-	enddo
-enddo
-
+!medium_oxygen = cmedium(OXYGEN)
+!medium_glucose = cmedium(GLUCOSE)
+!medium_lactate = cmedium(LACTATE)
+!do i = 1,2
+!	do im = 0,2
+!		idrug = DRUG_A + 3*(i-1)
+!		medium_drug(i,im) = cmedium(idrug+im)
+!	enddo
+!enddo
+!IC_oxygen = caverage(OXYGEN)
+!IC_glucose = caverage(GLUCOSE)
+!IC_lactate = caverage(LACTATE)
+!IC_pyruvate = mp%C_P
+!do i = 1,2
+!	do im = 0,2
+!		idrug = DRUG_A + 3*(i-1)
+!		IC_drug(i,im) = caverage(idrug+im)
+!	enddo
+!enddo
+write(nflog,'(a,2f8.2)') 'IC glucose, lactate: ',caverage(GLUCOSE),caverage(LACTATE)
 if (ndivided /= ndoublings) then
 	write(*,*) 'ndivided /= ndoublings: ',ndivided,ndoublings
 	stop
@@ -315,9 +315,32 @@ ndoublings = 0
 doubling_time_sum = 0
 ndivided = 0
 
+if (use_PEST) then
+	call PEST_output(hour, EC)
+endif
+
 end subroutine
 
+!--------------------------------------------------------------------------------
+! This must be customised for the particular PEST application.
+! For calibration using XM-SG-027 we write GLUCOSE_EC and LACTATE_EC at hours 1,2,3
+! and LACTATE_EC at hour 4.
+! The format is important becaise PEST expects to find values at specified places.
+!--------------------------------------------------------------------------------
+subroutine PEST_output(hour, EC)
+real(REAL_KIND) :: hour, EC(:)
+integer :: ihour
 
+ihour = hour
+if (real(ihour) /= hour) return
+if (ihour == 0) return
+if (ihour <= 3) then
+	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'GLUCOSE_EC',EC(GLUCOSE)
+	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
+elseif (ihour == 4) then
+	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
+endif
+end subroutine
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------

@@ -408,3 +408,11 @@ void MainWindow:: on_cbox_SAVE_FACS_DATA_toggled(bool checked)
     line_SAVE_FACS_DATA_INTERVAL->setEnabled(checked);
     line_SAVE_FACS_DATA_NUMBER->setEnabled(checked);
 }
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::on_cbox_USE_DIVIDE_TIME_DIST_toggled(bool checked)
+{
+    groupBox_divisiondistributions->setEnabled(checked);
+    line_DVDIVIDE->setEnabled(!checked);
+}

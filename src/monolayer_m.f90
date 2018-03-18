@@ -198,8 +198,10 @@ integer :: ichemo, im
 
 if (chemo(ichemo)%present) then
     Caverage(MAX_CHEMO+ichemo) = chemo(ichemo)%bdry_conc
+    Cmediumave(ichemo) = chemo(ichemo)%bdry_conc
 else
     Caverage(MAX_CHEMO+ichemo) = 0
+    Cmediumave(ichemo) = 0
 endif
 if (ichemo <= 3) then
     C_OGL(ichemo,:) = chemo(ichemo)%bdry_conc
@@ -337,7 +339,7 @@ end subroutine
 subroutine ReadCellParams(ok)
 logical :: ok
 integer :: i, idrug, imetab, nmetab, im, itestcase, Nmm3, ichemo, itreatment, iuse_extra, iuse_relax, iuse_par_relax, iuse_FD
-integer :: iuse_oxygen, iuse_glucose, iuse_lactate, iuse_tracer, iuse_drug, iuse_metab, iV_depend, iV_random, iuse_gd_all
+integer :: iuse_oxygen, iuse_glucose, iuse_lactate, iuse_tracer, iuse_drug, iuse_metab, iV_depend, iV_random, iuse_gd_all, iuse_divide_dist
 !integer ::  idrug_decay, imetab_decay
 integer :: ictype, idisplay, isconstant, ioxygengrowth, iglucosegrowth, ilactategrowth, ioxygendeath, iglucosedeath
 integer :: iuse_drop, iconstant, isaveprofiledata, isaveslicedata, iusecellcycle, iusemetabolism, ityp, ifullymixed
@@ -364,6 +366,8 @@ endif
 read(nfcell,*) dll_run_version				! DLL run version number 
 !read(nfcell,*) NX							! size of grid
 read(nfcell,*) initial_count				! initial number of tumour cells
+write(*,*) 'initial_count: ',initial_count
+read(nfcell,*) iuse_divide_dist
 read(nfcell,*) divide_time_median(1)
 read(nfcell,*) divide_time_shape(1)
 read(nfcell,*) divide_time_median(2)
@@ -391,6 +395,7 @@ read(nfcell,*) NT_CONC						! number of subdivisions of DELTA_T for diffusion co
 !Vsite_cm3 = DELTA_X*DELTA_X*DELTA_X			! total site volume (cm^3)
 !read(nfcell,*) fluid_fraction				! fraction of the (non-necrotic) tumour that is fluid
 read(nfcell,*) Vcell_pL                     ! nominal cell volume in pL
+write(*,*) 'Vcell_pL: ',Vcell_pL
 read(nfcell,*) well_area                    ! well bottom area (cm^2)
 read(nfcell,*) medium_volume0				! initial total volume (cm^3)
 read(nfcell,*) ifullymixed					! medium is fully mixed
@@ -407,6 +412,7 @@ read(nfcell,*) aglucosia_death_hours		! time after tagging to death by aglucosia
 read(nfcell,*) itestcase                    ! test case to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs
 read(nfcell,*) seed(2)						! seed vector(2) for the RNGs
+write(*,*) 'seed(2): ',seed(2)
 read(nfcell,*) ncpu_input					! for GUI just a placeholder for ncpu, used only when execute parameter ncpu = 0
 read(nfcell,*) Ncelltypes					! maximum number of cell types in the spheroid
 do ictype = 1,Ncelltypes
@@ -423,17 +429,15 @@ chemo(OXYGEN)%controls_growth = (ioxygengrowth == 1)
 read(nfcell,*) ioxygendeath
 chemo(OXYGEN)%controls_death = (ioxygendeath == 1)
 read(nfcell,*) chemo(OXYGEN)%diff_coef
+write(*,*) 'chemo(OXYGEN)%diff_coef: ',chemo(OXYGEN)%diff_coef
 read(nfcell,*) chemo(OXYGEN)%medium_diff_coef
 read(nfcell,*) chemo(OXYGEN)%membrane_diff_in
-chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
 !chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_in
 read(nfcell,*) chemo(OXYGEN)%membrane_diff_out
-chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
 read(nfcell,*) chemo(OXYGEN)%bdry_conc
 read(nfcell,*) iconstant
 chemo(OXYGEN)%constant = (iconstant == 1)
 read(nfcell,*) chemo(OXYGEN)%max_cell_rate
-chemo(OXYGEN)%max_cell_rate = chemo(OXYGEN)%max_cell_rate*1.0e6					! mol/cell/s -> mumol/cell/s
 read(nfcell,*) chemo(OXYGEN)%MM_C0
 read(nfcell,*) chemo(OXYGEN)%Hill_N
 read(nfcell,*) iuse_glucose		!chemo(GLUCOSE)%used
@@ -444,17 +448,14 @@ chemo(GLUCOSE)%controls_death = (iglucosedeath == 1)
 read(nfcell,*) chemo(GLUCOSE)%diff_coef
 read(nfcell,*) chemo(GLUCOSE)%medium_diff_coef
 read(nfcell,*) chemo(GLUCOSE)%membrane_diff_in
-chemo(GLUCOSE)%membrane_diff_in = chemo(GLUCOSE)%membrane_diff_in*Vsite_cm3/60	! /min -> /sec
-!chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_in
 read(nfcell,*) chemo(GLUCOSE)%membrane_diff_out
-chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
 read(nfcell,*) chemo(GLUCOSE)%bdry_conc
 read(nfcell,*) iconstant
 chemo(GLUCOSE)%constant = (iconstant == 1)
 read(nfcell,*) chemo(GLUCOSE)%max_cell_rate
-chemo(GLUCOSE)%max_cell_rate = chemo(GLUCOSE)%max_cell_rate*1.0e6					! mol/cell/s -> mumol/cell/s
 read(nfcell,*) chemo(GLUCOSE)%MM_C0
 read(nfcell,*) chemo(GLUCOSE)%Hill_N
+write(*,*) 'chemo(GLUCOSE)%Hill_N: ',chemo(GLUCOSE)%Hill_N
 
 read(nfcell,*) iuse_lactate		
 !read(nfcell,*) ilactategrowth
@@ -462,14 +463,10 @@ read(nfcell,*) iuse_lactate
 read(nfcell,*) chemo(LACTATE)%diff_coef
 read(nfcell,*) chemo(LACTATE)%medium_diff_coef
 read(nfcell,*) chemo(LACTATE)%membrane_diff_in
-chemo(LACTATE)%membrane_diff_in = chemo(LACTATE)%membrane_diff_in*Vsite_cm3/60	! /min -> /sec
-!chemo(LACTATE)%membrane_diff_out = chemo(LACTATE)%membrane_diff_in
 read(nfcell,*) chemo(LACTATE)%membrane_diff_out
-chemo(LACTATE)%membrane_diff_out = chemo(LACTATE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
 read(nfcell,*) chemo(LACTATE)%bdry_conc
 chemo(LACTATE)%bdry_conc = max(0.001,chemo(LACTATE)%bdry_conc)
 read(nfcell,*) chemo(LACTATE)%max_cell_rate
-chemo(LACTATE)%max_cell_rate = chemo(LACTATE)%max_cell_rate*1.0e6					! mol/cell/s -> mumol/cell/s
 read(nfcell,*) chemo(LACTATE)%MM_C0
 read(nfcell,*) chemo(LACTATE)%Hill_N
 
@@ -477,10 +474,7 @@ read(nfcell,*) iuse_tracer		!chemo(TRACER)%used
 read(nfcell,*) chemo(TRACER)%diff_coef
 read(nfcell,*) chemo(TRACER)%medium_diff_coef
 read(nfcell,*) chemo(TRACER)%membrane_diff_in
-chemo(TRACER)%membrane_diff_in = chemo(TRACER)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
-!chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_in
 read(nfcell,*) chemo(TRACER)%membrane_diff_out
-chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
 read(nfcell,*) chemo(TRACER)%bdry_conc
 read(nfcell,*) iconstant
 chemo(TRACER)%constant = (iconstant == 1)
@@ -509,9 +503,11 @@ read(nfcell,*) LQ(2)%growth_delay_N
 read(nfcell,*) iuse_gd_all
 use_radiation_growth_delay_all = (iuse_gd_all == 1)
 read(nfcell,*) iusecellcycle
+write(*,*) 'iusecellcycle: ',iusecellcycle
 use_cell_cycle = (iusecellcycle == 1)
 call ReadCellCycleParameters(nfcell)
 read(nfcell,*) iusemetabolism
+write(*,*) 'iusemetabolism: ',iusemetabolism
 !use_metabolism = (iusemetabolism == 1)
 use_metabolism = .true.
 call ReadMetabolismParameters(nfcell)
@@ -570,6 +566,24 @@ if (is_radiation) then
 endif
 
 close(nfcell)
+
+if (use_PEST) then
+	call ReadPESTParameters
+endif
+
+! Rescale
+chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
+chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
+chemo(OXYGEN)%max_cell_rate = chemo(OXYGEN)%max_cell_rate*1.0e6						! mol/cell/s -> mumol/cell/s
+chemo(GLUCOSE)%membrane_diff_in = chemo(GLUCOSE)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
+chemo(GLUCOSE)%membrane_diff_out = chemo(GLUCOSE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
+chemo(GLUCOSE)%max_cell_rate = chemo(GLUCOSE)%max_cell_rate*1.0e6					! mol/cell/s -> mumol/cell/s
+chemo(LACTATE)%membrane_diff_in = chemo(LACTATE)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
+chemo(LACTATE)%membrane_diff_out = chemo(LACTATE)%membrane_diff_out*Vsite_cm3/60	! /min -> /sec
+chemo(LACTATE)%max_cell_rate = chemo(LACTATE)%max_cell_rate*1.0e6					! mol/cell/s -> mumol/cell/s
+chemo(TRACER)%membrane_diff_in = chemo(TRACER)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
+chemo(TRACER)%membrane_diff_out = chemo(TRACER)%membrane_diff_out*Vsite_cm3/60		! /min -> /sec
+
 
 if (celltype_fraction(1) == 1.0) then
 	write(nflog,*) 'Type 1 cells'
@@ -639,8 +653,10 @@ call logger(logmsg)
 write(logmsg,'(a,4e12.4)') 'Median, mean divide time: ',divide_time_median(1:2)/3600,divide_time_mean(1:2)/3600
 call logger(logmsg)
 
+use_divide_time_distribution = (iuse_divide_dist == 1)
 use_V_dependence = (iV_depend == 1)
 randomise_initial_volume = (iV_random == 1)
+use_constant_divide_volume = (dVdivide == 0)
 !use_extracellular_O2 = (iuse_extra == 1)
 t_anoxia_limit = 60*60*anoxia_tag_hours				! hours -> seconds
 anoxia_death_delay = 60*60*anoxia_death_hours		! hours -> seconds
@@ -708,6 +724,12 @@ doubling_time glycolysis_rate pyruvate_oxidation_rate ATP_rate intermediates_rat
 write(logmsg,*) 'Opened nfout: ',trim(outputfile)
 call logger(logmsg)
 
+if (use_PEST) then
+	open(nfPESTout,file=PEST_outputfile,status='replace')
+	write(logmsg,*) 'Opened PEST outputfile: ',trim(PEST_outputfile)
+	call logger(logmsg)
+endif
+
 Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
 NT_DISPLAY = 2
 DT_DISPLAY = NT_DISPLAY*DELTA_T
@@ -732,10 +754,12 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine ReadCellCycleParameters(nf)
 integer :: nf
+real(REAL_KIND) :: total
 type(cycle_parameters_type),pointer :: ccp
 
 ccp => cc_parameters
 read(nf,*) ccp%T_G1(1)
+write(*,*) 'ccp%T_G1(1): ',ccp%T_G1(1)
 read(nf,*) ccp%T_G1(2)
 read(nf,*) ccp%T_S(1)
 read(nf,*) ccp%T_S(2)
@@ -759,7 +783,12 @@ read(nf,*) ccp%Kmisrepair(1)
 read(nf,*) ccp%Kmisrepair(2)
 !read(nf,*) ccp%Kmisrepair(3)
 read(nf,*) ccp%Kcp
+write(*,*) 'ccp%Kcp: ',ccp%Kcp
 
+total = ccp%T_G1(1) + ccp%T_S(1) + ccp%T_G2(1) + ccp%T_M(1) + ccp%G1_mean_delay(1) + ccp%G2_mean_delay(1)
+write(nflog,'(a,7f8.2)') 'T_G1,T_S,T_G2,T_M,G1_delay,G2_delay, total: ',ccp%T_G1(1),ccp%T_S(1),ccp%T_G2(1),ccp%T_M(1), &
+						ccp%G1_mean_delay(1),ccp%G2_mean_delay(1),total
+						
 ccp%T_G1 = 3600*ccp%T_G1                    ! hours -> seconds
 ccp%T_S = 3600*ccp%T_S
 ccp%T_G2 = 3600*ccp%T_G2
@@ -1124,6 +1153,28 @@ enddo
 end subroutine
 
 !-----------------------------------------------------------------------------------------
+! Here the parameters that PEST is varying and estimating are overwritten.
+! Need to know the mapping between the PEST parameter values to model variables
+!-----------------------------------------------------------------------------------------
+subroutine ReadPESTParameters
+
+write(*,*) 'ReadPESTParameters'
+write(*,*) 'chemo(GLUCOSE)%max_cell_rate: ',chemo(GLUCOSE)%max_cell_rate
+write(*,*) 'chemo(GLUCOSE)%MM_C0: ',chemo(GLUCOSE)%MM_C0
+open(nfpar,file=PEST_parfile,status='old')
+! Fitting: 
+! glucose consumption rate	max_cell_rate
+! glucose MM_KM				MM_CO
+read(nfpar,*) chemo(GLUCOSE)%max_cell_rate
+!chemo(GLUCOSE)%max_cell_rate = chemo(GLUCOSE)%max_cell_rate*1.0e6		! mol/cell/s -> mumol/cell/s
+read(nfpar,*) chemo(GLUCOSE)%MM_C0
+!chemo(GLUCOSE)%MM_C0 = chemo(GLUCOSE)%MM_C0/1000						! uM -> mM
+close(nfpar)
+write(*,*) 'chemo(GLUCOSE)%max_cell_rate: ',chemo(GLUCOSE)%max_cell_rate
+write(*,*) 'chemo(GLUCOSE)%MM_C0: ',chemo(GLUCOSE)%MM_C0
+end subroutine
+
+!-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
 subroutine PlaceCells(ok)
 logical :: ok
@@ -1152,6 +1203,7 @@ enddo
 nlist = kcell-1
 Ncells = nlist
 Ncells0 = Ncells
+Nviable = Ncells_type
 !Nreuse = 0	
 ok = .true.
 !write(logmsg,*) 'idbug: ',idbug
@@ -1164,7 +1216,7 @@ subroutine AddCell(kcell, rsite)
 integer :: kcell
 real(REAL_KIND) :: rsite(3)
 integer :: ityp, k, kpar = 0
-real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R
+real(REAL_KIND) :: v(3), c(3), R1, R2, V0, Tdiv, Vdiv, p(3), R, gfactor
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 	
@@ -1180,8 +1232,9 @@ cp%Iphase = .true.
 !cp%nspheres = 1
 
 V0 = Vdivide0/2
-cp%divide_volume = get_divide_volume(ityp, V0, Tdiv)
+cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
 cp%divide_time = Tdiv
+cp%gfactor = 1
 cp%dVdt = max_growthrate(ityp)
 cp%metab%I_rate = metabolic(ityp)%I_rate_max	! this is just to ensure that initial growth rate is not 0
 if (use_volume_method) then
@@ -1197,7 +1250,7 @@ if (use_volume_method) then
         endif
     endif
     cp%t_divide_last = 0    ! not correct
-else
+else	! use cell cycle
     cp%NL1 = 0
     cp%NL2 = 0
     ! Need to assign phase, volume to complete phase, current volume
@@ -1212,30 +1265,30 @@ else
         cp%phase = G1_phase
         cp%G1_flag = .false.
         R = par_uni(kpar)
-        cp%G1_time = R*ccp%T_G1(ityp)
+        cp%G1_time = (1-R)*ccp%T_G1(ityp)
         cp%V = V0 + max_growthrate(ityp)*R*ccp%T_G1(ityp)
         cp%G1_V = V0 + max_growthrate(ityp)*ccp%T_G1(ityp)
         cp%t_divide_last = cp%G1_time - ccp%T_G1(ityp)
     elseif (k == 2) then
         cp%phase = S_phase
         R = par_uni(kpar)
-        cp%S_time = R*ccp%T_S    (ityp)
-        cp%V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + R*ccp%T_S(ityp))
-        cp%S_V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp))
+        cp%S_time = (1-R)*ccp%T_S(ityp)
+        cp%V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + R*ccp%T_S(ityp))		! + ccp%G1_mean_delay(ityp)
+        cp%S_V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp))		! + ccp%G1_mean_delay(ityp) 
         cp%t_divide_last = cp%S_time - ccp%T_S(ityp) - ccp%T_G1(ityp) - ccp%G1_mean_delay(ityp)
     elseif (k == 3) then
         cp%phase = G2_phase
         R = par_uni(kpar)
-        cp%G2_time = R*ccp%T_G2(ityp)
-        cp%V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp) + R*ccp%T_G2(ityp))
-        cp%S_V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp))
+        cp%G2_time = (1-R)*ccp%T_G2(ityp)
+        cp%V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) +  ccp%T_S(ityp) + R*ccp%T_G2(ityp))		! + ccp%G1_mean_delay(ityp)
+        cp%S_V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp))		! + ccp%G1_mean_delay(ityp) 
         cp%t_divide_last = cp%G2_time - ccp%T_G2(ityp) - ccp%T_S(ityp) - ccp%T_G1(ityp) - ccp%G1_mean_delay(ityp)
     endif
     cp%starved = .false.
 endif
 if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
-	cp%metab%I2Divide = get_I2Divide(cp)
-	cp%metab%Itotal = cp%metab%I2Divide*(cp%V - V0)/(cp%divide_volume - V0)
+!	cp%metab%I2Divide = get_I2Divide(cp)
+!	cp%metab%Itotal = cp%metab%I2Divide*(cp%V - V0)/(cp%divide_volume - V0)
 	cp%dVdt = max_growthrate(ityp)
 endif
 !cp%radius(1) = (3*cp%V/(4*PI))**(1./3.)
@@ -1281,7 +1334,7 @@ end subroutine
 subroutine oldAddCell(k,site)
 integer :: k, site(3)
 integer :: ityp, kpar = 0
-real(REAL_KIND) :: V0, Tdiv, R
+real(REAL_KIND) :: V0, Tdiv, R, gfactor
 
 lastID = lastID + 1
 cell_list(k)%ID = lastID
@@ -1305,7 +1358,7 @@ cell_list(k)%p_rad_death = 0
 !R = par_uni(kpar)
 !cell_list(k)%divide_volume = Vdivide0 + dVdivide*(2*R-1)
 V0 = Vdivide0/2
-cell_list(k)%divide_volume = get_divide_volume(ityp,V0, Tdiv)
+cell_list(k)%divide_volume = get_divide_volume(ityp,V0, Tdiv, gfactor)
 cell_list(k)%divide_time = Tdiv
 R = par_uni(kpar)
 if (randomise_initial_volume) then
@@ -1834,7 +1887,7 @@ Cin = Caverage(1:MAX_CHEMO)
 call get_metab_rates(cp%celltype, mp, Cin)
 return
 
-write(*,'(a,i2,3e12.3)') 'phase, Itotal,I2Divide,V: ',cp%phase,mp%Itotal,mp%I2Divide,cp%V
+write(*,'(a,i2,3e12.3)') 'phase, V: ',cp%phase,cp%V		!I2Divide,Itotal,mp%Itotal,mp%I2Divide
 write(*,'(a,3e11.3)') 'G_rate, P_rate, O_rate: ',mp%G_rate, mp%P_rate, mp%O_rate
 write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate: ',mp%L_rate, mp%A_rate, mp%I_rate
 write(*,'(a,4f8.4)') 'O2, glucose, lactate, H: ',Caverage(OXYGEN),Caverage(GLUCOSE),Caverage(LACTATE),mp%HIF1
@@ -1895,6 +1948,7 @@ character*(2048) :: infile, outfile
 logical :: ok, success
 integer :: i
 
+use_PEST = (.not.use_TCP .and. PEST_parfile(1:1) /= ' ')
 infile = ''
 do i = 1,inbuflen
 	infile(i:i) = infile_array(i)
@@ -2138,6 +2192,8 @@ if (isopen) then
 endif
 inquire(nfres,OPENED=isopen)
 if (isopen) close(nfres)
+inquire(nfPESTout,OPENED=isopen)
+if (isopen) close(nfPESTout)
 call logger('closed files')
 
 if (par_zig_init) then

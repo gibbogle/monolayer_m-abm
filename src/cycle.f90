@@ -148,7 +148,7 @@ elseif (phase == Checkpoint1) then  ! this checkpoint combines the release from 
 !        if (use_metabolism) then
 !	        cp%S_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_S(ityp)
 !	    else
-	        cp%S_time = tnow + (max_growthrate(ityp)/cp%dVdt)*ccp%T_S(ityp)
+	        cp%S_time = tnow + (max_growthrate(ityp)/cp%dVdt)*cp%gfactor*ccp%T_S(ityp)
 !	    endif
     endif
 elseif (phase == S_phase) then
@@ -163,7 +163,7 @@ elseif (phase == S_phase) then
 !        if (use_metabolism) then
 !	        cp%G2_time = tnow + (cp%metab%I_rate_max/cp%metab%I_rate)*ccp%T_G2(ityp)
 !	    else
-			cp%G2_time = tnow + (max_growthrate(ityp)/cp%dVdt)*ccp%T_G2(ityp)
+			cp%G2_time = tnow + (max_growthrate(ityp)/cp%dVdt)*cp%gfactor*ccp%T_G2(ityp)
 !		endif
     endif
 elseif (phase == G2_phase) then

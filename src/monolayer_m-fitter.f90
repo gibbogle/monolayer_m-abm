@@ -18,6 +18,7 @@ type parameter_type
 end type	
 
 type experiment_type
+	logical :: used
 	character*(24) :: expID
 	integer :: nvars, ntimes
 	character*(24), allocatable :: varID(:)		! this must agree with size in monolayer > transfer.f90 > subroutine get_values
@@ -334,6 +335,7 @@ end subroutine
 !	space + comma ' ,' is treated as a comma ','
 !	fields are delimitted by ','
 !	missing value ',,' is parsed to return the string ' ', which is given the floating point value -1
+! Need to drop experiments with arg(2) = Used = 'N'
 !----------------------------------------------------------------------------
 subroutine read_expt(nf,filename)
 integer :: nf
@@ -407,6 +409,7 @@ do
 		expID = arg(1)
 		p => experiment(iexp)
 		p%expID = expID
+		p%used = trim(arg(2)) == 'Y' .or. trim(arg(2)) == 'y'
 	endif
 	p%ntimes = p%ntimes + 1
 enddo
@@ -415,7 +418,7 @@ close(nf)
 
 do iexp = 1,Nexpts
 	p => experiment(iexp)
-	write(*,*) 'expt: ntimes: ',iexp,p%ntimes
+	write(*,*) 'expt: ntimes,used: ',iexp,p%ntimes,' ',p%used
 	allocate(p%t(p%ntimes))
 	allocate(p%y(p%ntimes,p%nvars))
 	allocate(p%ymax(p%nvars))
@@ -450,7 +453,7 @@ do
 		it = 0
 	endif
 	it = it+1
-	if (it == 1) then
+	if (it == 1) then	! skip used Y/N field
 		inc = 1
 	else
 		inc = 0
@@ -801,8 +804,10 @@ do iter = 1,Niters
 				write(nfitlog,*) 'Bad dfobj'
 				stop
 			endif
-			fobj = fobj + dfobj
 			pexp => experiment(iexp)
+			if (pexp%used) then		! dfobj is added only if the experiment is used
+				fobj = fobj + dfobj
+			endif
 			do k = 1,pexp%ntimes
 				write(nfitlog,'(i2,f8.3,10e14.6)') iexp,pexp%t(k),(pexp%ysim(k,i),i=1,pexp%nvars)
 			enddo

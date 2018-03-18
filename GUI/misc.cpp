@@ -148,7 +148,7 @@ void ExecThread::run()
 {
 	LOG_MSG("Invoking DLL...");
 	int res=0;
-    int hour;
+    double hour;
 	const char *infile, *outfile;
     char version[12];
 	QString infile_path, outfile_path;
@@ -210,6 +210,9 @@ void ExecThread::run()
 
     get_summary(Global::summaryData, &Global::i_hypoxia_cutoff, &Global::i_growth_cutoff);
 //    getProfiles();
+    sprintf(msg,"start hour: %f glucose: %f",hour,Global::summaryData[27]);
+    LOG_MSG(msg);
+    mutex1.lock();
     emit summary(hour);		// Emit signal to initialise summary plots
 
     for (int i=1; i <= nsteps+1; i++) {
@@ -261,8 +264,10 @@ void ExecThread::run()
 //                emit facs_update();
                 emit histo_update();
             }
-//            hour++;
-            hour = int(hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.);
+//            hour = int(hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.);
+            hour = hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.;
+            sprintf(msg,"hour: %f glucose: %f",hour,Global::summaryData[27]);
+            LOG_MSG(msg);
             mutex1.lock();
             emit summary(hour);		// Emit signal to update summary plots, at hourly intervals
         }

@@ -55,18 +55,18 @@ SUBROUTINE par_zigset( npar, par_jsrseed, grainsize)
    INTEGER, INTENT(IN)  :: npar, grainsize, par_jsrseed(0:*)
 
    INTEGER  :: i, kpar
-	REAL(DP) dn, tn, de, te
+   REAL(DP) dn, tn, de, te
 
-	par_n = npar
-	par_step = grainsize
+   par_n = npar
+   par_step = grainsize
 ! First we need to allocate all the non-volatile arrays with the size npar
-	allocate(par_jsr(0:npar*par_step))
-	allocate(par_kn(0:127,0:npar-1))
-	allocate(par_ke(0:255,0:npar-1))
-	allocate(par_wn(0:127,0:npar-1))
-	allocate(par_fn(0:127,0:npar-1))
-	allocate(par_we(0:255,0:npar-1))
-	allocate(par_fe(0:255,0:npar-1))
+   allocate(par_jsr(0:npar*par_step))
+   allocate(par_kn(0:127,0:npar-1))
+   allocate(par_ke(0:255,0:npar-1))
+   allocate(par_wn(0:127,0:npar-1))
+   allocate(par_fn(0:127,0:npar-1))
+   allocate(par_we(0:255,0:npar-1))
+   allocate(par_fe(0:255,0:npar-1))
 
 ! Now treat each instance separately
 do kpar = 0,npar-1
@@ -145,25 +145,25 @@ END FUNCTION par_shr3
 !  Generate uniformly distributed random numbers, sequence kpar
 !--------------------------------------------------------------------------
 FUNCTION par_uni(kpar) RESULT( fn_val )
-	integer :: kpar
+   integer :: kpar
    REAL(DP)  ::  fn_val
 
-	if (kpar >= par_n) then
-		write(*,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
-		write(21,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
-		stop
-	endif
+   if (kpar >= par_n) then
+       write(*,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
+       write(21,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
+       stop
+   endif
    fn_val = half + 0.2328306e-9_DP * par_shr3(kpar)
    RETURN
 END FUNCTION par_uni
 
 FUNCTION par_test(kpar) RESULT( fn_val )
-	integer :: kpar
-	integer :: fn_val
-	if (kpar >= par_n) then
-		write(*,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
-		stop
-	endif
+    integer :: kpar
+    integer :: fn_val
+    if (kpar >= par_n) then
+        write(*,*) 'thread number: ',kpar,' exceeds initialized max: ',par_n-1
+        stop
+    endif
     fn_val = kpar
     return
 end function
@@ -180,10 +180,10 @@ FUNCTION par_rnor(kpar) RESULT( fn_val )
    integer :: iz, hz
 
 !   IF( .NOT. initialized ) CALL zigset( jsr )
-	if (kpar >= par_n) then
-		write(*,*) 'thread number exceeds initialized max: ',kpar,par_n-1
-		stop
-	endif
+   if (kpar >= par_n) then
+       write(*,*) 'thread number exceeds initialized max: ',kpar,par_n-1
+       stop
+   endif
    hz = par_shr3(kpar)
    iz = IAND( hz, 127 )
    IF( ABS( hz ) < par_kn(iz,kpar) ) THEN
@@ -227,10 +227,10 @@ FUNCTION par_rexp(kpar) RESULT( fn_val )
    integer :: iz, jz
 
 !   IF( .NOT. initialized ) CALL Zigset( jsr )
-	if (kpar >= par_n) then
-		write(*,*) 'thread number exceeds initialized max: ',kpar,par_n-1
-		stop
-	endif
+   if (kpar >= par_n) then
+       write(*,*) 'thread number exceeds initialized max: ',kpar,par_n-1
+       stop
+   endif
    jz = par_shr3(kpar)
    iz = IAND( jz, 255 )
    IF( ABS( jz ) < par_ke(iz,kpar) ) THEN

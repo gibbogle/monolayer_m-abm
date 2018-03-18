@@ -60,7 +60,11 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Initial number of tumour cells",
 "Initial number of tumour cells"},
 
-{"DIVIDE_TIME_1_MEDIAN", 24, 0, 0,
+{"USE_DIVIDE_TIME_DIST", 0, 0, 1,
+"Use divide time distribution",
+"The divide time will be a random variate from a log-normal distribution."},
+
+{"DIVIDE_TIME_1_MEDIAN", 18, 0, 0,
 "Median (h)",
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters. \n\
 [hours]"},
@@ -69,7 +73,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Shape parameter",
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters."},
 
-{"DIVIDE_TIME_2_MEDIAN", 24, 0, 0,
+{"DIVIDE_TIME_2_MEDIAN", 18, 0, 0,
 "Division time median parameter",
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters. \n\
 [hours]"},
@@ -893,7 +897,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
     {"ICdrugB",                   0, 0,1,"","IC concentration of drug B"},
     {"ICdrugBmet1",               0, 0,1,"","IC concentration of drug B metabolite 1"},
     {"ICdrugBmet2",               0, 0,1,"","IC concentration of drug B metabolite 2"},
-    {"Medglucose",                0, 0,1,"","Average medium concentration of glucose"},
+    {"Medoxygen",                 0, 0,1,"","Average medium concentration of oxygen"},
     {"Medglucose",                0, 0,1,"","Average medium concentration of glucose"},
     {"Medlactate",                0, 0,1,"","Average medium concentration of lactate"},
     {"MeddrugA",                  0, 0,1,"","Average medium concentration of drug A"},

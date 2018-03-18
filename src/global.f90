@@ -31,7 +31,7 @@ integer, parameter :: DIVIDE_ALWAYS_PUSH  = 1
 integer, parameter :: DIVIDE_USE_CLEAR_SITE  = 2
 integer, parameter :: DIVIDE_USE_CLEAR_SITE_RANDOM  = 3
 
-integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfFACS=17
+integer, parameter :: nfin=10, nfout=11, nflog=12, nfres=13, nfrun=14, nfcell=15, nftreatment=16, nfFACS=17, nfpar=18, nfpestout=19
 integer, parameter :: neumann(3,6) = reshape((/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /), (/3,6/))
 
 integer, parameter :: CFSE = 0
@@ -115,8 +115,8 @@ type metabolism_type
 	real(REAL_KIND) :: A_rate
 	real(REAL_KIND) :: I_rate
 	real(REAL_KIND) :: O_rate
-	real(REAL_KIND) :: Itotal	! total of intermediates pool
-	real(REAL_KIND) :: I2Divide	! intermediates total needed to divide
+!	real(REAL_KIND) :: Itotal	! total of intermediates pool			NOT USED
+!	real(REAL_KIND) :: I2Divide	! intermediates total needed to divide	NOT USED
 	real(REAL_KIND) :: GA_rate
 	real(REAL_KIND) :: f_G
 	real(REAL_KIND) :: f_P
@@ -149,6 +149,7 @@ type cell_type
 	real(REAL_KIND) :: ATP_rate_factor	! to introduce some random variation 
 	real(REAL_KIND) :: divide_volume	! fractional divide volume (normalised)
 	real(REAL_KIND) :: divide_time
+	real(REAL_KIND) :: gfactor			! to make sum(T_G1, T_S, T_G2) consistent with Tdivide
 	real(REAL_KIND) :: t_divide_last	! these two values are used for colony simulation
 	real(REAL_KIND) :: t_divide_next
 	real(REAL_KIND) :: birthtime
@@ -396,13 +397,13 @@ logical :: use_radiation, use_treatment
 !logical :: use_growth_suppression = .true.	! see usage in subroutine CellGrowth
 logical :: use_extracellular_O2 = .false.
 logical :: use_V_dependence
-logical :: use_divide_time_distribution = .true.
-logical :: use_constant_divide_volume = .true.
+logical :: use_divide_time_distribution
+logical :: use_constant_divide_volume
 logical :: use_volume_method
 logical :: use_cell_cycle
 logical :: use_constant_growthrate = .false. 
 logical :: use_new_drugdata = .true.
-logical :: randomise_initial_volume
+logical :: randomise_initial_volume = .true.
 logical :: is_radiation
 !logical :: use_FD = .true.
 logical :: use_gaplist = .true.
@@ -427,6 +428,10 @@ integer :: seed(2)
 integer :: kcell_dbug
 integer :: kcell_now
 
+! PEST variables
+logical :: use_PEST
+character*(128) :: PEST_parfile, PEST_outputfile
+
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
 
 ! Off-lattice parameters, in the input file but unused here
@@ -435,7 +440,7 @@ integer :: kcell_now
 
 !real(REAL_KIND), allocatable :: omp_x(:), omp_y(:), omp_z(:)
 
-!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T
+!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, PEST_parfile, PEST_outputfile
 
 contains
 
@@ -749,10 +754,50 @@ end function
 ! Two approaches:
 ! 1. Use Vdivide0 and dVdivide to generate a volume
 ! 2. Use the divide time log-normal distribution 
+!    (use_V_dependence = false)
+!-----------------------------------------------------------------------------------------
+function get_divide_volume(ityp,V0,Tdiv,gfactor) result(Vdiv)
+integer :: ityp
+real(REAL_KIND) :: V0, Tdiv, gfactor
+real(REAL_KIND) :: Vdiv, Tfixed, Tgrowth0, Tgrowth, rVmax
+real(REAL_KIND) :: b, R
+integer :: kpar=0
+type(cycle_parameters_type), pointer :: ccp
+
+ccp => cc_parameters
+
+Tgrowth0 = ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp)
+Tfixed = ccp%T_M(ityp) + ccp%G1_mean_delay(ityp) + ccp%G2_mean_delay(ityp)
+if (use_divide_time_distribution) then
+	Tdiv = DivideTime(ityp)
+	Tgrowth = Tdiv - Tfixed
+	gfactor = Tgrowth/Tgrowth0
+	Vdiv = V0 + Tgrowth*rVmax
+else
+	if (use_constant_divide_volume) then
+		Vdiv = Vdivide0
+		Tdiv = Tgrowth0 + Tfixed
+		gfactor = 1
+	else
+		R = par_uni(kpar)
+		Vdiv = Vdivide0 + dVdivide*(2*R-1)
+		Tgrowth = (Vdiv - V0)/rVmax
+		gfactor = Tgrowth/Tgrowth0
+		Tdiv = Tgrowth + Tfixed
+	endif
+endif
+end function	
+
+!-----------------------------------------------------------------------------------------
+! ityp = cell type
+! V0 = cell starting volume (after division) = %volume
+! Two approaches:
+! 1. Use Vdivide0 and dVdivide to generate a volume
+! 2. Use the divide time log-normal distribution 
 !    (a) use_V_dependence = true
 !    (b) use_V_dependence = false
 !-----------------------------------------------------------------------------------------
-function get_divide_volume(ityp,V0,Tdiv) result(Vdiv)
+function get_divide_volume1(ityp,V0,Tdiv) result(Vdiv)
 integer :: ityp
 real(REAL_KIND) :: V0, Tdiv
 real(REAL_KIND) :: Vdiv
@@ -762,15 +807,11 @@ integer :: kpar=0
 Tmean = divide_time_mean(ityp)
 if (use_divide_time_distribution) then
 	Tdiv = DivideTime(ityp)
-	if (use_constant_divide_volume) then
-		Vdiv = Vdivide0
+	if (use_V_dependence) then
+		b = log(2.0)*(Tdiv/Tmean)
+		Vdiv = V0*exp(b)
 	else
-		if (use_V_dependence) then
-			b = log(2.0)*(Tdiv/Tmean)
-			Vdiv = V0*exp(b)
-		else
-			Vdiv = V0 + (Vdivide0/2)*(Tdiv/Tmean)
-		endif
+		Vdiv = V0 + (Vdivide0/2)*(Tdiv/Tmean)
 	endif
 else
 	if (use_constant_divide_volume) then

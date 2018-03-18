@@ -372,12 +372,12 @@ do ichemo = 1,3
     membrane_kout = chemo(ichemo)%membrane_diff_out
 	membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*C)
     if (ichemo == OXYGEN) then
-		dCreact = (-mp%O_rate + membrane_flux)/vol_cm3
+		dCreact = (-mp%O_rate + membrane_flux)/vol_cm3		! O_rate is rate of consumption
     elseif (ichemo == GLUCOSE) then	! 
-		dCreact = (-mp%G_rate + membrane_flux)/vol_cm3
+		dCreact = (-mp%G_rate + membrane_flux)/vol_cm3		! G_rate is rate of consumption
     elseif (ichemo == LACTATE) then
-		dCreact = (mp%L_rate + membrane_flux)/vol_cm3
-		dCreact = dCreact*f_MM(C,chemo(LACTATE)%MM_C0, int(chemo(LACTATE)%Hill_N))
+		dCreact = (mp%L_rate + membrane_flux)/vol_cm3		! L_rate is rate of production
+!		dCreact = dCreact*f_MM(C,chemo(LACTATE)%MM_C0, int(chemo(LACTATE)%Hill_N))
     endif
 	dydt(k) = dCreact
 !	write(nflog,'(a,i4,e12.3)') 'dydt: ',im,dydt(k)
@@ -733,7 +733,7 @@ real(REAL_KIND) :: tstart, dt
 logical :: ok
 integer :: ichemo, k, ict, neqn, i, kcell, it
 real(REAL_KIND) :: t, tend
-real(REAL_KIND) :: C(3*N1D+3), Cin(3), Csum, Itotal, I2Divide, dCdt(63), dtt
+real(REAL_KIND) :: C(3*N1D+3), Cin(3), Csum, dCdt(63), dtt	!, Itotal, I2Divide
 real(REAL_KIND) :: timer1, timer2
 ! Variables for RKC
 integer :: info(4), idid
@@ -835,11 +835,11 @@ do kcell = 1,nlist
 	cp => cell_list(kcell)
     if (cp%state == DEAD .or. cp%state == DYING) cycle
 ! First back up cell metabolism parameters that we need to preserve
-	Itotal = cp%metab%Itotal
-	I2Divide = cp%metab%I2Divide
+!	Itotal = cp%metab%Itotal
+!	I2Divide = cp%metab%I2Divide
     cp%metab = metabolic(ict)
-    cp%metab%Itotal = Itotal
-    cp%metab%I2Divide = I2Divide
+!    cp%metab%Itotal = Itotal
+!    cp%metab%I2Divide = I2Divide
     cp%metab%A_rate = cp%ATP_rate_factor*cp%metab%A_rate
 enddo
 
@@ -853,6 +853,7 @@ area_factor = (average_volume)**(2./3.)
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
 membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
+write(nflog,'(a,4e12.3)') 'r_G, r_P, r_L, cons: ',mp%G_rate,mp%P_rate, mp%L_rate, 2*(1-mp%f_G)*mp%G_rate - mp%P_rate - mp%L_rate
 !write(*,'(a,3e12.3)') 'Lactate flux: ',mp%L_rate,membrane_flux,2*(1-N_GI(1))*mp%G_rate-mp%P_rate
 ! Checks OK
 !if (istep > 1100) write(*,'(a,2e12.3)') 'f_G, f_P: ',mp%f_G,mp%f_P
@@ -1012,7 +1013,6 @@ real(REAL_KIND), dimension(:), pointer :: Cglucose
 
 !write(*,*) 'SolveMediumGlucose: ',dt
 ichemo = GLUCOSE
-!Cglucose(:) = chemo(ichemo)%Cmedium(:)
 Cglucose => chemo(ichemo)%Cmedium
 Kd = chemo(ichemo)%medium_diff_coef
 membrane_kin = chemo(ichemo)%membrane_diff_in
@@ -1042,7 +1042,6 @@ enddo
 !write(nflog,'(6e12.3)') F(1),C,(Cglucose(i),i=1,4)
 !write(nflog,'(10e12.3)') (Cglucose(i),i=1,N1D)
 Caverage(MAX_CHEMO + ichemo) = Cex
-!chemo(ichemo)%Cmedium(:) = Cglucose(:)
 end subroutine
 
 !-----------------------------------------------------------------------------------------

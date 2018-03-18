@@ -841,6 +841,7 @@ end subroutine
 
 
 !-----------------------------------------------------------------------------------------
+! Need to check phase-dependence of growth
 !-----------------------------------------------------------------------------------------
 subroutine growcell(cp, dt)
 type(cell_type), pointer :: cp
@@ -868,12 +869,12 @@ if (tagged) then
 endif
 if (colony_simulation) then
 	if (use_metabolism) then
-		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
-		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max
+!		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
+		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
 		cp%dVdt = cp%growth_rate_factor*cp%dVdt
 !		cp%V = cp%divide_volume*cp%metab%Itotal/cp%metab%I2Divide
 !		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide
-		cp%V = cp%V + cp%dVdt*dt
+		cp%V = cp%V + cp%dVdt*dt	! Should growth occur in a checkpoint????
 	else
 		metab = 1
 		dVdt = get_dVdt(cp,metab)
@@ -882,12 +883,12 @@ if (colony_simulation) then
 	endif
 else
 	if (use_metabolism) then
-		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
+!		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
 		! need to set cp%dVdt from cp%metab%I_rate
-		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max
+		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
 		cp%dVdt = cp%growth_rate_factor*cp%dVdt
 !		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
-		cp%V = cp%V + cp%dVdt*dt
+		cp%V = cp%V + cp%dVdt*dt	! Should growth occur in a checkpoint????
 		metab = 1
 	else
 		oxygen_growth = chemo(OXYGEN)%controls_growth
@@ -1008,7 +1009,7 @@ subroutine divider(kcell1, ok)
 integer :: kcell1
 logical :: ok
 integer :: kcell2, ityp, nbrs0
-real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv
+real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv, gfactor
 type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
 
@@ -1050,12 +1051,12 @@ cp1%generation = cp1%generation + 1
 V0 = cp1%V/2
 cp1%V = V0
 cp1%birthtime = tnow
-cp1%divide_volume = get_divide_volume(ityp,V0,Tdiv)
+cp1%divide_volume = get_divide_volume(ityp,V0,Tdiv, gfactor)
 cp1%divide_time = Tdiv
-if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
-	cp1%metab%I2Divide = get_I2Divide(cp1)
-	cp1%metab%Itotal = 0
-endif
+!if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide NOT USED
+!	cp1%metab%I2Divide = get_I2Divide(cp1)
+!	cp1%metab%Itotal = 0
+!endif
 cp1%mitosis = 0
 cfse0 = cp1%CFSE
 cp1%CFSE = generate_CFSE(cfse0/2)
@@ -1073,7 +1074,7 @@ if (cp1%growth_delay) then
 endif
 cp1%G2_M = .false.
 if (use_metabolism) then
-    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*ccp%T_G1(ityp)
+    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%gfactor*ccp%T_G1(ityp)
 else
 	cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
 endif
@@ -1093,11 +1094,11 @@ cp1%t_divide_last = tnow
 cp2 = cp1
 
 ! These are the variations from cp1
-cp2%divide_volume = get_divide_volume(ityp,V0,Tdiv)
+cp2%divide_volume = get_divide_volume(ityp,V0,Tdiv, gfactor)
 cp2%divide_time = Tdiv
 if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
-	cp2%metab%I2Divide = get_I2Divide(cp2)
-	cp2%metab%Itotal = 0
+!	cp2%metab%I2Divide = get_I2Divide(cp2)
+!	cp2%metab%Itotal = 0
 	cp2%growth_rate_factor = get_growth_rate_factor()
 	cp2%ATP_rate_factor = get_ATP_rate_factor()
 endif
