@@ -429,7 +429,7 @@ integer :: kcell_dbug
 integer :: kcell_now
 
 ! PEST variables
-logical :: use_PEST
+logical :: use_PEST = .false.
 character*(128) :: PEST_parfile, PEST_outputfile
 
 !integer :: icentral !extracellular variable index corresponding to a central site (NX/2,NY/2,NZ/2)
@@ -440,7 +440,7 @@ character*(128) :: PEST_parfile, PEST_outputfile
 
 !real(REAL_KIND), allocatable :: omp_x(:), omp_y(:), omp_z(:)
 
-!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, PEST_parfile, PEST_outputfile
+!DEC$ ATTRIBUTES DLLEXPORT :: nsteps, DELTA_T, use_PEST, PEST_outputfile
 
 contains
 

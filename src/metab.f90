@@ -80,32 +80,10 @@ contains
 function get_glycosis_rate(ityp, H, G) result(rate)
 integer :: ityp
 real(REAL_KIND) :: H, G, rate
-real(REAL_KIND) :: Kmin, Kmax, Km1
-real(REAL_KIND) :: Vmax1, Vmax2, Km2, n1, n2
-real(REAL_KIND) :: fV = 0.6
-real(REAL_KIND) :: fK = 0.08
-real(REAL_KIND) :: fboost = 2
-real(REAL_KIND) :: Cboost = 0.1
-logical :: variable_Km = .false.
-logical :: double_Km = .false.
-logical :: use_boost = .false.
+real(REAL_KIND) :: metab
 
-if (use_boost) then
-elseif (double_Km) then
-	Km1 = Hill_Km_G
-	Km2 = fK*Km1
-	n1 = Hill_N_G
-	n2 = 1
-	rate = fV*G**n1/(Km1**n1 + G**n1) + (1 - fV)*G**n2/(Km2**n2 + G**n2)
-elseif (variable_Km) then
-	Kmax = Hill_Km_G	! These are completely arbitrary values
-	Kmin = Kmax/15
-	Km1 = 1*Kmin
-	rate = G*(Km1 + G)/(Kmin*Km1 + Kmax*G + G*(Km1 + G))
-else
-	rate = G**Hill_N_G /(G**Hill_N_G + Hill_Km_G**Hill_N_G)
-endif
-rate = G_maxrate* (1 + K_Hb(ityp)*H)*rate
+metab = glucose_metab(G)
+rate = G_maxrate* (1 + K_Hb(ityp)*H)*metab
 end function
 
 !!--------------------------------------------------------------------------
@@ -1065,6 +1043,81 @@ C_L = 0
 !enddo
 stop
 end subroutine
+
+!----------------------------------------------------------------------------------
+! Computes metabolism rate as a fraction of the maximum cell rate
+! Use the "soft landing" option for Hill_N = 1 if MM_threshold = 0
+!----------------------------------------------------------------------------------
+function O2_metab(C) result(metab)
+integer :: ichemo
+real(REAL_KIND) :: C
+real(REAL_KIND) :: metab
+
+ichemo = OXYGEN
+if (ichemo == OXYGEN) then
+	if (chemo(ichemo)%Hill_N == 2) then
+		if (C > 0) then
+			metab = C*C/(chemo(ichemo)%MM_C0*chemo(ichemo)%MM_C0 + C*C)
+		else
+			metab = 0
+		endif
+	else
+		if (MM_THRESHOLD > 0) then
+			if (C > ODEdiff%C1_soft) then
+				metab = (C-ODEdiff%deltaC_soft)/(chemo(ichemo)%MM_C0 + C - ODEdiff%deltaC_soft)
+			elseif (C > 0) then
+				metab = ODEdiff%k_soft*C*C
+			else
+				metab = 0
+			endif
+		else
+			if (C > 0) then
+				metab = C/(chemo(ichemo)%MM_C0 + C)
+			else
+				metab = 0
+			endif
+		endif
+	endif
+endif
+end function
+
+!----------------------------------------------------------------------------------
+! Computes metabolism rate as a fraction of the maximum cell rate
+!----------------------------------------------------------------------------------
+function glucose_metab(C) result(metab)
+real(REAL_KIND) :: C, metab
+real(REAL_KIND) :: Kmin, Kmax, Km1
+real(REAL_KIND) :: Vmax1, Vmax2, Km2, n1, n2
+real(REAL_KIND) :: fV = 0.6
+real(REAL_KIND) :: fK = 0.08
+real(REAL_KIND) :: fboost = 2
+real(REAL_KIND) :: Cboost = 0.1
+logical :: variable_Km = .false.
+logical :: double_Km = .false.
+logical :: use_boost = .false.
+
+if (C == 0) then
+	metab = 0
+	return
+endif
+if (use_boost) then
+
+elseif (double_Km) then
+	Km1 = Hill_Km_G
+	Km2 = fK*Km1
+	n1 = Hill_N_G
+	n2 = 1
+	metab = fV*C**n1/(Km1**n1 + C**n1) + (1 - fV)*C**n2/(Km2**n2 + C**n2)
+elseif (variable_Km) then
+	Kmax = Hill_Km_G	! These are completely arbitrary values
+	Kmin = Kmax/15
+	Km1 = 1*Kmin
+	metab = C*(Km1 + C)/(Kmin*Km1 + Kmax*C + C*(Km1 + C))
+else
+	metab = C**Hill_N_G /(C**Hill_N_G + Hill_Km_G**Hill_N_G)
+endif
+end function
+
 end module
 
 !--------------------------------------------------------------------------

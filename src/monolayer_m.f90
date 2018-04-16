@@ -118,9 +118,9 @@ write(nflog,*) 'Vdivide0, max_growthrate: ',Vdivide0, max_growthrate
 !bdrop = 1
 !cdrop = 0
 !zmin = 1
-if (use_metabolism) then
+!if (use_metabolism) then	! always call it to set up parameters for glucose_metab()
 	call SetupMetabolism
-endif
+!endif
 call PlaceCells(ok)
 !call show_volume_data
 !call SetRadius(Nsites)
@@ -567,9 +567,9 @@ endif
 
 close(nfcell)
 
-if (use_PEST) then
-	call ReadPESTParameters
-endif
+!if (use_PEST) then
+!	call ReadPESTParameters
+!endif
 
 ! Rescale
 chemo(OXYGEN)%membrane_diff_in = chemo(OXYGEN)%membrane_diff_in*Vsite_cm3/60		! /min -> /sec
@@ -703,7 +703,11 @@ write(nflog,'(a,a)') 'GUI version: ',gui_run_version
 write(nflog,'(a,a)') 'DLL version: ',dll_run_version
 write(nflog,*)
 
-open(nfres,file='monolayer_ts.out',status='replace')
+if (.not.use_PEST) then
+	open(nfres,file='monolayer_ts.out',status='replace')
+else
+	open(nfres,file=PEST_outputfile,status='replace')
+endif
 !write(nfres,'(a,a)') 'GUI version: ',gui_run_version
 !write(nfres,'(a,a)') 'DLL version: ',dll_run_version
 !write(nfres,*)
@@ -724,11 +728,11 @@ doubling_time glycolysis_rate pyruvate_oxidation_rate ATP_rate intermediates_rat
 write(logmsg,*) 'Opened nfout: ',trim(outputfile)
 call logger(logmsg)
 
-if (use_PEST) then
-	open(nfPESTout,file=PEST_outputfile,status='replace')
-	write(logmsg,*) 'Opened PEST outputfile: ',trim(PEST_outputfile)
-	call logger(logmsg)
-endif
+!if (use_PEST) then
+!	open(nfPESTout,file=PEST_outputfile,status='replace')
+!	write(logmsg,*) 'Opened PEST outputfile: ',trim(PEST_outputfile)
+!	call logger(logmsg)
+!endif
 
 Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
 NT_DISPLAY = 2
@@ -1150,28 +1154,6 @@ do idrug = 1,ndrugs_used
 	enddo
 enddo
 
-end subroutine
-
-!-----------------------------------------------------------------------------------------
-! Here the parameters that PEST is varying and estimating are overwritten.
-! Need to know the mapping between the PEST parameter values to model variables
-!-----------------------------------------------------------------------------------------
-subroutine ReadPESTParameters
-
-write(*,*) 'ReadPESTParameters'
-write(*,*) 'chemo(GLUCOSE)%max_cell_rate: ',chemo(GLUCOSE)%max_cell_rate
-write(*,*) 'chemo(GLUCOSE)%MM_C0: ',chemo(GLUCOSE)%MM_C0
-open(nfpar,file=PEST_parfile,status='old')
-! Fitting: 
-! glucose consumption rate	max_cell_rate
-! glucose MM_KM				MM_CO
-read(nfpar,*) chemo(GLUCOSE)%max_cell_rate
-!chemo(GLUCOSE)%max_cell_rate = chemo(GLUCOSE)%max_cell_rate*1.0e6		! mol/cell/s -> mumol/cell/s
-read(nfpar,*) chemo(GLUCOSE)%MM_C0
-!chemo(GLUCOSE)%MM_C0 = chemo(GLUCOSE)%MM_C0/1000						! uM -> mM
-close(nfpar)
-write(*,*) 'chemo(GLUCOSE)%max_cell_rate: ',chemo(GLUCOSE)%max_cell_rate
-write(*,*) 'chemo(GLUCOSE)%MM_C0: ',chemo(GLUCOSE)%MM_C0
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1948,7 +1930,10 @@ character*(2048) :: infile, outfile
 logical :: ok, success
 integer :: i
 
-use_PEST = (.not.use_TCP .and. PEST_parfile(1:1) /= ' ')
+!use_PEST = (.not.use_TCP .and. PEST_outputfile(1:1) /= ' ')
+if (use_TCP) then
+	use_PEST = .false.
+endif
 infile = ''
 do i = 1,inbuflen
 	infile(i:i) = infile_array(i)
@@ -2192,8 +2177,8 @@ if (isopen) then
 endif
 inquire(nfres,OPENED=isopen)
 if (isopen) close(nfres)
-inquire(nfPESTout,OPENED=isopen)
-if (isopen) close(nfPESTout)
+!inquire(nfPESTout,OPENED=isopen)
+!if (isopen) close(nfPESTout)
 call logger('closed files')
 
 if (par_zig_init) then

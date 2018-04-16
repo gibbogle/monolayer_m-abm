@@ -298,13 +298,13 @@ summaryData(1:55) = [ rint(istep), rint(Ncells), rint(TNviable) , rint(TNanoxia_
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
 	doubling_time, r_G, r_P, r_A, r_I, mp%f_G, mp%f_P, mp%HIF1, mp%PDK1, rint(ndivided)]
-write(nfres,'(a,a,2a12,i8,e12.4,22i7,46e12.4)') trim(header),' ',gui_run_version, dll_run_version, &
+write(nfres,'(a,a,2a12,i8,e12.4,22i7,46e13.5)') trim(header),' ',gui_run_version, dll_run_version, &
 	istep, hour, Ncells_type(1:2), &
     Nanoxia_dead(1:2), Naglucosia_dead(1:2), Ndrug_dead(1,1:2), &
     Ndrug_dead(2,1:2), Nradiation_dead(1:2), &
     Ntagged_anoxia(1:2), Ntagged_aglucosia(1:2), Ntagged_drug(1,1:2), &
-    Ntagged_drug(2,1:2), Ntagged_radiation(1:2), &
-	nhypoxic(:)/real(Ncells), clonohypoxic_fraction(:), ngrowth(:)/real(Ncells), plate_eff(1:2), &
+    Ntagged_drug(2,1:2), Ntagged_radiation(1:2), &															! 218
+	nhypoxic(1:3)/real(Ncells), clonohypoxic_fraction(1:3), ngrowth(1:3)/real(Ncells), plate_eff(1:2), &	! 350
 	EC(OXYGEN), EC(GLUCOSE), EC(LACTATE), EC(DRUG_A:DRUG_A+2), EC(DRUG_B:DRUG_B+2), &
 	caverage(OXYGEN), caverage(GLUCOSE), caverage(LACTATE), mp%C_P, caverage(DRUG_A:DRUG_A+2), caverage(DRUG_B:DRUG_B+2), &
 	cmedium(OXYGEN), cmedium(GLUCOSE), cmedium(LACTATE), cmedium(DRUG_A:DRUG_A+2), cmedium(DRUG_B:DRUG_B+2), &
@@ -315,9 +315,9 @@ ndoublings = 0
 doubling_time_sum = 0
 ndivided = 0
 
-if (use_PEST) then
-	call PEST_output(hour, EC)
-endif
+!if (use_PEST) then
+!	call PEST_output(hour, EC)
+!endif
 
 end subroutine
 
@@ -325,22 +325,24 @@ end subroutine
 ! This must be customised for the particular PEST application.
 ! For calibration using XM-SG-027 we write GLUCOSE_EC and LACTATE_EC at hours 1,2,3
 ! and LACTATE_EC at hour 4.
-! The format is important becaise PEST expects to find values at specified places.
+! The format is important because PEST expects to find values at specified places.
+! NOT USED: PEST now gets output values from nfres, which is opened with the passed
+! PEST output file name.
 !--------------------------------------------------------------------------------
-subroutine PEST_output(hour, EC)
-real(REAL_KIND) :: hour, EC(:)
-integer :: ihour
-
-ihour = hour
-if (real(ihour) /= hour) return
-if (ihour == 0) return
-if (ihour <= 3) then
-	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'GLUCOSE_EC',EC(GLUCOSE)
-	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
-elseif (ihour == 4) then
-	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
-endif
-end subroutine
+!subroutine PEST_output(hour, EC)
+!real(REAL_KIND) :: hour, EC(:)
+!integer :: ihour
+!
+!ihour = hour
+!if (real(ihour) /= hour) return
+!if (ihour == 0) return
+!if (ihour <= 3) then
+!	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'GLUCOSE_EC',EC(GLUCOSE)
+!	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
+!elseif (ihour == 4) then
+!	write(nfPESTout,'(i2,1x,a10,1x,e12.6)') ihour,'LACTATE_EC',EC(LACTATE)
+!endif
+!end subroutine
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
@@ -414,6 +416,7 @@ end subroutine
 
 !--------------------------------------------------------------------------------
 ! Compute total uptake rate for a constituent
+! NOT USED
 !--------------------------------------------------------------------------------
 subroutine sum_dMdt(ichemo)
 integer :: ichemo
