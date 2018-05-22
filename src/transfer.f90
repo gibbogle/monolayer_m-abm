@@ -274,7 +274,7 @@ call getMediumConc(EC,cmedium)
 !		IC_drug(i,im) = caverage(idrug+im)
 !	enddo
 !enddo
-write(nflog,'(a,2f8.2)') 'IC glucose, lactate: ',caverage(GLUCOSE),caverage(LACTATE)
+!write(nflog,'(a,2f8.2)') 'IC glucose, lactate: ',caverage(GLUCOSE),caverage(LACTATE)
 if (ndivided /= ndoublings) then
 	write(*,*) 'ndivided /= ndoublings: ',ndivided,ndoublings
 	stop
@@ -318,7 +318,6 @@ ndivided = 0
 !if (use_PEST) then
 !	call PEST_output(hour, EC)
 !endif
-
 end subroutine
 
 !--------------------------------------------------------------------------------
@@ -581,16 +580,19 @@ do kcell = 1,nlist
 	if (cell_list(kcell)%state == DEAD) cycle
 	n = n+1
 enddo
+write(nflog,*) 'get_nFACS: n: ',n
 end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
-subroutine get_FACS(facs_data) BIND(C)
-!DEC$ ATTRIBUTES DLLEXPORT :: get_facs
+subroutine get_FACS(facs_data,vmin,vmax,vmin_log,vmax_log) BIND(C)
+!DEC$ ATTRIBUTES DLLEXPORT :: get_facs 
 use, intrinsic :: iso_c_binding
-real(c_double) :: val, facs_data(*)
+real(c_double) :: facs_data(*)
+real(c_double) :: vmin(*), vmax(*)
+real(c_double) :: vmin_log(*), vmax_log(*)
 integer :: k, kcell, iextra, ichemo, ivar, nvars, var_index(32)
-real(REAL_KIND) :: cfse_min
+real(REAL_KIND) :: cfse_min, val, val_log
 
 call logger('get_FACS')
 nvars = 1	! CFSE
@@ -599,15 +601,17 @@ do ichemo = 1,MAX_CHEMO
 	if (.not.chemo(ichemo)%used) cycle
 	nvars = nvars + 1
 	var_index(nvars) = ichemo
+!	write(*,*) 'ichemo: ',ichemo,' nvars: ',nvars,'  ',chemo(ichemo)%name
 enddo
 do iextra = 1,N_EXTRA-1
 	nvars = nvars + 1
 	var_index(nvars) = MAX_CHEMO + iextra
 enddo
-write(nflog,*) 'nvars: ',nvars
-do k = 1,nvars
-	write(nflog,*) 'k, var_index: ',k,var_index(k)
-enddo
+!write(nflog,*) 'nvars: ',nvars 
+vmin(1:nvars) = 1.0e10
+vmax(1:nvars) = -1.0e10
+!vmin_log(1:nvars) = 1.0e10
+!vmax_log(1:nvars) = -1.0e10
 cfse_min = 1.0e20
 k = 0
 do kcell = 1,nlist
@@ -630,8 +634,18 @@ do kcell = 1,nlist
 		endif
 		k = k+1
 		facs_data(k) = val
+		vmin(ivar) = min(val,vmin(ivar))
+		vmax(ivar) = max(val,vmax(ivar))
+!		if (val <= 1.0e-8) then
+!			val_log = -8
+!		else
+!			val_log = log10(val)
+!		endif
+!		vmin_log(ivar) = min(val_log,vmin_log(ivar))
+!		vmax_log(ivar) = max(val_log,vmax_log(ivar))
 	enddo
 enddo
+call logger('Did get_FACS')
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -661,7 +675,7 @@ type(cell_type), pointer :: cp
 !real(REAL_KIND) :: vmin_log(100), vmax_log(100)
 !real(REAL_KIND),allocatable :: histo_data_log(:)
 
-call logger('get_histo')
+!call logger('get_histo')
 nvars = 1	! CFSE
 var_index(nvars) = 0
 do ichemo = 1,MAX_CHEMO
@@ -968,7 +982,7 @@ if (chemo(DRUG_A)%used) then
 		var_name(nvars) = 'EDU'
 	elseif (trim(chemo(DRUG_A)%name) == 'PI') then
 		nvars = nvars + 1
-		var_name(nvars) = 'PI_LIVE'
+		var_name(nvars) = 'PI'
 	endif
 endif
 if (chemo(DRUG_B)%used) then
@@ -977,7 +991,7 @@ if (chemo(DRUG_B)%used) then
 		var_name(nvars) = 'EDU'
 	elseif (trim(drug(DRUG_B)%name) == 'PI') then
 		nvars = nvars + 1
-		var_name(nvars) = 'PI_LIVE'
+		var_name(nvars) = 'PI'
 	endif
 endif
 	

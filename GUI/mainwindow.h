@@ -34,6 +34,7 @@ using namespace std;
 #include <qwt_plot.h>
 #include <qwt_plot_grid.h>
 #include <qwt_interval_data.h>
+#include <qpainter.h>
 #include "histogram_item.h"
 
 #include "qcustomplot.h"
@@ -200,6 +201,10 @@ public slots:
     void on_checkBox_volume_scaling_toggled(bool checked);
     void on_cbox_SAVE_FACS_DATA_toggled(bool checked);
     void on_cbox_USE_DIVIDE_TIME_DIST_toggled(bool checked);
+    void on_pushButton_saveHisto_clicked();
+    void on_pushButton_saveFACS_clicked();
+    void saveFACSImage();
+    void saveHistoImage();
 
 signals:
     void facs_update();
@@ -312,6 +317,9 @@ private:
     QwtPlot *qpHistoBar, *qpHistoLine;
     HistogramItem *histogram;
     QCustomPlot *colony_plot;
+    double *xQpval, *yQpval;
+    QwtSymbol FACS_sym;
+    QwtPlotCurve FACS_crv;
 
 	int nDistPts;
 	int nTicks;

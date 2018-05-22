@@ -25,6 +25,10 @@ namespace Global
     double *FACS_data=NULL;
     int nFACS_cells=0;
     int nFACS_dim=0;
+    double FACS_vmin[32];
+    double FACS_vmax[32];
+    double FACS_vmin_log[32];
+    double FACS_vmax_log[32];
 
     double *histo_data=NULL;
     double *histo_data_log=NULL;

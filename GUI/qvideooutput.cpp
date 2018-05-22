@@ -654,6 +654,7 @@ void QVideoOutput::recorder()
 //        QPainter p( &image );
 //        qp->drawCanvas( &p );
 //        p.drawImage( 0, 0, image );
+
         qp->print(image);
         im = image;
         imwidth = im.width();

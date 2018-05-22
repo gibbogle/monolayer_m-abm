@@ -652,6 +652,7 @@ write(logmsg,'(a,24e12.4)') 'shape, sigma: ',divide_time_shape(1:2),sigma(1:2)
 call logger(logmsg)
 write(logmsg,'(a,4e12.4)') 'Median, mean divide time: ',divide_time_median(1:2)/3600,divide_time_mean(1:2)/3600
 call logger(logmsg)
+call AdjustCycleTimes
 
 use_divide_time_distribution = (iuse_divide_dist == 1)
 use_V_dependence = (iV_depend == 1)
@@ -806,6 +807,27 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !-----------------------------------------------------------------------------------------
+subroutine AdjustCycleTimes
+integer :: ityp
+real(REAL_KIND) :: tmean, tsum, tfactor
+type(cycle_parameters_type),pointer :: ccp
+
+ccp => cc_parameters
+do ityp = 1,2
+	tmean = divide_time_mean(ityp)
+	tsum = ccp%T_G1(1) + ccp%T_S(1) + ccp%T_G2(1) + ccp%T_M(1) + ccp%G1_mean_delay(1) + ccp%G2_mean_delay(1)
+	tfactor = tmean/tsum
+	ccp%T_G1(ityp) = tfactor*ccp%T_G1(ityp)
+	ccp%T_S(ityp) = tfactor*ccp%T_S(ityp)
+	ccp%T_G2(ityp) = tfactor*ccp%T_G2(ityp)
+	ccp%T_M(ityp) = tfactor*ccp%T_M(ityp)
+	ccp%G1_mean_delay(ityp) = tfactor*ccp%G1_mean_delay(ityp)
+	ccp%G2_mean_delay(ityp)= tfactor*ccp%G2_mean_delay(ityp)
+enddo
+end subroutine
+
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine ReadMetabolismParameters(nf)
 integer :: nf
 integer :: ityp
@@ -909,6 +931,11 @@ do idrug = 1,Ndrugs_used
 			drug(idrug)%nmetabolites = 1
 			drug(idrug)%phase_dependent = .true.
 			drug(idrug)%active_phase(S_phase) = .true.
+		endif
+	    if (drug(idrug)%name == 'PI') then
+			drug(idrug)%nmetabolites = 1
+			drug(idrug)%phase_dependent = .true.
+			drug(idrug)%active_phase(1:6) = .true.
 		endif
     enddo
     write(nflog,*) 'drug: ',idrug,drug(idrug)%classname,'  ',drug(idrug)%name
@@ -1216,7 +1243,7 @@ cp%Iphase = .true.
 V0 = Vdivide0/2
 cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
 cp%divide_time = Tdiv
-cp%gfactor = 1
+cp%fg = gfactor
 cp%dVdt = max_growthrate(ityp)
 cp%metab%I_rate = metabolic(ityp)%I_rate_max	! this is just to ensure that initial growth rate is not 0
 if (use_volume_method) then
@@ -1236,6 +1263,9 @@ else	! use cell cycle
     cp%NL1 = 0
     cp%NL2 = 0
     ! Need to assign phase, volume to complete phase, current volume
+    call SetInitialCellCycleStatus(cp)
+#if 0
+! THIS MUST BE REPLACED-------------------------------------------------------------------------------------
     ! Simplest way to assign phase fractions is in proportion to phase durations
     ! (exclude M-phase)
     p(1) = ccp%T_G1(ityp)
@@ -1266,6 +1296,9 @@ else	! use cell cycle
         cp%S_V = V0 + max_growthrate(ityp)*(ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp))		! + ccp%G1_mean_delay(ityp) 
         cp%t_divide_last = cp%G2_time - ccp%T_G2(ityp) - ccp%T_S(ityp) - ccp%T_G1(ityp) - ccp%G1_mean_delay(ityp)
     endif
+!-----------------------------------------------------------------------------------------------------------
+#endif
+
     cp%starved = .false.
 endif
 if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
@@ -1312,6 +1345,108 @@ cp%ATP_rate_factor = get_ATP_rate_factor()
 end subroutine
 
 !--------------------------------------------------------------------------------
+! %divide_time and %fg have been generated
+! Assuming growth rate is max_growthrate
+! Assuming NOT volume_based_transition, need to determine: 
+! for G1:
+!	%G1_time
+! for Checkpoint1:
+!	%G1_flag
+!	%G1S_time
+! for S:
+!	%S_time
+! for G2:
+!	%G2_time
+! for Checkpoint2:
+!	%G2_flag
+!	%G2M_time
+! for M:
+!	%M_time
+! for all phases:
+!	%V
+!	%t_divide_last
+!--------------------------------------------------------------------------------
+subroutine SetInitialCellCycleStatus(cp)
+type(cell_type), pointer :: cp
+type(cycle_parameters_type),pointer :: ccp
+integer :: ityp, iphase
+integer :: kpar = 0
+real(REAL_KIND) :: Tdiv, Tmean, V0, fg, rVmax, fsum, R, x, y, z, phase_fraction(6), phase_time(6)
+
+ccp => cc_parameters
+ityp = cp%celltype
+Tdiv = cp%divide_time
+V0 = Vdivide0/2
+Tmean = divide_time_mean(ityp)
+rVmax = max_growthrate(ityp)
+fg = cp%fg
+R = par_uni(kpar)
+x = (4 - sqrt(16 - 12*R))/2	
+! This is the level of progress through the cell cycle,  0 -> 1, for prob. density f(x) = 1 - 2(x-0.5)/3
+! Cumulative prob. function F(x) = -x^2/3 + 4x/3, then from R U(0,1): (-x^2 + 4x)/3 = R, x^2 - 4x + 3R = 0
+phase_time(1) = fg*ccp%T_G1(ityp)
+phase_time(2) = ccp%G1_mean_delay(ityp)
+phase_time(3) = fg*ccp%T_S(ityp)
+phase_time(4) = fg*ccp%T_G2(ityp)
+phase_time(5) = ccp%G2_mean_delay(ityp)
+phase_time(6) = ccp%T_M(ityp)
+phase_fraction = phase_time/Tdiv
+! These fractions must sum to 1 because of get_divide_volume (check)
+fsum = 0
+do iphase = 1,6
+	if (fsum + phase_fraction(iphase) > x) then	! this is the phase
+		y = (x - fsum)/phase_fraction(iphase)	! this is fractional progress through the phase
+		z = 1 - y								! this is fraction phase left to complete, => time until phase transition
+		if (iphase == G1_phase) then
+			cp%phase = G1_phase
+			cp%G1_time = z*phase_time(1)
+			cp%V = V0 + y*phase_time(1)*rVmax
+			cp%t_divide_last = -y*phase_time(1)
+		elseif (iphase == Checkpoint1) then
+			cp%phase = Checkpoint1
+			cp%G1S_time = z*phase_time(2)
+			cp%G1_flag = .false.
+			cp%V = V0 + phase_time(1)*rVmax
+			cp%t_divide_last = -(phase_time(1) + y*phase_time(2))
+		elseif (iphase == S_phase) then
+			cp%phase = S_phase
+			cp%S_start_time = -y*phase_time(3)
+			cp%S_time = z*phase_time(3)
+			cp%V = V0 + (phase_time(1) + y*phase_time(3))*rVmax 
+			cp%t_divide_last = -(phase_time(1) + phase_time(2) + y*phase_time(3))
+		elseif (iphase == G2_phase) then
+			cp%phase = G2_phase
+			cp%G2_time = z*phase_time(4)
+			cp%V = V0 + (phase_time(1) + phase_time(3) + y*phase_time(4))*rVmax 
+			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + y*phase_time(4))
+		elseif (iphase == Checkpoint2) then
+			cp%phase = Checkpoint2
+			cp%G2M_time = z*phase_time(5)
+			cp%G2_flag = .false.
+			cp%V = V0 + (phase_time(1) + phase_time(3) + phase_time(4))*rVmax 
+			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + y*phase_time(5))
+		elseif (iphase == M_phase) then
+			cp%phase = M_phase
+			cp%M_time = z*phase_time(6)
+			cp%V = V0 + (phase_time(1) + phase_time(3) + phase_time(4))*rVmax 
+			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5) + y*phase_time(6))
+		else
+			write(*,*) 'Error in SetInitialCellCycleStatus' 
+			stop
+		endif
+		exit
+	endif
+	fsum = fsum + phase_fraction(iphase)
+enddo
+!write(*,*)
+!write(*,'(a,3f8.3)') 'Tdiv, Tmean, fg: ',Tdiv/3600,Tmean/3600,fg
+!write(*,'(a,6f8.3)') 'phase_time: ',phase_time/3600
+!write(*,'(a,6f8.3)') 'phase_fraction: ',phase_fraction
+!write(*,'(a,i2,5f8.3,e12.3)') 'iphase, R,x,y,z,tlast,V: ',iphase,R,x,y,z,cp%t_divide_last/3600,cp%V
+!if (iphase >= 5) write(*,'(a,2e12.3)') 'Vdiv, V: ',cp%divide_volume, cp%V
+!write(*,'(a,2f8.3)') 'Tdiv,sum of phases: ',Tdiv/3600,(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5) + phase_time(6))/3600
+end subroutine
+!--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
 subroutine oldAddCell(k,site)
 integer :: k, site(3)
@@ -1342,6 +1477,7 @@ cell_list(k)%p_rad_death = 0
 V0 = Vdivide0/2
 cell_list(k)%divide_volume = get_divide_volume(ityp,V0, Tdiv, gfactor)
 cell_list(k)%divide_time = Tdiv
+cell_list(k)%fg = gfactor
 R = par_uni(kpar)
 if (randomise_initial_volume) then
 	cell_list(k)%V = cell_list(k)%divide_volume*0.5*(1 + R)
@@ -1694,7 +1830,7 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 integer :: kcell, site(3), hour, nthour, kpar=0
-real(REAL_KIND) :: r(3), rmax, tstart, dt, radiation_dose, diam_um, framp, tnow, area, diam
+real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, tnow, area, diam
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nlivecells
 integer :: nvars, ns
@@ -1739,47 +1875,52 @@ endif
 
 drug_gt_cthreshold = .false.
 
-if (medium_change_step .or. chemo(DRUG_A)%present) then
+if (medium_change_step .or. chemo(DRUG_A)%present .or. chemo(DRUG_B)%present) then
 	ndiv = 6
 else
 	ndiv = 1
 endif
-dt = DELTA_T/(NT_CONC*ndiv)
+dt = DELTA_T/ndiv
+dts = dt/NT_CONC
 DELTA_T_save = DELTA_T
-DELTA_T = DELTA_T/ndiv
+DELTA_T = dt
 t_sim_0 = t_simulation
 do idiv = 0,ndiv-1
-t_simulation = t_sim_0 + idiv*DELTA_T
+	t_simulation = t_sim_0 + idiv*DELTA_T
 
-if (dbug) write(nflog,*) 'Solver'
-do it_solve = 1,NT_CONC
-	tstart = (it_solve-1)*dt
-	t_simulation = (istep-1)*DELTA_T + tstart
-	call Solver(it_solve,tstart,dt,Ncells,ok)
+	if (dbug) write(nflog,*) 'Solver'
+	do it_solve = 1,NT_CONC
+		tstart = (it_solve-1)*dts
+	!	t_simulation = (istep-1)*DELTA_T + tstart
+		t_simulation = t_simulation + tstart
+		call Solver(it_solve,t_simulation,dts,Ncells,ok)
+		if (.not.ok) then
+			res = 5
+			return
+		endif
+	enddo	! end it_solve loop
+	if (dbug) write(nflog,*) 'did Solver'
+	if (use_metabolism) then
+		do ityp = 1,Ncelltypes
+			HIF1 = metabolic(ityp)%HIF1
+			call analyticSetHIF1(ityp,Caverage(OXYGEN),HIF1,DELTA_T)
+			metabolic(ityp)%HIF1 = HIF1
+			PDK1 = metabolic(ityp)%PDK1
+			call analyticSetPDK1(ityp,HIF1,PDK1,dt)
+			metabolic(ityp)%PDK1 = PDK1
+		enddo
+	endif
+	!write(nflog,*) 'did Solver'
+	call CheckDrugConcs
+	call CheckDrugPresence
+
+	call GrowCells(DELTA_T,t_simulation,ok)
 	if (.not.ok) then
-		res = 5
+		res = 3
 		return
 	endif
-	! Set O2 levels
-!    call SetOxygenLevels
-!	if (.not.fully_mixed) call SolveMediumGlucose(dt)
-enddo
-if (dbug) write(nflog,*) 'did Solver'
-if (use_metabolism) then
-	do ityp = 1,Ncelltypes
-		HIF1 = metabolic(ityp)%HIF1
-		call analyticSetHIF1(ityp,Caverage(OXYGEN),HIF1,DELTA_T)
-		metabolic(ityp)%HIF1 = HIF1
-		PDK1 = metabolic(ityp)%PDK1
-		call analyticSetPDK1(ityp,HIF1,PDK1,dt)
-		metabolic(ityp)%PDK1 = PDK1
-	enddo
-endif
-!write(nflog,*) 'did Solver'
-call CheckDrugConcs
-call CheckDrugPresence
-
-enddo
+	
+enddo	! end idiv loop
 
 DELTA_T = DELTA_T_save
 medium_change_step = .false.
@@ -1787,13 +1928,13 @@ medium_change_step = .false.
 !istep = istep + 1
 t_simulation = (istep-1)*DELTA_T	! seconds
 
-!write(nflog,*) 'GrowCells'
-call GrowCells(DELTA_T,ok)
-!write(nflog,*) 'did GrowCells'
-if (.not.ok) then
-	res = 3
-	return
-endif
+!!write(nflog,*) 'GrowCells'
+!call GrowCells(DELTA_T,t_simulation,ok)
+!!write(nflog,*) 'did GrowCells'
+!if (.not.ok) then
+!	res = 3
+!	return
+!endif
 
 radiation_dose = 0
 if (use_treatment) then     ! now we use events
@@ -1831,9 +1972,10 @@ if (saveFACS%active) then
 	endif
 endif
 
+write(nflog,'(a,f6.2,i2)') 'cell 1: hr,phase: ',t_simulation/3600,cell_list(1)%phase
 if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
-	write(logmsg,'(a,i6,i4,a,i8,a,i8)') 'istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,'   Nviable: ',sum(Nviable)
+	write(logmsg,'(a,i6,i4,a,i8,a,i8)') 'did istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,'   Nviable: ',sum(Nviable)
 	call logger(logmsg)
 !	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%O_rate
 !	call logger(logmsg)
@@ -1927,7 +2069,7 @@ use, intrinsic :: iso_c_binding
 character(c_char) :: infile_array(*), outfile_array(*)
 integer(c_int) :: ncpu, inbuflen, outbuflen, res
 character*(2048) :: infile, outfile
-logical :: ok, success
+logical :: ok, success, isopen
 integer :: i
 
 !use_PEST = (.not.use_TCP .and. PEST_outputfile(1:1) /= ' ')
@@ -1943,6 +2085,10 @@ do i = 1,outbuflen
 	outfile(i:i) = outfile_array(i)
 enddo
 
+inquire(unit=nflog,OPENED=isopen)
+if (isopen) then
+	close(nflog)
+endif
 open(nflog,file='monolayer.log',status='replace')
 
 #ifdef GFORTRAN
@@ -2115,7 +2261,7 @@ endif
 write(logmsg,'(a,f10.2)') 'Execution time (min): ',(wtime() - execute_t1)/60
 call logger(logmsg)
 
-close(nflog)
+!close(nflog)
 
 if (use_TCP) then
 	if (stopped) then

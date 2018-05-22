@@ -124,6 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     createFACSPage();
     LOG_MSG("did createFACSPage");
+    xQpval = NULL;
+    yQpval = NULL;
 
     createLists();
     LOG_QMSG("did createLists");
@@ -174,117 +176,6 @@ MainWindow::MainWindow(QWidget *parent)
     goToInputs();
 }
 
-void MainWindow::createFACSPage()
-{
-    LOG_MSG("createFACSPage");
-    groupBox_FACS = new QGroupBox;
-    QHBoxLayout *layout1 = new QHBoxLayout;
-    layout1->setMargin(1);
-    qpFACS = new QwtPlot;
-    layout1->addWidget(qpFACS);
-    QGroupBox *vbox1 = new QGroupBox;
-    QVBoxLayout *layout1v = new QVBoxLayout;
-    layout1v->setMargin(1);
-    vbox1->setLayout(layout1v);
-    vbox1->setMinimumWidth(103);
-    vbox1->setMaximumWidth(103);
-    layout1v->setStretch(0,0);
-    QLabel *xAxisLabel = new QLabel(" X axis");
-    checkBox_FACS_log_x = new QCheckBox;
-    checkBox_FACS_log_x->setText("Log scale?");
-    groupBox_FACS_x_vars = new QGroupBox;
-    groupBox_FACS_x_vars->setMinimumHeight(101);
-    layout1v->addWidget(xAxisLabel);
-    layout1v->addWidget(checkBox_FACS_log_x);
-    layout1v->addWidget(groupBox_FACS_x_vars);
-    layout1v->addSpacing(20);
-    QLabel *yAxisLabel = new QLabel(" Y axis");
-    checkBox_FACS_log_y = new QCheckBox;
-    checkBox_FACS_log_y->setText("Log scale?");
-    groupBox_FACS_y_vars = new QGroupBox;
-    groupBox_FACS_y_vars->setMinimumHeight(101);
-    layout1v->addWidget(yAxisLabel);
-    layout1v->addWidget(checkBox_FACS_log_y);
-    layout1v->addWidget(groupBox_FACS_y_vars);
-    layout1v->addStretch(1);
-    layout1->addWidget(vbox1);
-    groupBox_FACS->setLayout(layout1);
-
-    groupBox_Histo = new QGroupBox;
-    QGridLayout *layout2a = new QGridLayout;
-    layout2a->setMargin(1);
-    qpHistoBar = new QwtPlot;
-    qpHistoLine = new QwtPlot;
-    layout2a->addWidget(qpHistoBar,0,0);
-    layout2a->addWidget(qpHistoLine,0,0);
-    QGroupBox *vBox2 = new QGroupBox;
-    QVBoxLayout *layout2v = new QVBoxLayout;
-    layout2v->setMargin(1);
-    vBox2->setLayout(layout2v);
-    vBox2->setMinimumWidth(103);
-    vBox2->setMaximumWidth(103);
-    QGroupBox *groupBox_celltype = new QGroupBox;
-    groupBox_celltype->setMinimumHeight(80);
-    groupBox_celltype->setMaximumHeight(80);
-    groupBox_Histo_x_vars = new QGroupBox;
-    groupBox_Histo_x_vars->setMinimumHeight(101);
-    checkBox_histo_logscale = new QCheckBox;
-    checkBox_histo_logscale->setText("Log scale?");
-    QGroupBox *groupBox_histotype = new QGroupBox;
-    groupBox_histotype->setMinimumHeight(60);
-    groupBox_histotype->setMaximumHeight(60);
-    layout2v->addWidget(groupBox_celltype);
-    layout2v->addSpacing(20);
-    layout2v->addWidget(groupBox_Histo_x_vars);
-    layout2v->addStretch(1);
-    layout2v->addWidget(checkBox_histo_logscale);
-    layout2v->addWidget(groupBox_histotype);
-
-    layout2a->addWidget(vBox2,0,1);
-    groupBox_Histo->setLayout(layout2a);
-
-    QRadioButton *radioButton_celltype_1 = new QRadioButton("Cell type 1");
-    QRadioButton *radioButton_celltype_2 = new QRadioButton("Cell type 2");
-    QRadioButton *radioButton_celltype_3 = new QRadioButton("Both types");
-    buttonGroup_celltype = new QButtonGroup;
-    buttonGroup_celltype->addButton(radioButton_celltype_1);
-    buttonGroup_celltype->addButton(radioButton_celltype_2);
-    buttonGroup_celltype->addButton(radioButton_celltype_3);
-    QVBoxLayout *vbox_rb1 = new QVBoxLayout;
-    vbox_rb1->addWidget(radioButton_celltype_1);
-    vbox_rb1->addWidget(radioButton_celltype_2);
-    vbox_rb1->addWidget(radioButton_celltype_3);
-    radioButton_celltype_1->setChecked(true);
-    groupBox_celltype->setLayout(vbox_rb1);
-
-    QRadioButton *radioButton_histotype_1 = new QRadioButton("Bar plot");
-    QRadioButton *radioButton_histotype_2 = new QRadioButton("Line plot");
-    buttonGroup_histotype = new QButtonGroup;
-    buttonGroup_histotype->addButton(radioButton_histotype_1);
-    buttonGroup_histotype->setId(radioButton_histotype_1,1);
-    buttonGroup_histotype->addButton(radioButton_histotype_2);
-    buttonGroup_histotype->setId(radioButton_histotype_2,2);
-    QVBoxLayout *vbox_rb2 = new QVBoxLayout;
-    vbox_rb2->addWidget(radioButton_histotype_1);
-    vbox_rb2->addWidget(radioButton_histotype_2);
-    radioButton_histotype_1->setChecked(true);
-    groupBox_histotype->setLayout(vbox_rb2);
-
-    QHBoxLayout *biglayout = new QHBoxLayout;
-    biglayout->addWidget(groupBox_FACS,1);
-    biglayout->addWidget(groupBox_Histo,1);
-    biglayout->setMargin(25);
-    page_FACS->setLayout(biglayout);
-
-    qpFACS->clear();
-    qpFACS->setTitle("FACS");
-    qpFACS->replot();
-    qpHistoBar->setTitle("Histogram");
-    qpHistoBar->replot();
-    qpHistoLine->hide();
-    connect((QObject *)groupBox_FACS,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
-    connect((QObject *)groupBox_Histo,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
-}
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
@@ -315,10 +206,10 @@ void MainWindow::createActions()
     connect(action_pause, SIGNAL(triggered()), SLOT(pauseServer()));
     connect(action_stop, SIGNAL(triggered()), SLOT(stopServer()));
 //    connect(action_set_speed, SIGNAL(triggered()), SLOT(setVTKSpeed()));
-    connect(buttonGroup_FACS_x_vars, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(facs_update()));
-    connect(buttonGroup_FACS_y_vars, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(facs_update()));
-    connect(checkBox_FACS_log_x, SIGNAL(stateChanged(int)), this, SIGNAL(facs_update()));
-    connect(checkBox_FACS_log_y, SIGNAL(stateChanged(int)), this, SIGNAL(facs_update()));
+//    connect(buttonGroup_FACS_x_vars, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(facs_update()));
+//    connect(buttonGroup_FACS_y_vars, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(facs_update()));
+//    connect(checkBox_FACS_log_x, SIGNAL(stateChanged(int)), this, SIGNAL(facs_update()));
+//    connect(checkBox_FACS_log_y, SIGNAL(stateChanged(int)), this, SIGNAL(facs_update()));
     connect(buttonGroup_histo, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(histo_update()));
     connect(buttonGroup_histotype, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(histo_update()));
 
@@ -631,362 +522,6 @@ void MainWindow:: drawDistPlots()
 //    connect((QObject *)groupBox_FACS,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
 //}
 
-//--------------------------------------------------------------------------------------------------------
-// Possible variables to plot are Global::vars_used[]
-// Use this to trigger FACS plot.
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::showFACS()
-{
-    double xmin, xmax, ymin, ymax, x, y, xscale, yscale;
-    int i, ivar, kvar_x, kvar_y, ichemox, ichemoy;
-    bool x_logscale, y_logscale;
-    QString xlabel, ylabel;
-    QRadioButton *rb;
-    QTime t;
-
-    if (!paused && !exthread->stopped) return;
-    LOG_MSG("showFACS");
-    t.start();
-//    zzzgetFACS();
-//    LOG_QMSG("getFACS time: " + QString::number(t.elapsed()));
-//    LOG_QMSG("showFACS: nvars_used: " + QString::number(Global::nvars_used));
-//    if (Global::showingFACS) LOG_MSG("showingFACS");
-//    if (recordingFACS) LOG_MSG("recordingFACS");
-//    qpFACS = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_FACS");
-    qpFACS->size();
-    qpFACS->clear();
-    qpFACS->setTitle("FACS");
-//    QwtSymbol symbol = QwtSymbol( QwtSymbol::Diamond, Qt::blue, Qt::NoPen, QSize( 3,3 ) );
-    QwtSymbol symbol = QwtSymbol( QwtSymbol::Rect, Qt::blue, Qt::NoPen, QSize( 2,2 ) );
-
-    // Determine which button is checked:
-    for (ivar=0; ivar<Global::nvars_used; ivar++) {
-        rb = FACS_x_vars_rb_list[ivar];
-        if (rb->isChecked()) {
-            ichemox = Global::GUI_to_DLL_index[ivar];
-            break;
-        }
-    }
-    kvar_x = ivar;
-    switch(ichemox) {
-    case CFSE:
-        xscale = 1000;
-        xlabel = "CFSE";
-        xmin = 0.1;
-        xmax = 1500;
-        break;
-    case OXYGEN:
-        xscale = 1;
-        xlabel = "Oxygen";
-        xmin = 1.0e-4;
-        xmax = 1.0;
-        break;
-    case GLUCOSE:
-        xscale = 1;
-        xlabel = "Glucose";
-        xmin = 1.0e-3;
-        xmax = 10.0;
-        break;
-    case LACTATE:
-        xscale = 1;
-        xlabel = "Lactate";
-        xmin = 1.0e-3;
-        xmax = 10.0;
-        break;
-    case TRACER:
-        break;
-    case DRUG_A_PARENT:
-        break;
-    case DRUG_A_METAB_1:
-        break;
-    case DRUG_A_METAB_2:
-        break;
-    case DRUG_B_PARENT:
-        break;
-    case DRUG_B_METAB_1:
-        break;
-    case DRUG_B_METAB_2:
-        break;
-    case GROWTH_RATE:
-        xscale = 1;
-        xlabel = "Growth rate";
-        xmin = 1.0e-8;
-        xmax = 2.0e-5;
-        break;
-    case CELL_VOLUME:
-        xscale = 1;
-        xlabel = "Cell volume";
-        xmin = 0.5;
-        xmax = 2;
-        break;
-    case O2_BY_VOL:
-        xscale = 1;
-        xlabel = "O2 x volume";
-        xmin = 0.05;
-        xmax = 2;
-        break;
-    case CYCLE_PHASE:
-        xscale = 1;
-        xlabel = "Cell cycle phase";
-        xmin = 0;
-        xmax = 8;
-        break;
-    }
-    for (ivar=0; ivar<Global::nvars_used; ivar++) {
-        rb = FACS_y_vars_rb_list[ivar];
-        if (rb->isChecked()) {
-            ichemoy = Global::GUI_to_DLL_index[ivar];
-            break;
-        }
-    }
-    kvar_y = ivar;
-    switch(ichemoy) {
-    case CFSE:
-        yscale = 1000;
-        ylabel = "CFSE";
-        ymin = 0.1;
-        ymax = 1500;
-        break;
-    case OXYGEN:
-        yscale = 1;
-        ylabel = "Oxygen";
-        ymin = 1.0e-4;
-        ymax = 1.0;
-        break;
-    case GLUCOSE:
-        yscale = 1;
-        ylabel = "Glucose";
-        ymin = 1.0e-3;
-        ymax = 10.0;
-        break;
-    case LACTATE:
-        yscale = 1;
-        ylabel = "Lactate";
-        ymin = 1.0e-3;
-        ymax = 10.0;
-        LOG_MSG("Lactate selected");
-        break;
-    case TRACER:
-        break;
-    case DRUG_A_PARENT:
-        break;
-    case DRUG_A_METAB_1:
-        break;
-    case DRUG_A_METAB_2:
-        break;
-    case DRUG_B_PARENT:
-        break;
-    case DRUG_B_METAB_1:
-        break;
-    case DRUG_B_METAB_2:
-        break;
-    case GROWTH_RATE:
-        yscale = 1;
-        ylabel = "Growth rate";
-        ymin = 1.0e-8;
-        ymax = 2.0e-5;
-        break;
-    case CELL_VOLUME:
-        yscale = 1;
-        ylabel = "Cell volume";
-        ymin = 0.5;
-        ymax = 2;
-        break;
-    case O2_BY_VOL:
-        yscale = 1;
-        ylabel = "O2 x volume";
-        ymin = 0.05;
-        ymax = 2;
-        break;
-    case CYCLE_PHASE:
-        yscale = 1;
-        ylabel = "Cell cycle phase";
-        ymin = 0;
-        ymax = 8;
-        break;
-    }
-
-    t.start();
-    x_logscale = checkBox_FACS_log_x->isChecked();
-    y_logscale = checkBox_FACS_log_y->isChecked();
-
-    double cfse_max = 0;
-    if (ichemox == CFSE || ichemoy == CFSE) {
-        for (i=0; i<Global::nFACS_cells; i++) {
-            if (ichemox == CFSE) {
-                x = Global::FACS_data[Global::nvars_used*i+kvar_x];
-                cfse_max = max(cfse_max,xscale*x);
-            } else {
-                y = Global::FACS_data[Global::nvars_used*i+kvar_y];
-                cfse_max = max(cfse_max,yscale*y);
-            }
-        }
-    }
-    if (ichemox == CFSE) xmax = cfse_max;
-    if (ichemoy == CFSE) ymax = cfse_max;
-
-    for (i=0; i<Global::nFACS_cells; i++) {
-        x = Global::FACS_data[Global::nvars_used*i+kvar_x];
-        y = Global::FACS_data[Global::nvars_used*i+kvar_y];
-        x = xscale*x;
-        y = yscale*y;
-        y = max(y,1.01*ymin);
-        if (x >= xmin) {
-            QwtPlotMarker* m = new QwtPlotMarker();
-            m->setSymbol( symbol );
-            m->setValue( QPointF( x,y ) );
-            m->attach( qpFACS );
-        }
-    }
-    qpFACS->setAxisScale(QwtPlot::yLeft, ymin, ymax, 0);
-    qpFACS->setAxisTitle(QwtPlot::yLeft, ylabel);
-    if (y_logscale) {
-        qpFACS->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
-    } else {
-        qpFACS->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
-    }
-    qpFACS->setAxisMaxMinor(QwtPlot::yLeft, 10);
-    qpFACS->setAxisMaxMajor(QwtPlot::yLeft, 5);
-
-    qpFACS->setAxisScale(QwtPlot::xBottom, xmin, xmax, 0);
-    qpFACS->setAxisTitle(QwtPlot::xBottom, xlabel);
-    if (x_logscale) {
-        qpFACS->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
-    } else {
-        qpFACS->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
-    }
-    qpFACS->setAxisMaxMinor(QwtPlot::xBottom, 10);
-    qpFACS->setAxisMaxMajor(QwtPlot::xBottom, 5);
-
-    qpFACS->replot();
-    LOG_QMSG("showFACS time: " + QString::number(t.elapsed()));
-
-//    if (videoFACS->record) {
-//        LOG_MSG("showFACS 6a");
-//        videoFACS->recorder();
-//    } else if (actionStop_recording_FACS->isEnabled()) {
-//        LOG_MSG("showFACS 6b");
-//        actionStart_recording_FACS->setEnabled(true);
-//        actionStop_recording_FACS->setEnabled(false);
-//    }
-}
-
-
-//-----------------------------------------------------------------------------------------
-// Get FACS data TESTING WITH IT HERE
-//-----------------------------------------------------------------------------------------
-void MainWindow::zzzgetFACS()
-{
-//    LOG_MSG("get_nfacs");
-    get_nfacs(&Global::nFACS_cells);
-    if (!Global::FACS_data || Global::nFACS_cells*Global::nvars_used > Global::nFACS_dim) {
-        if (Global::FACS_data) free(Global::FACS_data);
-        Global::nFACS_dim = 3*Global::nFACS_cells*Global::nvars_used;   // 3* to avoid excessive malloc/free
-        Global::FACS_data = (double *)malloc(Global::nFACS_dim*sizeof(double));
-    }
-//    LOG_MSG("get_facs");
-    get_facs(Global::FACS_data);
-}
-
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::test_histo()
-{
-    QString testlabel = "test";
-    int numValues = 20;
-    double width = 10, xmin = 0;
-    QwtArray<double> values(numValues);
-    for (int i=0; i<numValues; i++) {
-        values[i] = rand() %100;
-    }
-    makeHistoPlot(numValues,xmin,width,values,testlabel);
-}
-
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-//void MainWindow:: initHistoPlot()
-//{
-//    qpHistoBar = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_Histo");
-//    qpHistoBar->setTitle("Histogram");
-////    QwtSymbol symbol = QwtSymbol( QwtSymbol::Diamond, Qt::blue, Qt::NoPen, QSize( 3,3 ) );
-//    qpHistoBar->replot();
-
-//    qpHistoLine = (QwtPlot *)qFindChild<QObject *>(this, "qwtPlot_HistoLine");
-//    qpHistoLine->hide();
-
-//    connect((QObject *)groupBox_Histo,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
-//}
-
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::makeHistoPlot(int numValues, double xmin, double width,
-                               QwtArray<double> values, QString xlabel)
-{
-    QwtPlot *plot;
-    double pos;
-
-//    LOG_MSG("makeHistoPlot");
-//    bool use_HistoBar = radioButton_histotype_1->isChecked();
-    bool use_HistoBar = (buttonGroup_histotype->checkedId() == 1);
-    if (use_HistoBar) {
-        plot = qpHistoBar;
-        qpHistoLine->hide();
-    } else {
-        plot = qpHistoLine;
-        qpHistoBar->hide();
-    }
-    plot->clear();
-    plot->setCanvasBackground(QColor(Qt::white));
-    plot->setTitle("Histogram");
-
-    QwtPlotGrid *grid = new QwtPlotGrid;
-    grid->enableXMin(true);
-    grid->enableYMin(true);
-    grid->setMajPen(QPen(Qt::black, 0, Qt::DotLine));
-    grid->setMinPen(QPen(Qt::gray, 0 , Qt::DotLine));
-    grid->attach(plot);
-
-    if (use_HistoBar) {
-        if (histogram) {
-            histogram->detach();
-        } else {
-            histogram = new HistogramItem();
-        }
-        histogram->setColor(Qt::darkCyan);
-
-        QwtArray<QwtDoubleInterval> intervals(numValues);
-
-        pos = xmin;
-        for ( int i = 0; i < numValues; i++ )
-        {
-            intervals[i] = QwtDoubleInterval(pos, pos + width);
-            pos += width;
-        }
-
-        histogram->setData(QwtIntervalData(intervals, values));
-        histogram->attach(plot);
-    } else {
-        double x[100], y[100];
-        for ( int i = 0; i < numValues; i++ ) {
-            x[i] = xmin + (i + 0.5)*width;
-            y[i] = values[i];
-        }
-        pos = x[numValues-1] + width/2;
-        QwtPlotCurve *curve = new QwtPlotCurve("");
-        QPen *pen = new QPen();
-        pen->setColor(Qt::black);
-        curve->attach(plot);
-        curve->setPen(*pen);
-        curve->setData(x, y, numValues);
-    }
-
-    plot->setAxisTitle(QwtPlot::xBottom, xlabel);
-    plot->setAxisScale(QwtPlot::yLeft, 0.0, 100.0);
-    plot->setAxisScale(QwtPlot::xBottom, xmin, pos);
-    plot->replot();
-    plot->show();
-
-}
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
@@ -1328,7 +863,6 @@ void MainWindow::reloadParams()
 			|| qsname.startsWith("comb_") || qsname.startsWith("cbox_")
 			|| qsname.startsWith("rbut_") || qsname.startsWith("text_")) {
 			QString wtag = qsname.mid(5);
-			int rbutton_case = 0;
 			if (qsname.startsWith("rbut_")) {
 //				parse_rbutton(wtag,&rbutton_case);
 //                wtag = parse_rbutton(qsname,&rbutton_case);
@@ -2088,10 +1622,10 @@ void MainWindow::runServer()
 	started = true;
 	exthread = new ExecThread(inputFile);
 //	connect(exthread, SIGNAL(display()), this, SLOT(displayScene()));
-    connect(exthread, SIGNAL(summary(double)), this, SLOT(showSummary(double)));
-    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()));
-    connect(this, SIGNAL(facs_update()), this, SLOT(showFACS()));
-    connect(exthread, SIGNAL(histo_update()), this, SLOT(showHisto()));
+    connect(exthread, SIGNAL(summary(double)), this, SLOT(showSummary(double)), Qt::UniqueConnection);
+//    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()));
+    connect(this, SIGNAL(facs_update()), this, SLOT(showFACS()), Qt::UniqueConnection);
+    connect(exthread, SIGNAL(histo_update()), this, SLOT(showHisto()), Qt::UniqueConnection);
     connect(this, SIGNAL(histo_update()), this, SLOT(showHisto()));
     connect(exthread, SIGNAL(setupC(int)), this, SLOT(setupConstituents(int)));
     connect(exthread, SIGNAL(badDLL(QString)), this, SLOT(reportBadDLL(QString)));
@@ -2130,12 +1664,12 @@ void MainWindow::preConnection(int nplot_times)
 //	int nsteps = int(hours+1.5);
     int nsteps = nplot_times;
     newR->nsteps = nsteps;
-	newR->tnow = new double[nsteps];
+    newR->tnow = new double[nsteps+1];
     newR->max_time = nsteps*Global::DELTA_T*Global::NT_DISPLAY/3600;   // hours
 
     for (int i=0; i<grph->nGraphs; i++) {
  //       if (!grph->isActive(i)) continue;
-		newR->pData[i] = new double[nsteps];
+        newR->pData[i] = new double[nsteps+1];
 		newR->pData[i][0] = 0;
 	}
 	LOG_MSG("preconnection: Allocated result set arrays");
@@ -2290,14 +1824,15 @@ void MainWindow::displayScene()
 void MainWindow::showSummary(double hr)
 {
     double val;
-    int n, res;
     QString tag;
 
     step++;
     if (step > newR->nsteps) {
         LOG_MSG("ERROR: step > nsteps");
         stopServer();
-		return;
+        exthread->mutex1.unlock();
+        LOG_MSG("showSummary: exthread->mutex1.unlock()\n");
+        return;
 	}
     hour = hr;
     sprintf(msg,"showSummary: step: %d hour: %f",step,hour);
@@ -2306,34 +1841,27 @@ void MainWindow::showSummary(double hr)
     progress = int(100.*hour/hours);
 	progressBar->setValue(progress);
     QString hourstr = QString::number(hour);
-//    QString hourstr = QString::number(int(hour));
     hour_display->setText(hourstr);
 
     Global::casename = newR->casename;
-    double dtstep = Global::NT_DISPLAY*Global::DELTA_T;
     newR->tnow[step] = hour;    //step*dtstep/3600;    // tnow in hours
 
     // TS plots
-	for (int i=0; i<nGraphs; i++) {
+    for (int i=0; i<nGraphs; i++) {
         if (!grph->isTimeseries(i)) continue;
         if (!grph->isActive(i)) continue;
-		int k = grph->get_dataIndex(i);
+        int k = grph->get_dataIndex(i);
         val = Global::summaryData[k];
         newR->pData[i][step] = val;
         tag = grph->get_tag(i);
         double yscale = grph->get_yscale(i);
         pGraph[i]->redraw(newR->tnow, newR->pData[i], step+1, Global::casename, tag, yscale, false);
-        if (k == 27) {
-            LOG_QMSG(tag);
-            sprintf(msg,"Glucose: i: %d step: %d tnow: %f pData[i]: %f val: %f",i,step,newR->tnow[step],newR->pData[i][step],val);
-            LOG_MSG(msg);
-        }
     }
 
     // Profile plots
-    updateProfilePlots();
+//    updateProfilePlots();
 
-    field->setSliceChanged();
+//    field->setSliceChanged();
     exthread->mutex1.unlock();
 }
 

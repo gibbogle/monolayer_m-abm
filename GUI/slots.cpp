@@ -375,6 +375,7 @@ void MainWindow::clickedGraph(QMouseEvent *event)
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::on_pushButton_update_FACS_Histo_clicked()
 {
+    LOG_MSG("on_pushButton_update_FACS_Histo_clicked");
     if (paused || exthread->paused || exthread->stopped) {
         LOG_MSG("call getFACS");
         exthread->getFACS();
@@ -415,4 +416,18 @@ void MainWindow::on_cbox_USE_DIVIDE_TIME_DIST_toggled(bool checked)
 {
     groupBox_divisiondistributions->setEnabled(checked);
     line_DVDIVIDE->setEnabled(!checked);
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::on_pushButton_saveHisto_clicked()
+{
+    saveHistoImage();
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::on_pushButton_saveFACS_clicked()
+{
+    saveFACSImage();
 }

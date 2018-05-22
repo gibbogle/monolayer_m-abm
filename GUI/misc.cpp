@@ -156,6 +156,7 @@ void ExecThread::run()
     int len_version;
     QString dll_version;
     bool cused[32];
+    bool USING_PI = false;
 
 	infile_path = inputFile;
 	QString casename = QFileInfo(inputFile).baseName();
@@ -210,9 +211,10 @@ void ExecThread::run()
 
     get_summary(Global::summaryData, &Global::i_hypoxia_cutoff, &Global::i_growth_cutoff);
 //    getProfiles();
-    sprintf(msg,"start hour: %f glucose: %f",hour,Global::summaryData[27]);
+    sprintf(msg,"did get_summary: start hour: %f glucose: %f",hour,Global::summaryData[27]);
     LOG_MSG(msg);
     mutex1.lock();
+    LOG_MSG("locked: emit summary\n");
     emit summary(hour);		// Emit signal to initialise summary plots
 
     for (int i=1; i <= nsteps+1; i++) {
@@ -233,25 +235,21 @@ void ExecThread::run()
             break;
         }
 
-        mutex1.lock();
-//        LOG_MSG("call simulate_step");
         simulate_step(&res);
 //        LOG_MSG("did simulate_step");
-        mutex1.unlock();
         if (res != 0) {
             LOG_MSG("simulate_step: res != 0");
             break;
         }
 
         if (i%summary_interval == 0) {
-            mutex1.lock();
             get_summary(Global::summaryData, &Global::i_hypoxia_cutoff, &Global::i_growth_cutoff);
 //            getProfiles();
 //            get_volprob(&Global::vol_nv, &Global::vol_v0, &Global::vol_dv, Global::volProb);
 //            get_oxyprob(&Global::oxy_nv, &Global::oxy_v0, &Global::oxy_dv, Global::oxyProb);
 //            get_distdata(&Global::dist_nv, Global::distParams, Global::distData);
             get_concdata(&Global::conc_nvars, &Global::conc_nc_ex, &Global::conc_dx_ex, Global::concData);
-            get_pi_dist(PI_NBINS, Global::PI_fract, &Global::PI_max_fract, &Global::PI_max_fluor);
+            if (USING_PI) get_pi_dist(PI_NBINS, Global::PI_fract, &Global::PI_max_fract, &Global::PI_max_fluor);
 //            get_ic_concdata(&Global::conc_nvars, &Global::conc_nc_ic, &Global::conc_dx_ic, Global::IC_concData);
 
 // The problem is that getFACS takes a long time when the simulation is running and the number of cells is large.
@@ -259,17 +257,15 @@ void ExecThread::run()
 //            if (Global::showingFACS || Global::recordingFACS) {
 //                getFACS();
 //            }
-            mutex1.unlock();
             if (Global::showingFACS || Global::recordingFACS) {
 //                emit facs_update();
                 emit histo_update();
             }
-//            hour = int(hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.);
             hour = hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.;
-            sprintf(msg,"hour: %f glucose: %f",hour,Global::summaryData[27]);
-            LOG_MSG(msg);
             mutex1.lock();
             emit summary(hour);		// Emit signal to update summary plots, at hourly intervals
+            mutex1.lock();
+            mutex1.unlock();
         }
 
         if (stopped) {
@@ -285,6 +281,12 @@ void ExecThread::run()
 //		}
         if (stopped) {
             res = -1;
+            break;
+        }
+        if (i == nsteps+1) {
+//            mutex1.lock();
+            stopped = true;
+//            mutex1.unlock();
             break;
         }
     }
@@ -383,8 +385,12 @@ void ExecThread::getFACS()
         LOG_MSG(msg);
     }
     LOG_MSG("get_facs");
-    get_facs(Global::FACS_data);
+    QTime t;
+    t.start();
+    get_facs(Global::FACS_data, Global::FACS_vmin, Global::FACS_vmax, Global::FACS_vmin_log, Global::FACS_vmax_log);
     LOG_MSG("did get_facs");
+    LOG_QMSG("get_facs time (ms): " + QString::number(t.elapsed()));
+
 }
 
 //-----------------------------------------------------------------------------------------

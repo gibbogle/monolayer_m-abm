@@ -60,7 +60,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "Initial number of tumour cells",
 "Initial number of tumour cells"},
 
-{"USE_DIVIDE_TIME_DIST", 0, 0, 1,
+{"USE_DIVIDE_TIME_DIST", 1, 0, 1,
 "Use divide time distribution",
 "The divide time will be a random variate from a log-normal distribution."},
 
@@ -69,7 +69,7 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters. \n\
 [hours]"},
 
-{"DIVIDE_TIME_1_SHAPE", 1.2, 0, 0,
+{"DIVIDE_TIME_1_SHAPE", 1.1, 0, 0,
 "Shape parameter",
 "The time taken for tumour cell division has a lognormal distribution, described by the median and shape parameters."},
 

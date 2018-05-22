@@ -18,14 +18,16 @@ contains
 ! dt seconds
 ! radiation dose has been separated out
 !-----------------------------------------------------------------------------------------
-subroutine GrowCells(dt,ok)
-real(REAL_KIND) :: dt
+subroutine GrowCells(dt,t_simulation,ok)
+real(REAL_KIND) :: dt, t_simulation
 logical :: ok
 logical :: changed
 integer :: kcell, idrug, ichemo
 
 !call logger('GrowCells: ')
-tnow = istep*DELTA_T
+!tnow = istep*DELTA_T
+tnow = t_simulation		! now = time at the start of the timestep
+!write(*,*) 'tnow, t_simulation: ',tnow,t_simulation
 ok = .true.
 call new_grower(dt,changed,ok)
 if (.not.ok) return
@@ -1008,7 +1010,7 @@ end function
 subroutine divider(kcell1, ok)
 integer :: kcell1
 logical :: ok
-integer :: kcell2, ityp, nbrs0
+integer :: kcell2, ityp, nbrs0, im, imax, ipdd
 real(REAL_KIND) :: r(3), c(3), cfse0, cfse2, V0, Tdiv, gfactor
 type(cell_type), pointer :: cp1, cp2
 type(cycle_parameters_type), pointer :: ccp
@@ -1053,6 +1055,7 @@ cp1%V = V0
 cp1%birthtime = tnow
 cp1%divide_volume = get_divide_volume(ityp,V0,Tdiv, gfactor)
 cp1%divide_time = Tdiv
+cp1%fg = gfactor
 !if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide NOT USED
 !	cp1%metab%I2Divide = get_I2Divide(cp1)
 !	cp1%metab%Itotal = 0
@@ -1061,6 +1064,19 @@ cp1%mitosis = 0
 cfse0 = cp1%CFSE
 cp1%CFSE = generate_CFSE(cfse0/2)
 cfse2 = cfse0 - cp1%CFSE
+! Halve drug levels - OK for normal drugs?
+do ipdd = 0,1
+	if (chemo(DRUG_A + 3*ipdd)%used) then
+		if (drug(ipdd+1)%phase_dependent) then
+			imax = 1
+		else
+			imax = 2
+		endif
+		do im = 0,imax
+			cp1%Cin(DRUG_A + 3*ipdd + im) = cp1%Cin(DRUG_A + 3*ipdd + im)/2
+		enddo
+	endif
+enddo
 
 cp1%drug_tag = .false.
 cp1%anoxia_tag = .false.
@@ -1074,9 +1090,11 @@ if (cp1%growth_delay) then
 endif
 cp1%G2_M = .false.
 if (use_metabolism) then
-    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%gfactor*ccp%T_G1(ityp)
+    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1(ityp)
+	cp1%growth_rate_factor = get_growth_rate_factor()
+	cp1%ATP_rate_factor = get_ATP_rate_factor()
 else
-	cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
+	cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
 endif
 cp1%Iphase = .true.
 cp1%phase = G1_phase
@@ -1090,17 +1108,18 @@ doubling_time_sum = doubling_time_sum + tnow - cp1%t_divide_last
 cp1%t_divide_last = tnow
 
 ! Second cell
-!cell_list(kcell2) = cell_list(kcell1)
 cp2 = cp1
 
 ! These are the variations from cp1
 cp2%divide_volume = get_divide_volume(ityp,V0,Tdiv, gfactor)
 cp2%divide_time = Tdiv
+cp2%fg = gfactor
 if (use_metabolism) then	! Fraction of I needed to divide = fraction of volume needed to divide
-!	cp2%metab%I2Divide = get_I2Divide(cp2)
-!	cp2%metab%Itotal = 0
+    cp2%G1_time = tnow + (cp2%metab%I_rate_max/cp2%metab%I_rate)*cp2%fg*ccp%T_G1(ityp)
 	cp2%growth_rate_factor = get_growth_rate_factor()
 	cp2%ATP_rate_factor = get_ATP_rate_factor()
+else
+	cp2%G1_time = tnow + (max_growthrate(ityp)/cp2%dVdt)*cp2%fg*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
 endif
 cp2%CFSE = cfse2
 if (cp2%radiation_tag) then

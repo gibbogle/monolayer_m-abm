@@ -16,6 +16,7 @@ module ode_diffuse
 
 use chemokine
 use metabolism
+use cycle_mod
 use rkc_90
 
 implicit none
@@ -853,7 +854,7 @@ area_factor = (average_volume)**(2./3.)
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
 membrane_flux = area_factor*(membrane_kin*Cex - membrane_kout*Cic)
-write(nflog,'(a,4e12.3)') 'r_G, r_P, r_L, cons: ',mp%G_rate,mp%P_rate, mp%L_rate, 2*(1-mp%f_G)*mp%G_rate - mp%P_rate - mp%L_rate
+!write(nflog,'(a,4e12.3)') 'r_G, r_P, r_L, cons: ',mp%G_rate,mp%P_rate, mp%L_rate, 2*(1-mp%f_G)*mp%G_rate - mp%P_rate - mp%L_rate
 !write(*,'(a,3e12.3)') 'Lactate flux: ',mp%L_rate,membrane_flux,2*(1-N_GI(1))*mp%G_rate-mp%P_rate
 ! Checks OK
 !if (istep > 1100) write(*,'(a,2e12.3)') 'f_G, f_P: ',mp%f_G,mp%f_P
@@ -969,6 +970,7 @@ end function
 
 
 !----------------------------------------------------------------------------------
+! NOT USED
 !----------------------------------------------------------------------------------
 subroutine UpdateCbnd_1D
 integer :: kpar = 0
@@ -1060,30 +1062,39 @@ logical :: tagged, active
 type(cell_type), pointer :: cp
 type(drug_type), pointer :: dp
 integer :: ict, n_O2, kcell, it, k, i, n_S_phase, n
-real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, Cex, vol_cm3, area_factor
-real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd
+real(REAL_KIND) :: dtt, decay_rate, membrane_kin, membrane_kout, membrane_flux, Cex, Cex0, vol_cm3, area_factor, R
+real(REAL_KIND) :: CO2, cellfluxsum, C, Clabel, KmetC, dCreact, totalflux, F(N1D+1), A, d, dX, dV, Kd, t, PI_factor
 real(REAL_KIND) :: average_volume = 1.2
 real(REAL_KIND), dimension(:), pointer :: Cmedium
 logical :: use_average_volume = .false.
 integer :: nt = 20
 integer :: ndt = 20
+integer :: kpar = 0
+real(REAL_KIND) :: cov = 0.002
 
-! First solve for each cell separately
-dtt = dt/nt
+Cex = Caverage(MAX_CHEMO+ichemo)
+Cex0 = Cex
+!if (Cex == 0 .and. chemo(ichemo)%present) then	! stop processing when the parent drug is removed 
+!	Caverage(ichemo) = 0
+!	chemo(ichemo)%present = .false.
+!	return
+!endif
+
+dtt = (dt/nt)
 dp => drug(idrug)
 n_O2 = dp%n_O2(ict,0)
 decay_rate = chemo(ichemo)%decay_rate
 membrane_kin = chemo(ichemo)%membrane_diff_in
 membrane_kout = chemo(ichemo)%membrane_diff_out
-Cex = Caverage(MAX_CHEMO+ichemo)
 Cmedium => chemo(ichemo)%Cmedium
 if (use_average_volume) then
-    vol_cm3 = Vcell_cm3*average_volume	  ! not accounting for cell volume change
+    vol_cm3 = Vcell_cm3*average_volume	  ! not accounting for cell volume change 
     area_factor = (average_volume)**(2./3.)
 endif
 
 do it = 1,nt
-
+	t = tstart + (it-1)*dtt
+! Solve for each cell separately
 n_S_phase = 0
 totalflux = 0
 do kcell = 1,nlist
@@ -1114,22 +1125,32 @@ do kcell = 1,nlist
 			if (trim(dp%name) == 'EDU') then
 				dCreact = dCreact*cp%dVdt/max_growthrate(ict)
 			endif
-			if (trim(dp%name) == 'PI_LIVE') then
-			
+			if (trim(dp%name) == 'PI') then
+				if (cp%phase < S_phase) then
+					PI_factor = 1
+				elseif (cp%phase > S_phase) then
+					PI_factor = 2
+				else
+					PI_factor = 1 + (t - cp%S_start_time)/(cp%S_time - cp%S_start_time)
+				endif
+!				dCreact = dCreact*cp%dVdt/max_growthrate(ict)
+				dCreact = 0.1*PI_factor*dCreact
+				if (kcell == 1) write(nflog,'(a,2i6,4e12.3)') 'dCreact: ',kcell,it,C,Cex,dCreact,membrane_flux/vol_cm3
 			endif
 			cp%dCdt(ichemo) = dCreact + membrane_flux/vol_cm3 - C*decay_rate
 			cp%dCdt(ichemo+1) = -dCreact
-!			write(*,*) 'kcell: ',kcell
-!			if (kcell == 1) write(*,'(a,4e12.3)') 'dCreact, membrane_flux: ',dCreact, membrane_flux, C, Cex
+!			cp%dCdt(ichemo+1) = PI_factor/3600	! test just recording time
 			Clabel = Clabel + dtt*cp%dCdt(ichemo+1)
 		else
 			cp%dCdt(ichemo) = membrane_flux/vol_cm3 - C*decay_rate	
 		endif
-		C = C + dtt*cp%dCdt(ichemo)
+!		R = par_uni(kpar)
+		C = C + dtt*cp%dCdt(ichemo)	!*(1 + (R-0.5)*cov)
 		cellfluxsum = cellfluxsum + membrane_flux
 !	enddo
+!	if (kcell == 4) write(nflog,'(a,i6,4e12.3)') 'it: ',it,t,cp%S_start_time,cp%S_time,PI_factor
 	cp%Cin(ichemo) = C
-	cp%Cin(ichemo+1) = Clabel
+	cp%Cin(ichemo+1) = Clabel*(1 + (par_uni(kpar)-0.5)*cov)
     cp%dMdt(ichemo) = -cellfluxsum/nt	! average flux of parent drug
     totalflux = totalflux + cp%dMdt(ichemo)
 enddo
@@ -1169,6 +1190,10 @@ enddo
 Caverage(ichemo) = C/n
 Caverage(ichemo+1) = Clabel/n
 Caverage(MAX_CHEMO + ichemo) = Cex
+if (Cex0 == 0) then	! stop processing when the parent drug is removed 
+!	Caverage(ichemo) = 0
+	chemo(ichemo)%present = .false.
+endif
 end subroutine
 
 

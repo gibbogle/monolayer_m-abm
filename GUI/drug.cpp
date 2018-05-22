@@ -251,11 +251,9 @@ void MainWindow::populateDrugTable(int idrug)
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::on_buttonGroup_drug_buttonClicked(QAbstractButton* button)
 {
-    int idrug;
-    QString drugname;
     LOG_MSG("on_buttonGroup_drug_buttonClicked");
 //    int id = buttonGroup_drug->checkedId();
-    QRadioButton *rb = (QRadioButton *)button;
+//    QRadioButton *rb = (QRadioButton *)button;
 //    drugname = rb->text();
 //    LOG_QMSG("drugname: " + drugname);
 //    if (id == 1) {

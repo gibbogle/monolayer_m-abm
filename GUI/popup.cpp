@@ -423,7 +423,7 @@ void MainWindow::makeDrugPlot(int idrug, int kset, int ictyp, double *maxdose, Q
 {
     QLineEdit *line;
     int kills, killmodel, i;
-    double C_O2, C2, Kmet0, KO2, n_O2, Ckill_O2, f, T, Ckill, Kd, c, dt;
+    double C_O2, C2, Kmet0, KO2, n_O2, Ckill_O2, f, T, Ckill, Kd, c;
     double Cdrug, kmet, dMdt, SF;   //, kill_prob;
 
     i = KILL_kills - NDKILLPARAMS;
@@ -734,8 +734,8 @@ void MainWindow::makeDrugPlot1(QString drugTypeStr, QString cellTypeStr, double 
 {
     QLineEdit *line;
     QString objName0, objName;
-    int idrug, kset, ictyp, killmodel;
-    double C_O2, C2, Kmet0, KO2, n_O2, Ckill_O2, f, T, Ckill, Kd, c, dt;
+    int killmodel;
+    double C_O2, C2, Kmet0, KO2, n_O2, Ckill_O2, f, T, Ckill, Kd, c;
     double Cdrug, kmet, dMdt, SF;   //, kill_prob;
 
     objName = "cbox_" + drugTypeStr + "_" + cellTypeStr + "_15";
