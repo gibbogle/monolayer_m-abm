@@ -139,7 +139,7 @@ do ichemo = 1,TRACER
 	endif
 enddo
 call UpdateChemomap
-call AdjustMM
+!call AdjustMM
 call SetInitialGrowthRate
 Nradiation_tag = 0
 Ndrug_tag = 0
@@ -1446,6 +1446,7 @@ enddo
 !if (iphase >= 5) write(*,'(a,2e12.3)') 'Vdiv, V: ',cp%divide_volume, cp%V
 !write(*,'(a,2f8.3)') 'Tdiv,sum of phases: ',Tdiv/3600,(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5) + phase_time(6))/3600
 end subroutine
+
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
 subroutine oldAddCell(k,site)

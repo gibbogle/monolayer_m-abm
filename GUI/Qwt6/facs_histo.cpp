@@ -4,14 +4,15 @@
 
 #ifdef QWT_VER5
 #include "mainwindow.h"
-#include <qwt_plot_printfilter.h>
 #else
 #include "Qwt6/mainwindow.h"
 #endif
 #include "log.h"
 #include "params.h"
 #include "global.h"
+#include "malloc.h"
 #include <QPainter>
+#include <qwt_scale_engine.h>
 
 #ifdef linux
 #include <QTcpServer>
@@ -21,6 +22,39 @@
 
 LOG_USE();
 
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::processGroupBoxClick(QString text)
+{
+    LOG_QMSG("processGroupBoxClick: " + text);
+    QwtPlot *plot;
+
+    if (text.compare("Histo") == 0) {
+        LOG_MSG("save Histo plot");
+        bool use_HistoBar = (buttonGroup_histotype->checkedId() == 1);
+        if (use_HistoBar) {
+            plot = qpHistoBar;
+            qpHistoLine->hide();
+        } else {
+            plot = qpHistoLine;
+            qpHistoBar->hide();
+        }
+    } else if (text.compare("FACS") == 0) {
+        LOG_MSG("save FACS plot");
+        plot = qpFACS;
+    } else {
+        return;
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(0,"Select image file", ".",
+        "Image files (*.png *.jpg *.tif *.bmp)");
+    if (fileName.isEmpty()) {
+        return;
+    }
+    QSizeF size(120,120);
+    QwtPlotRenderer renderer;
+    renderer.renderDocument(plot,fileName,size,85);
+}
 
 void MainWindow::createFACSPage()
 {
@@ -124,7 +158,6 @@ void MainWindow::createFACSPage()
     biglayout->setMargin(25);
     page_FACS->setLayout(biglayout);
 
-    qpFACS->clear();
     qpFACS->setTitle("FACS");
     qpFACS->replot();
     qpHistoBar->setTitle("Histogram");
@@ -132,6 +165,30 @@ void MainWindow::createFACSPage()
     qpHistoLine->hide();
     connect((QObject *)groupBox_FACS,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
     connect((QObject *)groupBox_Histo,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
+}
+
+//--------------------------------------------------------------------------------------------------------
+// (May not be useful)
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::heap_check()
+{
+    /* Check heap status */
+    int heapstatus = _heapchk();
+    switch( heapstatus )
+    {
+    case _HEAPOK:
+       LOG_MSG(" OK - heap is fine\n" );
+       break;
+    case _HEAPEMPTY:
+       LOG_MSG(" OK - heap is empty\n" );
+       break;
+    case _HEAPBADBEGIN:
+       LOG_MSG( "ERROR - bad start of heap\n" );
+       break;
+    case _HEAPBADNODE:
+       LOG_MSG( "ERROR - bad node in heap\n" );
+       break;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -151,7 +208,6 @@ void MainWindow::showFACS()
     LOG_MSG("showFACS");
 
     qpFACS->size();
-//    qpFACS->clear();
     qpFACS->setTitle("FACS");
 
     // Determine which x button is checked:
@@ -337,21 +393,19 @@ void MainWindow::showFACS()
 
     if (xQpval) free(xQpval);
     if (yQpval) free(yQpval);
-    xQpval = (double *)malloc(Global::nFACS_cells*sizeof(double));
-    yQpval = (double *)malloc(Global::nFACS_cells*sizeof(double));
-
-    QwtSymbol *sym = &FACS_sym;
+    double *xQpval = (double *)malloc((Global::nFACS_cells)*sizeof(double));
+    double *yQpval = (double *)malloc((Global::nFACS_cells)*sizeof(double));
+    QwtSymbol *sym = new QwtSymbol();
     QwtPlotCurve *crv = &FACS_crv;
     sym->setStyle(QwtSymbol::Ellipse);
     sym->setPen(QColor(Qt::blue));
     sym->setBrush(QColor(Qt::blue));
     int dotSize = lineEdit_dotsize->text().toInt();
     sym->setSize(dotSize);
-    crv->setSymbol(*sym);
+    crv->setSymbol(sym);
     crv->setPen(QColor(Qt::red));
     crv->setStyle(QwtPlotCurve::NoCurve);
     crv->attach(qpFACS);
-
     QTime tt;
     tt.start();
     for (i=0; i<Global::nFACS_cells; i++) {
@@ -365,12 +419,14 @@ void MainWindow::showFACS()
             yQpval[i] = y;
         }
     }
-    crv->setRawData(xQpval,yQpval,Global::nFACS_cells);
+
+//    crv->setRawData(xQpval,yQpval,Global::nFACS_cells);
+    crv->setSamples(xQpval,yQpval,Global::nFACS_cells);
 
     qpFACS->setAxisScale(QwtPlot::yLeft, ymin, max(1.5*ymin,ymax), 0);
     qpFACS->setAxisTitle(QwtPlot::yLeft, ylabel);
     if (y_logscale) {
-        qpFACS->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
+        qpFACS->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
     } else {
         qpFACS->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
     }
@@ -380,7 +436,7 @@ void MainWindow::showFACS()
     qpFACS->setAxisScale(QwtPlot::xBottom, xmin, xmax, 0);
     qpFACS->setAxisTitle(QwtPlot::xBottom, xlabel);
     if (x_logscale) {
-        qpFACS->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
+        qpFACS->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
     } else {
         qpFACS->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
     }
@@ -388,6 +444,8 @@ void MainWindow::showFACS()
     qpFACS->setAxisMaxMajor(QwtPlot::xBottom, 5);
 
     qpFACS->replot();
+    free(xQpval);
+    free(yQpval);
     LOG_QMSG("showFACS display time (ms): " + QString::number(tt.elapsed()));
 }
 
@@ -396,26 +454,12 @@ void MainWindow::showFACS()
 void MainWindow::saveFACSImage()
 {
     QString path = QFileDialog::getSaveFileName(this, tr("Save as image"), "", tr("PNG file (*.png)"));
-
     if (path.isEmpty())
         return;
 
-    QImage img(512, 512, QImage::Format_ARGB32);
-    QwtPlotPrintFilter pf;
-    //    pf.setOptions(QwtPlotPrintFilter::PrintAll);
-    //    pf.color(Qt::GlobalColor::white,QwtPlotPrintFilter::CanvasBackground);
-    //    pf.color(Qt::GlobalColor::white,QwtPlotPrintFilter::WidgetBackground);
-    pf.setOptions(2+4+8+16+32);
-    bool use_painter = false;
-    if (use_painter) {
-        QPainter painter;
-        painter.begin(&img);
-        qpFACS->print(&painter,QRect(0, 0, 512, 512),pf);
-        painter.end();
-    } else {
-        qpFACS->print(img,pf);
-    }
-    img.save(path);
+    QSizeF size(120,120);
+    QwtPlotRenderer renderer;
+    renderer.renderDocument(qpFACS,path,size,85);
 }
 
 
@@ -439,7 +483,7 @@ void MainWindow::test_histo()
     QString testlabel = "test";
     int numValues = 20;
     double width = 10, xmin = 0;
-    QwtArray<double> values(numValues);
+    QVector<double> values(numValues);
     for (int i=0; i<numValues; i++) {
         values[i] = rand() %100;
     }
@@ -448,8 +492,59 @@ void MainWindow::test_histo()
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
+void MainWindow:: showHisto()
+{
+    int ivar, k, k0, numValues;
+    QRadioButton *rb;
+    QString xlabel;
+    double width, xmin;
+    bool log_scale;
+
+    exthread->getHisto();
+    log_scale = checkBox_histo_logscale->isChecked();
+    numValues = Global::nhisto_bins;
+    QVector<double> values(numValues);
+    // Determine which button is checked:
+    for (ivar=0; ivar<Global::nvars_used; ivar++) {
+        rb = histo_rb_list[ivar];
+        if (rb->isChecked()) {
+            break;
+        }
+    }
+    xlabel = Global::var_string[ivar];
+    k0 = Global::histo_celltype*numValues*Global::nvars_used;
+    if (!Global::histo_data) {
+        LOG_MSG("No histo_data");
+        return;
+    }
+    for (int i=0; i<numValues; i++) {
+        k = k0 + ivar*numValues + i;
+        if (log_scale)
+            values[i] = Global::histo_data_log[k];
+        else
+            values[i] = Global::histo_data[k];
+    }
+    if (log_scale) {
+        xmin = Global::histo_vmin_log[ivar];
+        width = (Global::histo_vmax_log[ivar] - Global::histo_vmin_log[ivar])/numValues;
+    } else {
+        xmin = Global::histo_vmin[ivar];
+        width = (Global::histo_vmax[ivar] - Global::histo_vmin[ivar])/numValues;
+    }
+    if (xlabel.compare("Cycle phase") == 0) {
+        LOG_QMSG("xlabel: " + xlabel)
+        xmin = 1;
+        double xmax = 8;
+        numValues = 7;
+        width = (xmax - xmin)/numValues;
+    }
+    makeHistoPlot(numValues,xmin,width,values,xlabel);
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
 void MainWindow::makeHistoPlot(int numValues, double xmin, double width,
-                               QwtArray<double> values, QString xlabel)
+                               QVector<double> values, QString xlabel)
 {
     QwtPlot *plot;
     double pos;
@@ -462,37 +557,39 @@ void MainWindow::makeHistoPlot(int numValues, double xmin, double width,
         plot = qpHistoLine;
         qpHistoBar->hide();
     }
-    plot->clear();
     plot->setCanvasBackground(QColor(Qt::white));
     plot->setTitle("Histogram");
 
     QwtPlotGrid *grid = new QwtPlotGrid;
     grid->enableXMin(true);
     grid->enableYMin(true);
-    grid->setMajPen(QPen(Qt::black, 0, Qt::DotLine));
-    grid->setMinPen(QPen(Qt::gray, 0 , Qt::DotLine));
+    grid->setMajorPen(QPen(Qt::black, 0, Qt::DotLine));
+    grid->setMinorPen(QPen(Qt::gray, 0 , Qt::DotLine));
     grid->attach(plot);
 
     if (use_HistoBar) {
         if (histogram) {
             histogram->detach();
         } else {
-            histogram = new HistogramItem();
+            histogram = new QwtPlotHistogram();
         }
-        histogram->setColor(Qt::darkCyan);
 
-        QwtArray<QwtDoubleInterval> intervals(numValues);
-
+        QColor c = Qt::darkCyan;
+        c.setAlpha( 180 );
+        histogram->setBrush( QBrush( c ) );
+        QVector<QwtIntervalSample> samples( numValues );
         pos = xmin;
-        for ( int i = 0; i < numValues; i++ )
+        for ( uint i = 0; i < numValues; i++ )
         {
-            intervals[i] = QwtDoubleInterval(pos, pos + width);
+            QwtInterval interval( pos, pos+width );
+            interval.setBorderFlags( QwtInterval::ExcludeMaximum );
+            samples[i] = QwtIntervalSample( values[i], interval );
             pos += width;
         }
-
-        histogram->setData(QwtIntervalData(intervals, values));
+        histogram->setData( new QwtIntervalSeriesData( samples ) );
         histogram->attach(plot);
     } else {
+        plot->detachItems(QwtPlotItem::Rtti_PlotCurve, true);
         double x[100], y[100];
         for ( int i = 0; i < numValues; i++ ) {
             x[i] = xmin + (i + 0.5)*width;
@@ -502,9 +599,10 @@ void MainWindow::makeHistoPlot(int numValues, double xmin, double width,
         QwtPlotCurve *curve = new QwtPlotCurve("");
         QPen *pen = new QPen();
         pen->setColor(Qt::black);
+        pen->setWidth(3);
         curve->attach(plot);
         curve->setPen(*pen);
-        curve->setData(x, y, numValues);
+        curve->setSamples(x, y, numValues);
     }
 
     plot->setAxisTitle(QwtPlot::xBottom, xlabel);
@@ -529,24 +627,10 @@ void MainWindow::saveHistoImage()
     }
 
     QString path = QFileDialog::getSaveFileName(this, tr("Save as image"), "", tr("PNG file (*.png)"));
-
     if (path.isEmpty())
         return;
 
-    QImage img(512, 512, QImage::Format_ARGB32);
-    QwtPlotPrintFilter pf;
-    pf.setOptions(QwtPlotPrintFilter::PrintAll);
-//    pf.color(Qt::GlobalColor::white,QwtPlotPrintFilter::CanvasBackground);
-//    pf.color(Qt::GlobalColor::white,QwtPlotPrintFilter::WidgetBackground);
-//    pf.setOptions(2+4+8+16+32);
-    bool use_painter = false;
-    if (use_painter) {
-        QPainter painter;
-        painter.begin(&img);
-        qplot->print(&painter,QRect(0, 0, 512, 512),pf);
-        painter.end();
-    } else {
-        qplot->print(img,pf);
-    }
-    img.save(path);
+    QSizeF size(120,120);
+    QwtPlotRenderer renderer;
+    renderer.renderDocument(qplot,path,size,85);
 }

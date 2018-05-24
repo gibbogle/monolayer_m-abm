@@ -61,20 +61,6 @@ end type
 type(chemokine_type), target :: chemo(MAX_CHEMO)
 
 type ODEdiff_type
-!	integer :: ichemo
-!	integer :: nextra
-!	integer :: nintra
-!	integer :: nvars
-!	integer, allocatable :: ivar(:,:,:)
-!	integer, allocatable :: varsite(:,:)
-!	integer, allocatable :: icoef(:,:)
-!	integer, allocatable :: iexcoef(:,:)
-!	integer, allocatable :: vartype(:)
-!	integer, allocatable :: cell_index(:)
-!	integer, allocatable :: isite_extra(:)
-!	integer, allocatable :: isite_intra(:)
-!	integer, allocatable :: extra_isite(:)
-!!	integer, allocatable :: ncoef(:)
 	real(REAL_KIND) :: deltaC_soft
 	real(REAL_KIND) :: k_soft
 	real(REAL_KIND) :: C1_soft

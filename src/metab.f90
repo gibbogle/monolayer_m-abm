@@ -86,16 +86,6 @@ metab = glucose_metab(G)
 rate = G_maxrate* (1 + K_Hb(ityp)*H)*metab
 end function
 
-!!--------------------------------------------------------------------------
-!!--------------------------------------------------------------------------
-!function get_Poxidation_rate(ityp, PDK, P) result(rate)
-!integer :: ityp
-!real(REAL_KIND) :: PDK, P, rate
-!
-!rate = PDK*P**Hill_N_P/(P**Hill_N_P + Hill_Km_P**Hill_N_P)
-!end function
-
-
 !--------------------------------------------------------------------------
 ! Currently this sets up parameters for type 1 cells only.
 !--------------------------------------------------------------------------
@@ -720,9 +710,17 @@ endif
 !mp_save => metab_save
 !mp_save = mp
 
-C_O2 = C(1)
-C_G = C(N1D+2)
-C_L = C(2*N1D+3)
+if (N1D == 0) then
+	! Cex for 3D case - vspheroid
+	C_O2 = C(1)
+	C_G = C(2)
+	C_L = C(3)
+else
+	! Cex for 1D case - monolayer
+	C_O2 = C(1)
+	C_G = C(N1D+2)
+	C_L = C(2*N1D+3)
+endif
 
 N_O2 = Hill_N_O2
 Km_O2 = Hill_Km_O2
@@ -1062,21 +1060,21 @@ if (ichemo == OXYGEN) then
 			metab = 0
 		endif
 	else
-		if (MM_THRESHOLD > 0) then
-			if (C > ODEdiff%C1_soft) then
-				metab = (C-ODEdiff%deltaC_soft)/(chemo(ichemo)%MM_C0 + C - ODEdiff%deltaC_soft)
-			elseif (C > 0) then
-				metab = ODEdiff%k_soft*C*C
-			else
-				metab = 0
-			endif
-		else
+!		if (MM_THRESHOLD > 0) then
+!			if (C > ODEdiff%C1_soft) then
+!				metab = (C-ODEdiff%deltaC_soft)/(chemo(ichemo)%MM_C0 + C - ODEdiff%deltaC_soft)
+!			elseif (C > 0) then
+!				metab = ODEdiff%k_soft*C*C
+!			else
+!				metab = 0
+!			endif
+!		else
 			if (C > 0) then
 				metab = C/(chemo(ichemo)%MM_C0 + C)
 			else
 				metab = 0
 			endif
-		endif
+!		endif
 	endif
 endif
 end function

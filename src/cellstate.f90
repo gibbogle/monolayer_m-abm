@@ -1128,7 +1128,7 @@ endif
 !if (colony_simulation) write(*,'(a,i6,2e12.3)') 'new cell: ',kcell2,cp2%V,cp2%divide_volume
 end subroutine
 
-
+#if 0
 !----------------------------------------------------------------------------------
 ! Makes a slight modification to the Michaelis-Menten function to create a
 ! "soft landing" as C -> 0
@@ -1164,6 +1164,7 @@ endif
 !write(logmsg,'(a,4e12.4)') 'AdjustMM: C0, deltaC, C1, k: ',C0, ODEdiff%deltaC_soft, ODEdiff%C1_soft, ODEdiff%k_soft
 !call logger(logmsg)
 end subroutine
+#endif
 
 !----------------------------------------------------------------------------------
 ! This is used to adjust a cell's growth rate to introduce some random variability

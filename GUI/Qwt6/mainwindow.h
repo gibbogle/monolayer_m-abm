@@ -31,14 +31,12 @@ using namespace std;
 //#include "SimpleView2DUI.h"
 #include "qvideooutput.h"
 
-#include "mainwindow.h"
 #include <qwt_plot.h>
 #include <qwt_plot_grid.h>
+//#include <qwt_interval_data.h>
 #include <qpainter.h>
-#include "histogram_item.h"
-#ifdef QWT_VER5
-#include <qwt_interval_data.h>
-#endif
+//#include "histogram_item.h"
+#include <qwt_plot_histogram.h>
 
 #include "qcustomplot.h"
 #include "plotwin.h"
@@ -251,6 +249,7 @@ private:
     void test_histo();
     void makeHistoPlot(int numValues, double xmin, double width, QVector<double> values, QString xlabel);
     void showBool(QString, bool);
+    void heap_check();
 
 	double erf(double z);
     double pnorm(double x1, double x2, double mu, double sig);
@@ -318,7 +317,8 @@ private:
     QwtPlot *qpFACS;
     QwtPlotCurve *curveFACS;
     QwtPlot *qpHistoBar, *qpHistoLine;
-    HistogramItem *histogram;
+//    HistogramItem *histogram;
+    QwtPlotHistogram *histogram;
     QCustomPlot *colony_plot;
     double *xQpval, *yQpval;
     QwtSymbol FACS_sym;
