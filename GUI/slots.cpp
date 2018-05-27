@@ -1,10 +1,6 @@
 #include <QtGui>
 
-#ifdef QWT_VER5
 #include "mainwindow.h"
-#else
-#include "Qwt6/mainwindow.h"
-#endif
 #include "log.h"
 #include "params.h"
 #include "global.h"
@@ -18,6 +14,30 @@
 LOG_USE();
 
 extern Params *parm;	// I don't believe this is the right way, but it works
+
+//--------------------------------------------------------------------------------------------------------
+// (May not be useful)
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::heap_check()
+{
+    /* Check heap status */
+    int heapstatus = _heapchk();
+    switch( heapstatus )
+    {
+    case _HEAPOK:
+       LOG_MSG(" OK - heap is fine\n" );
+       break;
+    case _HEAPEMPTY:
+       LOG_MSG(" OK - heap is empty\n" );
+       break;
+    case _HEAPBADBEGIN:
+       LOG_MSG( "ERROR - bad start of heap\n" );
+       break;
+    case _HEAPBADNODE:
+       LOG_MSG( "ERROR - bad node in heap\n" );
+       break;
+    }
+}
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------

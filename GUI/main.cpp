@@ -4,11 +4,7 @@
 //! [0]
 #include <QApplication>
 
-#ifdef QWT_VER5
 #include "mainwindow.h"
-#else
-#include "Qwt6/mainwindow.h"
-#endif
 #include "log.h"
 #include <windows.h>
 #include <stdio.h>

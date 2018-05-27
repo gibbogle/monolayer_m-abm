@@ -1,9 +1,5 @@
 // drug.cpp
-#ifdef QWT_VER5
 #include "mainwindow.h"
-#else
-#include "Qwt6/mainwindow.h"
-#endif
 #include "QMessageBox"
 #include "QFile"
 #include <QDebug>

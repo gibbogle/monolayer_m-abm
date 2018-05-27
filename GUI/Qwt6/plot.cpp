@@ -1,8 +1,4 @@
-#ifdef QWT_VER5
 #include "plot.h"
-#else
-#include "Qwt6/plot.h"
-#endif
 
 #include "log.h"
 

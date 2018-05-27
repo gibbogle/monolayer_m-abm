@@ -37,6 +37,9 @@ extern "C" {
 #include <qwt_painter.h>
 #include <qwt_plot_canvas.h>
 #include <myqgraphicsview.h>
+#ifdef QWT_VER6
+#include <qwt_plot_renderer.h>
+#endif
 
 #define VTK_SOURCE 0
 #define QWT_FACS_SOURCE 1

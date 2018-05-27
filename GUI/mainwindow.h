@@ -35,9 +35,11 @@ using namespace std;
 #include <qwt_plot.h>
 #include <qwt_plot_grid.h>
 #include <qpainter.h>
-#include "histogram_item.h"
 #ifdef QWT_VER5
 #include <qwt_interval_data.h>
+#include "histogram_item.h"
+#else
+#include <qwt_plot_histogram.h>
 #endif
 
 #include "qcustomplot.h"
@@ -182,9 +184,9 @@ public slots:
     void on_line_CELLPERCENT_1_textEdited(QString pc1_str);
     void on_line_CELLPERCENT_2_textEdited(QString pc2_str);
     void radioButtonChanged(QAbstractButton *b);
-    void on_buttonGroup_celltype_buttonClicked(QAbstractButton* button);
-    void on_buttonGroup_histotype_buttonClicked(QAbstractButton* button);
-    void on_checkBox_histo_logscale_toggled();
+    void buttonGroup_celltype_buttonClicked(QAbstractButton* button);
+    void buttonGroup_histotype_buttonClicked(QAbstractButton* button);
+    void checkBox_histo_logscale_stateChanged(int);
     void on_buttonGroup_drug_buttonClicked(QAbstractButton* button);
     void updateCkill();
 
@@ -223,6 +225,7 @@ private:
     void setupParamList();
 	void loadParams();
 	void reloadParams();
+    void heap_check();
 
     void trackError();
 
@@ -318,7 +321,11 @@ private:
     QwtPlot *qpFACS;
     QwtPlotCurve *curveFACS;
     QwtPlot *qpHistoBar, *qpHistoLine;
+#ifdef QWT_VER5
     HistogramItem *histogram;
+#else
+    QwtPlotHistogram *histogram;
+#endif
     QCustomPlot *colony_plot;
     double *xQpval, *yQpval;
     QwtSymbol FACS_sym;

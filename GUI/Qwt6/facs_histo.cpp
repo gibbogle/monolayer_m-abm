@@ -2,11 +2,7 @@
 
 #include <QtGui>
 
-#ifdef QWT_VER5
 #include "mainwindow.h"
-#else
-#include "Qwt6/mainwindow.h"
-#endif
 #include "log.h"
 #include "params.h"
 #include "global.h"
@@ -163,32 +159,42 @@ void MainWindow::createFACSPage()
     qpHistoBar->setTitle("Histogram");
     qpHistoBar->replot();
     qpHistoLine->hide();
-    connect((QObject *)groupBox_FACS,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
-    connect((QObject *)groupBox_Histo,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
+
+    connect(checkBox_histo_logscale,SIGNAL(stateChanged(int)),this,SLOT(checkBox_histo_logscale_stateChanged(int)));
+    connect(buttonGroup_celltype,SIGNAL(buttonClicked(QAbstractButton*)),this,SLOT(buttonGroup_celltype_buttonClicked(QAbstractButton*)));
+    connect(buttonGroup_histotype,SIGNAL(buttonClicked(QAbstractButton*)),this,SLOT(buttonGroup_histotype_buttonClicked(QAbstractButton*)));
+//    connect((QObject *)groupBox_FACS,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
+//    connect((QObject *)groupBox_Histo,SIGNAL(groupBoxClicked(QString)),this,SLOT(processGroupBoxClick(QString)));
+}
+
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::buttonGroup_celltype_buttonClicked(QAbstractButton* button)
+{
+    LOG_MSG("on_buttonGroup_celltype_buttonClicked");
+    if (button->text() == "Cell type 1") {
+        Global::histo_celltype = 1;
+    } else if (button->text() == "Cell type 2") {
+        Global::histo_celltype = 2;
+    } else {
+        Global::histo_celltype = 0; // both cell types
+    }
+    showHisto();
 }
 
 //--------------------------------------------------------------------------------------------------------
-// (May not be useful)
 //--------------------------------------------------------------------------------------------------------
-void MainWindow::heap_check()
+void MainWindow::checkBox_histo_logscale_stateChanged(int state)
 {
-    /* Check heap status */
-    int heapstatus = _heapchk();
-    switch( heapstatus )
-    {
-    case _HEAPOK:
-       LOG_MSG(" OK - heap is fine\n" );
-       break;
-    case _HEAPEMPTY:
-       LOG_MSG(" OK - heap is empty\n" );
-       break;
-    case _HEAPBADBEGIN:
-       LOG_MSG( "ERROR - bad start of heap\n" );
-       break;
-    case _HEAPBADNODE:
-       LOG_MSG( "ERROR - bad node in heap\n" );
-       break;
-    }
+    showHisto();
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow::buttonGroup_histotype_buttonClicked(QAbstractButton* button)
+{
+    showHisto();
 }
 
 //--------------------------------------------------------------------------------------------------------

@@ -522,35 +522,6 @@ void MainWindow:: drawDistPlots()
 //}
 
 
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::on_buttonGroup_celltype_buttonClicked(QAbstractButton* button)
-{
-    LOG_MSG("on_buttonGroup_celltype_buttonClicked");
-    if (button->text() == "Cell type 1") {
-        Global::histo_celltype = 1;
-    } else if (button->text() == "Cell type 2") {
-        Global::histo_celltype = 2;
-    } else {
-        Global::histo_celltype = 0; // both cell types
-    }
-    showHisto();
-}
-
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::on_checkBox_histo_logscale_toggled()
-{
-    showHisto();
-}
-
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::on_buttonGroup_histotype_buttonClicked(QAbstractButton* button)
-{
-    showHisto();
-}
-
 //-------------------------------------------------------------
 // Loops through the workingParameterList and fills in the GUI.
 //-------------------------------------------------------------
