@@ -1365,6 +1365,7 @@ end subroutine
 ! for all phases:
 !	%V
 !	%t_divide_last
+! Note: no cells start in mitosis - set all phase=6 cells at the end of G2 checkpoint
 !--------------------------------------------------------------------------------
 subroutine SetInitialCellCycleStatus(cp)
 type(cell_type), pointer :: cp
@@ -1426,10 +1427,14 @@ do iphase = 1,6
 			cp%V = V0 + (phase_time(1) + phase_time(3) + phase_time(4))*rVmax 
 			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + y*phase_time(5))
 		elseif (iphase == M_phase) then
-			cp%phase = M_phase
-			cp%M_time = z*phase_time(6)
+!			cp%phase = M_phase
+!			cp%M_time = z*phase_time(6)
 			cp%V = V0 + (phase_time(1) + phase_time(3) + phase_time(4))*rVmax 
-			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5) + y*phase_time(6))
+!			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5) + y*phase_time(6))
+			cp%phase = Checkpoint2
+			cp%G2M_time = 0
+			cp%G2_flag = .false.
+			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5))
 		else
 			write(*,*) 'Error in SetInitialCellCycleStatus' 
 			stop

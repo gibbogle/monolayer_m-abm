@@ -252,14 +252,17 @@ void ExecThread::run()
             if (USING_PI) get_pi_dist(PI_NBINS, Global::PI_fract, &Global::PI_max_fract, &Global::PI_max_fluor);
 //            get_ic_concdata(&Global::conc_nvars, &Global::conc_nc_ic, &Global::conc_dx_ic, Global::IC_concData);
 
-// The problem is that getFACS takes a long time when the simulation is running and the number of cells is large.
-// Now getFACS and showFACS are executed only when the simulation is paused or stopped, with the refresh button.
-//            if (Global::showingFACS || Global::recordingFACS) {
-//                getFACS();
-//            }
+// The problem is that getFACS takes a long time when the simulation is running and the number of cells is large.  FIXED
             if (Global::showingFACS || Global::recordingFACS) {
-//                emit facs_update();
+                getFACS();
+            }
+            if (Global::showingFACS || Global::recordingFACS) {
+                LOG_MSG("emit facs_update");
+                mutex1.lock();
+                emit facs_update();
+                mutex1.lock();
                 emit histo_update();
+                mutex1.unlock();
             }
             hour = hour + (Global::DELTA_T*Global::NT_DISPLAY)/3600.;
             mutex1.lock();

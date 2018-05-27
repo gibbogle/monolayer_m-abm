@@ -635,7 +635,7 @@ void QVideoOutput::recorder()
     LOG_MSG(msg);
     if (!record) return;
     if (source == VTK_SOURCE) {
-        id = vtkImageData::New();
+//        id = vtkImageData::New();
         id = w2i->GetOutput();
         w2i->Modified();	//important
         id->Update();

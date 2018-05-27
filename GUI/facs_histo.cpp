@@ -147,7 +147,8 @@ void MainWindow::showFACS()
     QRadioButton *rb;
     QTime t;
 
-    if (!paused && !exthread->stopped) return;
+    if (!videoFACS->record)
+        if (!paused && !exthread->stopped) return;
     LOG_MSG("showFACS");
 
     qpFACS->size();
@@ -388,6 +389,11 @@ void MainWindow::showFACS()
     qpFACS->setAxisMaxMajor(QwtPlot::xBottom, 5);
 
     qpFACS->replot();
+    if (videoFACS->record) {
+        videoFACS->recorder();
+        exthread->mutex1.unlock();
+        LOG_MSG("exthread->mutex1.unlock");
+    }
     LOG_QMSG("showFACS display time (ms): " + QString::number(tt.elapsed()));
 }
 
@@ -444,6 +450,60 @@ void MainWindow::test_histo()
         values[i] = rand() %100;
     }
     makeHistoPlot(numValues,xmin,width,values,testlabel);
+}
+
+//--------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------
+void MainWindow:: showHisto()
+{
+    int ivar, k, k0, numValues;
+    QRadioButton *rb;
+    QString xlabel;
+    double width, xmin;
+    bool log_scale;
+
+    exthread->getHisto();
+    log_scale = checkBox_histo_logscale->isChecked();
+    numValues = Global::nhisto_bins;
+    QwtArray<double> values(numValues);
+
+    // Determine which button is checked:
+    for (ivar=0; ivar<Global::nvars_used; ivar++) {
+        rb = histo_rb_list[ivar];
+        if (rb->isChecked()) {
+            break;
+        }
+    }
+    xlabel = Global::var_string[ivar];
+    k0 = Global::histo_celltype*numValues*Global::nvars_used;
+//    sprintf(msg,"histo_celltype: %d numValues: %d nvars_used: %d k0: %d",Global::histo_celltype,numValues,Global::nvars_used,k0);
+//    LOG_MSG(msg);
+    if (!Global::histo_data) {
+        LOG_MSG("No histo_data");
+        return;
+    }
+    for (int i=0; i<numValues; i++) {
+        k = k0 + ivar*numValues + i;
+        if (log_scale)
+            values[i] = Global::histo_data_log[k];
+        else
+            values[i] = Global::histo_data[k];
+    }
+    if (log_scale) {
+        xmin = Global::histo_vmin_log[ivar];
+        width = (Global::histo_vmax_log[ivar] - Global::histo_vmin_log[ivar])/numValues;
+    } else {
+        xmin = Global::histo_vmin[ivar];
+        width = (Global::histo_vmax[ivar] - Global::histo_vmin[ivar])/numValues;
+    }
+    if (xlabel.compare("Cycle phase") == 0) {
+        LOG_QMSG("xlabel: " + xlabel)
+        xmin = 1;
+        double xmax = 8;
+        numValues = 7;
+        width = (xmax - xmin)/numValues;
+    }
+    makeHistoPlot(numValues,xmin,width,values,xlabel);
 }
 
 //--------------------------------------------------------------------------------------------------------

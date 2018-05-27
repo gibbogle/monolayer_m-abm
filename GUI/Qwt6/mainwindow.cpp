@@ -1565,7 +1565,7 @@ void MainWindow::runServer()
 	exthread = new ExecThread(inputFile);
 //	connect(exthread, SIGNAL(display()), this, SLOT(displayScene()));
     connect(exthread, SIGNAL(summary(double)), this, SLOT(showSummary(double)), Qt::UniqueConnection);
-//    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()));
+    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()), Qt::UniqueConnection);
     connect(this, SIGNAL(facs_update()), this, SLOT(showFACS()), Qt::UniqueConnection);
     connect(exthread, SIGNAL(histo_update()), this, SLOT(showHisto()), Qt::UniqueConnection);
     connect(this, SIGNAL(histo_update()), this, SLOT(showHisto()));

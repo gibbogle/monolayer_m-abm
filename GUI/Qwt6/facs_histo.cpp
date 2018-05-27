@@ -204,7 +204,8 @@ void MainWindow::showFACS()
     QRadioButton *rb;
     QTime t;
 
-    if (!paused && !exthread->stopped) return;
+    if (!videoFACS->record)
+        if (!paused && !exthread->stopped) return;
     LOG_MSG("showFACS");
 
     qpFACS->size();
@@ -446,6 +447,11 @@ void MainWindow::showFACS()
     qpFACS->replot();
     free(xQpval);
     free(yQpval);
+    if (videoFACS->record) {
+        videoFACS->recorder();
+        exthread->mutex1.unlock();
+        LOG_MSG("exthread->mutex1.unlock");
+    }
     LOG_QMSG("showFACS display time (ms): " + QString::number(tt.elapsed()));
 }
 

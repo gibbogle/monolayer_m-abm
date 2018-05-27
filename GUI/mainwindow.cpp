@@ -162,7 +162,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 //    videoVTK = new QVideoOutput(this, VTK_SOURCE, vtk->renWin, NULL, NULL);
     videoFACS = new QVideoOutput(this, QWT_FACS_SOURCE, NULL, qpFACS, NULL);
-    videoField = new QVideoOutput(this, QWT_FIELD_SOURCE, NULL, NULL, field->view);
+//    videoField = new QVideoOutput(this, QWT_FIELD_SOURCE, NULL, NULL, field->view);
 
     tabs->setCurrentIndex(9);
     setupPopup();
@@ -418,8 +418,7 @@ void MainWindow:: startRecorderFACS()
     actionStart_recording_FACS->setEnabled(false);
     actionStop_recording_FACS->setEnabled(true);
     Global::recordingFACS = true;
-    LOG_QMSG("startRecorderFACS");
-    LOG_QMSG(videoFileName);
+    LOG_QMSG("startRecorderFACS: " + videoFileName);
 }
 
 //--------------------------------------------------------------------------------------------------------
@@ -550,59 +549,6 @@ void MainWindow::on_checkBox_histo_logscale_toggled()
 void MainWindow::on_buttonGroup_histotype_buttonClicked(QAbstractButton* button)
 {
     showHisto();
-}
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow:: showHisto()
-{
-    int ivar, k, k0, numValues;
-    QRadioButton *rb;
-    QString xlabel;
-    double width, xmin;
-    bool log_scale;
-
-    exthread->getHisto();
-    log_scale = checkBox_histo_logscale->isChecked();
-    numValues = Global::nhisto_bins;
-    QwtArray<double> values(numValues);
-
-    // Determine which button is checked:
-    for (ivar=0; ivar<Global::nvars_used; ivar++) {
-        rb = histo_rb_list[ivar];
-        if (rb->isChecked()) {
-            break;
-        }
-    }
-    xlabel = Global::var_string[ivar];
-    k0 = Global::histo_celltype*numValues*Global::nvars_used;
-//    sprintf(msg,"histo_celltype: %d numValues: %d nvars_used: %d k0: %d",Global::histo_celltype,numValues,Global::nvars_used,k0);
-//    LOG_MSG(msg);
-    if (!Global::histo_data) {
-        LOG_MSG("No histo_data");
-        return;
-    }
-    for (int i=0; i<numValues; i++) {
-        k = k0 + ivar*numValues + i;
-        if (log_scale)
-            values[i] = Global::histo_data_log[k];
-        else
-            values[i] = Global::histo_data[k];
-    }
-    if (log_scale) {
-        xmin = Global::histo_vmin_log[ivar];
-        width = (Global::histo_vmax_log[ivar] - Global::histo_vmin_log[ivar])/numValues;
-    } else {
-        xmin = Global::histo_vmin[ivar];
-        width = (Global::histo_vmax[ivar] - Global::histo_vmin[ivar])/numValues;
-    }
-    if (xlabel.compare("Cycle phase") == 0) {
-        LOG_QMSG("xlabel: " + xlabel)
-        xmin = 1;
-        double xmax = 8;
-        numValues = 7;
-        width = (xmax - xmin)/numValues;
-    }
-    makeHistoPlot(numValues,xmin,width,values,xlabel);
 }
 
 //-------------------------------------------------------------
@@ -1623,7 +1569,7 @@ void MainWindow::runServer()
 	exthread = new ExecThread(inputFile);
 //	connect(exthread, SIGNAL(display()), this, SLOT(displayScene()));
     connect(exthread, SIGNAL(summary(double)), this, SLOT(showSummary(double)), Qt::UniqueConnection);
-//    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()));
+    connect(exthread, SIGNAL(facs_update()), this, SLOT(showFACS()), Qt::UniqueConnection);
     connect(this, SIGNAL(facs_update()), this, SLOT(showFACS()), Qt::UniqueConnection);
     connect(exthread, SIGNAL(histo_update()), this, SLOT(showHisto()), Qt::UniqueConnection);
     connect(this, SIGNAL(histo_update()), this, SLOT(showHisto()));
