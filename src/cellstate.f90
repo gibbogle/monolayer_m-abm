@@ -481,6 +481,7 @@ integer, parameter :: MAX_DIVIDE_LIST = 10000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled
 logical :: mitosis_entry, in_mitosis, divide, tagged
+logical, parameter :: SIMULATE_FORCES = .false.		! no forces in the monolayer simulation
 
 ok = .true.
 changed = .false.
@@ -524,16 +525,16 @@ do kcell = 1,nlist0
 				cp%t_start_mitosis = tnow
 				ncells_mphase = ncells_mphase + 1
 				
-#ifdef SIMULATE_FORCES
+				if (SIMULATE_FORCES) then
 ! The following are applicable when cell-cell forces are relevant
-				cp%nspheres = 2
-				call get_random_vector3(rr)	! set initial axis direction
-				cp%d = 0.1*small_d
-				c = cp%centre(:,1)
-				cp%centre(:,1) = c + (cp%d/2)*rr
-				cp%centre(:,2) = c - (cp%d/2)*rr
-				cp%d_divide = 2.0**(2./3)*cp%radius(1)
-#endif				
+!				cp%nspheres = 2
+!				call get_random_vector3(rr)	! set initial axis direction
+!				cp%d = 0.1*small_d
+!				c = cp%centre(:,1)
+!				cp%centre(:,1) = c + (cp%d/2)*rr
+!				cp%centre(:,2) = c - (cp%d/2)*rr
+!				cp%d_divide = 2.0**(2./3)*cp%radius(1)
+				endif
 	        endif
 	    else
 	        in_mitosis = .true.
@@ -563,16 +564,16 @@ do kcell = 1,nlist0
 				cp%mitosis = 0
 				cp%t_start_mitosis = tnow
 				ncells_mphase = ncells_mphase + 1
-#ifdef SIMULATE_FORCES
-				cp%nspheres = 2
-				call get_random_vector3(rr)	! set initial axis direction
-				rrsum = rrsum + rr
-				cp%d = 0.1*small_d
-				c = cp%centre(:,1)
-				cp%centre(:,1) = c + (cp%d/2)*rr
-				cp%centre(:,2) = c - (cp%d/2)*rr
-				cp%d_divide = 2.0**(2./3)*cp%radius(1)
-#endif			
+				if (SIMULATE_FORCES) then
+!				cp%nspheres = 2
+!				call get_random_vector3(rr)	! set initial axis direction
+!				rrsum = rrsum + rr
+!				cp%d = 0.1*small_d
+!				c = cp%centre(:,1)
+!				cp%centre(:,1) = c + (cp%d/2)*rr
+!				cp%centre(:,2) = c - (cp%d/2)*rr
+!				cp%d_divide = 2.0**(2./3)*cp%radius(1)
+				endif
             endif
             in_mitosis = .true.
         endif
