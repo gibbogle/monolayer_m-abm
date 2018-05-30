@@ -34,7 +34,6 @@ real(REAL_KIND) :: Tb, alpha
 ePL = epsilon_PL    ! /h
 e = epsilon_PL/sum(epsilon_2PL)
 Kcp = Kcp_set
-
 Tcp(0) = 0
 do i = 1,np
     n0 = i
@@ -60,7 +59,6 @@ do i = 1,np
     write(*,'(a,i4,f6.2)') 'n0, Tcp: ',i,Tcp(i)
 enddo
 Tcp = 3600*Tcp  ! hours -> seconds
-stop
 
 end subroutine
 

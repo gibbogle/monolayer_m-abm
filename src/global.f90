@@ -428,6 +428,7 @@ integer :: Nbnd
 integer :: seed(2)
 integer :: kcell_dbug
 integer :: kcell_now
+integer :: kcell_test = 1
 
 ! PEST variables
 logical :: use_PEST = .false.

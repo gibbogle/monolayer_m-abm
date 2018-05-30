@@ -23,6 +23,7 @@ real(REAL_KIND) :: dt, t_simulation
 logical :: ok
 logical :: changed
 integer :: kcell, idrug, ichemo
+type(cell_type),pointer :: cp
 
 !call logger('GrowCells: ')
 !tnow = istep*DELTA_T
@@ -37,6 +38,8 @@ if (.not.ok) return
 !endif
 call CellDeath(dt,ok)
 if (.not.ok) return
+cp => cell_list(kcell_test)
+write(nflog,'(a,2i6,2f8.3,e12.3)') 'kcell_test: ',kcell_test,cp%phase,tnow/3600,cp%mitosis,cp%dVdt
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -481,7 +484,6 @@ integer, parameter :: MAX_DIVIDE_LIST = 10000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled
 logical :: mitosis_entry, in_mitosis, divide, tagged
-logical, parameter :: SIMULATE_FORCES = .false.		! no forces in the monolayer simulation
 
 ok = .true.
 changed = .false.
@@ -525,7 +527,6 @@ do kcell = 1,nlist0
 				cp%t_start_mitosis = tnow
 				ncells_mphase = ncells_mphase + 1
 				
-				if (SIMULATE_FORCES) then
 ! The following are applicable when cell-cell forces are relevant
 !				cp%nspheres = 2
 !				call get_random_vector3(rr)	! set initial axis direction
@@ -534,7 +535,6 @@ do kcell = 1,nlist0
 !				cp%centre(:,1) = c + (cp%d/2)*rr
 !				cp%centre(:,2) = c - (cp%d/2)*rr
 !				cp%d_divide = 2.0**(2./3)*cp%radius(1)
-				endif
 	        endif
 	    else
 	        in_mitosis = .true.
@@ -544,7 +544,9 @@ do kcell = 1,nlist0
 !	    if (cp%dVdt == 0) then
 !			write(nflog,*) 'dVdt=0: kcell, phase: ',kcell,cp%phase 
 !		endif
-        call timestep(cp, ccp, dt)
+		if (cp%dVdt > 0) then
+	        call timestep(cp, ccp, dt)
+	    endif
         if (.not.cp%radiation_tag .and.(cp%NL2(1) > 0 .or. cp%NL2(2) > 0)) then	! irrepairable damage
 			! For now, tag for death at mitosis
 			cp%radiation_tag = .true.	! new_grower
@@ -564,7 +566,6 @@ do kcell = 1,nlist0
 				cp%mitosis = 0
 				cp%t_start_mitosis = tnow
 				ncells_mphase = ncells_mphase + 1
-				if (SIMULATE_FORCES) then
 !				cp%nspheres = 2
 !				call get_random_vector3(rr)	! set initial axis direction
 !				rrsum = rrsum + rr
@@ -573,7 +574,6 @@ do kcell = 1,nlist0
 !				cp%centre(:,1) = c + (cp%d/2)*rr
 !				cp%centre(:,2) = c - (cp%d/2)*rr
 !				cp%d_divide = 2.0**(2./3)*cp%radius(1)
-				endif
             endif
             in_mitosis = .true.
         endif
@@ -850,7 +850,7 @@ subroutine growcell(cp, dt)
 type(cell_type), pointer :: cp
 real(REAL_KIND) :: dt
 real(REAL_KIND) :: Cin_0(NCONST), Cex_0(NCONST)		! at some point NCONST -> MAX_CHEMO
-real(REAL_KIND) :: dVdt,  metab_O2, metab_glucose, metab
+real(REAL_KIND) :: dVdt,  Vin_0, dV,  metab_O2, metab_glucose, metab
 integer :: ityp
 logical :: oxygen_growth, glucose_growth, tagged
 
@@ -873,26 +873,22 @@ endif
 if (colony_simulation) then
 	if (use_metabolism) then
 !		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
-		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
-		cp%dVdt = cp%growth_rate_factor*cp%dVdt
-!		cp%V = cp%divide_volume*cp%metab%Itotal/cp%metab%I2Divide
-!		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide
-		cp%V = cp%V + cp%dVdt*dt	! Should growth occur in a checkpoint????
+!		dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
+!		dVdt = cp%growth_rate_factor*dVdt
+		metab = cp%metab%I_rate/cp%metab%I_rate_max
+		dVdt = get_dVdt(cp,metab)
 	else
 		metab = 1
 		dVdt = get_dVdt(cp,metab)
-		cp%dVdt = dVdt
-		cp%V = cp%V + dVdt*dt
 	endif
 else
 	if (use_metabolism) then
 !		cp%metab%Itotal = cp%metab%Itotal + dt*cp%metab%I_rate
 		! need to set cp%dVdt from cp%metab%I_rate
-		cp%dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
-		cp%dVdt = cp%growth_rate_factor*cp%dVdt
-!		cp%V = cp%divide_volume/2 + (cp%divide_volume/2)*cp%metab%Itotal/cp%metab%I2Divide	! approximate
-		cp%V = cp%V + cp%dVdt*dt	! Should growth occur in a checkpoint????
-		metab = 1
+!		dVdt = max_growthrate(ityp)*cp%metab%I_rate/cp%metab%I_rate_max	! ***** Convert %I_rate to %dVdt *****
+!		dVdt = cp%growth_rate_factor*cp%dVdt
+		metab = cp%metab%I_rate/cp%metab%I_rate_max
+		dVdt = get_dVdt(cp,metab)
 	else
 		oxygen_growth = chemo(OXYGEN)%controls_growth
 		glucose_growth = chemo(GLUCOSE)%controls_growth
@@ -910,10 +906,15 @@ else
 		if (suppress_growth) then	! for checking solvers
 			dVdt = 0
 		endif
-		cp%dVdt = dVdt
-		cp%V = cp%V + dVdt*dt
 	endif
 endif
+cp%dVdt = dVdt
+Vin_0 = cp%V
+dV = dVdt*dt
+if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or. cp%phase == G2_phase)) then
+    dV = 0
+endif
+cp%V = Vin_0 + dV
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -933,23 +934,23 @@ do kcell = 1,nlist
         cp => cell_list(kcell)
     endif
 	if (cp%state == DEAD) cycle
-	C_O2 = chemo(OXYGEN)%bdry_conc
-	C_glucose = chemo(GLUCOSE)%bdry_conc
-	metab_O2 = 1
-	metab_glucose = 1
 	metab = 1
-	if (oxygen_growth .and. glucose_growth) then
-	    metab_O2 = O2_metab(C_O2)
-		metab_glucose = glucose_metab(C_glucose)
-		metab = metab_O2*metab_glucose
-	elseif (oxygen_growth) then
-	    metab_O2 = O2_metab(C_O2)
-		metab = metab_O2
-	elseif (glucose_growth) then
-		metab_glucose = glucose_metab(C_glucose)
-		metab = metab_glucose
-	endif
 	dVdt = get_dVdt(cp,metab)
+!	C_O2 = chemo(OXYGEN)%bdry_conc
+!	C_glucose = chemo(GLUCOSE)%bdry_conc
+!	metab_O2 = 1
+!	metab_glucose = 1
+!	if (oxygen_growth .and. glucose_growth) then
+!	    metab_O2 = O2_metab(C_O2)
+!		metab_glucose = glucose_metab(C_glucose)
+!		metab = metab_O2*metab_glucose
+!	elseif (oxygen_growth) then
+!	    metab_O2 = O2_metab(C_O2)
+!		metab = metab_O2
+!	elseif (glucose_growth) then
+!		metab_glucose = glucose_metab(C_glucose)
+!		metab = metab_glucose
+!	endif
 	if (suppress_growth) then	! for checking solvers
 		dVdt = 0
 	endif
@@ -1090,13 +1091,10 @@ if (cp1%growth_delay) then
 	cp1%growth_delay = (cp1%N_delayed_cycles_left > 0)
 endif
 cp1%G2_M = .false.
-if (use_metabolism) then
-    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1(ityp)
-	cp1%growth_rate_factor = get_growth_rate_factor()
-	cp1%ATP_rate_factor = get_ATP_rate_factor()
-else
-	cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
-endif
+!if (use_metabolism) then
+!    cp1%G1_time = tnow + (cp1%metab%I_rate_max/cp1%metab%I_rate)*cp1%fg*ccp%T_G1(ityp)
+!endif
+cp1%G1_time = tnow + (max_growthrate(ityp)/cp1%dVdt)*cp1%fg*ccp%T_G1(ityp)    ! time spend in G1 varies inversely with dV/dt
 cp1%Iphase = .true.
 cp1%phase = G1_phase
 

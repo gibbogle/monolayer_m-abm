@@ -122,6 +122,7 @@ write(nflog,*) 'Vdivide0, max_growthrate: ',Vdivide0, max_growthrate
 	call SetupMetabolism
 !endif
 call PlaceCells(ok)
+call setTestCell(kcell_test)
 !call show_volume_data
 !call SetRadius(Nsites)
 !call getVolume(blob_volume,blob_area)
@@ -166,7 +167,7 @@ limit_stop = .false.
 kcell_dbug = 0
 write(logmsg,'(a,i6)') 'Startup procedures have been executed: initial T cell count: ',Ncells0
 call logger(logmsg)
-
+call averages
 end subroutine
 
 !----------------------------------------------------------------------------------------- 
@@ -800,9 +801,6 @@ ccp%T_G2 = 3600*ccp%T_G2
 ccp%T_M = 3600*ccp%T_M
 ccp%G1_mean_delay = 3600*ccp%G1_mean_delay
 ccp%G2_mean_delay = 3600*ccp%G2_mean_delay
-
-ccp%Pk_G1 = 1./ccp%G1_mean_delay    ! /sec
-ccp%Pk_G2 = 1./ccp%G2_mean_delay    ! /sec
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -824,6 +822,9 @@ do ityp = 1,2
 	ccp%G1_mean_delay(ityp) = tfactor*ccp%G1_mean_delay(ityp)
 	ccp%G2_mean_delay(ityp)= tfactor*ccp%G2_mean_delay(ityp)
 enddo
+ccp%Pk_G1 = 1./ccp%G1_mean_delay    ! /sec
+ccp%Pk_G2 = 1./ccp%G2_mean_delay    ! /sec
+write(nflog,'(a,4e12.3)') 'Pk_G1, Pk_G2: ',ccp%Pk_G1,ccp%Pk_G2
 end subroutine
 
 !-----------------------------------------------------------------------------------------
@@ -1454,6 +1455,41 @@ end subroutine
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
+subroutine setTestCell(kcell)
+integer :: kcell
+integer :: ityp
+real(REAL_KIND) :: V0, Tdiv, Tgrowth, Tgrowth0, Tfixed, rVmax, phase_time1
+type(cell_type), pointer :: cp
+type(cycle_parameters_type), pointer :: ccp
+
+ccp => cc_parameters
+cp => cell_list(kcell)
+ityp = 1
+V0 = Vdivide0/2
+Tdiv = divide_time_mean(ityp)
+cp%divide_time = Tdiv
+rVmax = max_growthrate(ityp)
+Tgrowth0 = ccp%T_G1(ityp) + ccp%T_S(ityp) + ccp%T_G2(ityp)
+Tfixed = ccp%T_M(ityp) + ccp%G1_mean_delay(ityp) + ccp%G2_mean_delay(ityp)
+Tgrowth = Tdiv - Tfixed
+cp%fg = Tgrowth/Tgrowth0
+cp%divide_volume = V0 + Tgrowth*rVmax
+phase_time1 = cp%fg*ccp%T_G1(ityp)
+cp%phase = G1_phase
+cp%G1_time = phase_time1
+cp%V = V0
+cp%t_divide_last = 0
+write(nflog,*) 'setTestCell'
+write(nflog,*) 'phase: ',cp%phase
+write(nflog,*) 'divide_time:', cp%divide_time
+write(nflog,*) 'V: ',cp%V
+write(nflog,*) 'divide_volume: ',cp%divide_volume
+write(nflog,*) 'fg: ',cp%fg
+write(nflog,*) 'G1_time: ',cp%G1_time
+end subroutine
+
+!--------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
 subroutine oldAddCell(k,site)
 integer :: k, site(3)
 integer :: ityp, kpar = 0
@@ -1836,7 +1872,7 @@ subroutine simulate_step(res) BIND(C)
 use, intrinsic :: iso_c_binding
 integer(c_int) :: res
 integer :: kcell, site(3), hour, nthour, kpar=0
-real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, tnow, area, diam
+real(REAL_KIND) :: r(3), rmax, tstart, dt, dts, radiation_dose, diam_um, framp, area, diam
 !integer, parameter :: NT_CONC = 6
 integer :: i, ic, ichemo, ndt, iz, idrug, ityp, idiv, ndiv, Nlivecells
 integer :: nvars, ns
@@ -1925,8 +1961,8 @@ do idiv = 0,ndiv-1
 		res = 3
 		return
 	endif
-	
 enddo	! end idiv loop
+write(nflog,*) 'istep,tnow: ',istep,tnow	
 
 DELTA_T = DELTA_T_save
 medium_change_step = .false.
@@ -1978,7 +2014,6 @@ if (saveFACS%active) then
 	endif
 endif
 
-write(nflog,'(a,f6.2,i2)') 'cell 1: hr,phase: ',t_simulation/3600,cell_list(1)%phase
 if (dbug .or. mod(istep,nthour) == 0) then
 	mp => metabolic(1)
 	write(logmsg,'(a,i6,i4,a,i8,a,i8)') 'did istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,'   Nviable: ',sum(Nviable)
@@ -1996,7 +2031,29 @@ endif
 ! write(nflog,'(a,f8.3)') 'did simulate_step: time: ',wtime()-start_wtime
 
 istep = istep + 1
+call averages
+end subroutine
 
+!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+subroutine averages
+real(REAL_KIND) :: ave_V, ave_dVdt, ave_fg
+integer :: kcell, n
+type(cell_type), pointer :: cp
+
+ave_V = 0
+ave_dVdt = 0
+ave_fg = 0
+n = 0
+do kcell = 1,Ncells
+	cp => cell_list(kcell)
+	if (cp%state == DEAD) continue
+	n = n+1
+	ave_V = ave_V + cp%V
+	ave_dVdt = ave_dVdt + cp%dVdt
+	ave_fg = ave_fg + cp%fg
+enddo
+write(nflog,'(a,3e12.3)') 'averages: V,dVdt,fg: ',ave_V/n,ave_dVdt/n, ave_fg/n
 end subroutine
 
 !-----------------------------------------------------------------------------------------
