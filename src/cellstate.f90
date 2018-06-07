@@ -955,10 +955,10 @@ do kcell = 1,nlist
 		dVdt = 0
 	endif
 	cp%dVdt = dVdt
-    if (cp%dVdt == 0) then
-        write(*,*) 'setinitialgrowthrate: dVdt: = 0: kcell: ',kcell,metab_O2,metab_glucose
+!    if (cp%dVdt == 0) then
+!        write(*,*) 'setinitialgrowthrate: dVdt: = 0: kcell: ',kcell,metab_O2,metab_glucose
 !        stop
-    endif
+!    endif
 enddo
 end subroutine
 

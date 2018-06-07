@@ -6,7 +6,7 @@
 #include "mainwindow.h"
 #include <qwt_plot_printfilter.h>
 #else
-#include "Qwt6/mainwindow.h"
+#include "mainwindow.h"
 #endif
 #include "log.h"
 #include "params.h"

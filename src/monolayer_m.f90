@@ -367,7 +367,6 @@ endif
 read(nfcell,*) dll_run_version				! DLL run version number 
 !read(nfcell,*) NX							! size of grid
 read(nfcell,*) initial_count				! initial number of tumour cells
-write(*,*) 'initial_count: ',initial_count
 read(nfcell,*) iuse_divide_dist
 read(nfcell,*) divide_time_median(1)
 read(nfcell,*) divide_time_shape(1)
@@ -396,7 +395,6 @@ read(nfcell,*) NT_CONC						! number of subdivisions of DELTA_T for diffusion co
 !Vsite_cm3 = DELTA_X*DELTA_X*DELTA_X			! total site volume (cm^3)
 !read(nfcell,*) fluid_fraction				! fraction of the (non-necrotic) tumour that is fluid
 read(nfcell,*) Vcell_pL                     ! nominal cell volume in pL
-write(*,*) 'Vcell_pL: ',Vcell_pL
 read(nfcell,*) well_area                    ! well bottom area (cm^2)
 read(nfcell,*) medium_volume0				! initial total volume (cm^3)
 read(nfcell,*) ifullymixed					! medium is fully mixed
@@ -413,7 +411,6 @@ read(nfcell,*) aglucosia_death_hours		! time after tagging to death by aglucosia
 read(nfcell,*) itestcase                    ! test case to simulate
 read(nfcell,*) seed(1)						! seed vector(1) for the RNGs
 read(nfcell,*) seed(2)						! seed vector(2) for the RNGs
-write(*,*) 'seed(2): ',seed(2)
 read(nfcell,*) ncpu_input					! for GUI just a placeholder for ncpu, used only when execute parameter ncpu = 0
 read(nfcell,*) Ncelltypes					! maximum number of cell types in the spheroid
 do ictype = 1,Ncelltypes
@@ -430,7 +427,6 @@ chemo(OXYGEN)%controls_growth = (ioxygengrowth == 1)
 read(nfcell,*) ioxygendeath
 chemo(OXYGEN)%controls_death = (ioxygendeath == 1)
 read(nfcell,*) chemo(OXYGEN)%diff_coef
-write(*,*) 'chemo(OXYGEN)%diff_coef: ',chemo(OXYGEN)%diff_coef
 read(nfcell,*) chemo(OXYGEN)%medium_diff_coef
 read(nfcell,*) chemo(OXYGEN)%membrane_diff_in
 !chemo(OXYGEN)%membrane_diff_out = chemo(OXYGEN)%membrane_diff_in
@@ -456,7 +452,6 @@ chemo(GLUCOSE)%constant = (iconstant == 1)
 read(nfcell,*) chemo(GLUCOSE)%max_cell_rate
 read(nfcell,*) chemo(GLUCOSE)%MM_C0
 read(nfcell,*) chemo(GLUCOSE)%Hill_N
-write(*,*) 'chemo(GLUCOSE)%Hill_N: ',chemo(GLUCOSE)%Hill_N
 
 read(nfcell,*) iuse_lactate		
 !read(nfcell,*) ilactategrowth
@@ -504,11 +499,9 @@ read(nfcell,*) LQ(2)%growth_delay_N
 read(nfcell,*) iuse_gd_all
 use_radiation_growth_delay_all = (iuse_gd_all == 1)
 read(nfcell,*) iusecellcycle
-write(*,*) 'iusecellcycle: ',iusecellcycle
 use_cell_cycle = (iusecellcycle == 1)
 call ReadCellCycleParameters(nfcell)
 read(nfcell,*) iusemetabolism
-write(*,*) 'iusemetabolism: ',iusemetabolism
 !use_metabolism = (iusemetabolism == 1)
 use_metabolism = .true.
 call ReadMetabolismParameters(nfcell)
@@ -765,7 +758,6 @@ type(cycle_parameters_type),pointer :: ccp
 
 ccp => cc_parameters
 read(nf,*) ccp%T_G1(1)
-write(*,*) 'ccp%T_G1(1): ',ccp%T_G1(1)
 read(nf,*) ccp%T_G1(2)
 read(nf,*) ccp%T_S(1)
 read(nf,*) ccp%T_S(2)
@@ -789,7 +781,6 @@ read(nf,*) ccp%Kmisrepair(1)
 read(nf,*) ccp%Kmisrepair(2)
 !read(nf,*) ccp%Kmisrepair(3)
 read(nf,*) ccp%Kcp
-write(*,*) 'ccp%Kcp: ',ccp%Kcp
 
 total = ccp%T_G1(1) + ccp%T_S(1) + ccp%T_G2(1) + ccp%T_M(1) + ccp%G1_mean_delay(1) + ccp%G2_mean_delay(1)
 write(nflog,'(a,7f8.2)') 'T_G1,T_S,T_G2,T_M,G1_delay,G2_delay, total: ',ccp%T_G1(1),ccp%T_S(1),ccp%T_G2(1),ccp%T_M(1), &
@@ -1437,7 +1428,7 @@ do iphase = 1,6
 			cp%G2_flag = .false.
 			cp%t_divide_last = -(phase_time(1) + phase_time(2) + phase_time(3) + phase_time(4) + phase_time(5))
 		else
-			write(*,*) 'Error in SetInitialCellCycleStatus' 
+			write(nfout,*) 'Error in SetInitialCellCycleStatus' 
 			stop
 		endif
 		exit
