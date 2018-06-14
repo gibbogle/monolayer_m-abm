@@ -513,6 +513,7 @@ read(nfcell,*) growthcutoff(1)
 read(nfcell,*) growthcutoff(2)
 read(nfcell,*) growthcutoff(3)
 read(nfcell,*) Cthreshold
+read(nfcell,*) Clabel_threshold
 read(nfcell,*) spcrad_value
 
 !read(nfcell,*) iuse_extra

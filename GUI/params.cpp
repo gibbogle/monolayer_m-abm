@@ -760,6 +760,10 @@ metabolism rate = dMdt = Cdrug.(1 - C2 + C2.KO2^n_O2/(KO2^n_O2 + C_O2^n_O2)).Kme
  "Drug Threshold",
  "Threshold drug concentration - when all intracellular and extracellular concentrations fall below this level, the drug concentrations everywhere are set to zero"},
 
+{"DRUG_LABEL_THRESHOLD", 0, 0, 0,
+"Label Threshold",
+"Threshold label-drug concentration - when a labelling drug (e.g. EDU) is used, this is the threshold for a cell to be considered as labelled"},
+
 {"SPCRAD", 200.0, 0, 0,
 "Spectral radius",
 "Spectral radius value used by RKC solver"},

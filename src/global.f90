@@ -333,6 +333,7 @@ type(cycle_parameters_type), target :: cc_parameters    ! possibly varies by cel
 
 logical :: drug_gt_cthreshold(MAX_DRUGTYPES)
 real(REAL_KIND) :: Cthreshold
+real(REAL_KIND) :: Clabel_threshold		! for labelling drug, e.g. EDU
 
 type(savedata_type) :: saveFACS	!, saveprofile, saveslice
 
