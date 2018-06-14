@@ -1,0 +1,2 @@
+The example is a copy of that in:
+d:\monolayer_m-abm\execution\XM-SG-027\PEST\

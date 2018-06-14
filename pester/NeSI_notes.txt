@@ -1,0 +1,45 @@
+To run PEST using the cluster
+-----------------------------
+
+All the PEST executable files must exist in /home/USERNAME/bin, and this directory must be in the path,
+OR (if possible) /home/mbog002/bin must be in the path (assuming that the user is permitted to execute programs there)
+OR the PEST files could be located in /gpfs1m/projects/uoa00014/pest/bin
+
+0. Use a text editor to create the *.tpl template files.
+   A template file is the model input file for the experiment with the value of each parameter which is to be fitted
+   replaced by "$ PARAMID $", where PARAMID is the short ID code for the parameter (see pester_manual.docx).
+   
+1. Use pester.xlsm to create all the other input files, including batch.config and run_pest.sh
+
+2. Start MobaXterm, login to the cluster
+
+3. Copy the input files to the NeSI directory where PEST will be invoked.
+   These are:
+       *.tpl
+	   *.out.ins
+	   MODEL.pst (e.g. monolayer_m.pst)
+	   batch.config
+	   run_pest.sh
+   This directory must contain:
+       run_sbatch.sh
+	   run_simulations.sh
+	   
+4. cd to the directory where PEST will be invoked
+
+5. ./run_sbatch.sh
+
+6. Check the status of the batch job with 'squ'.  If necessary, cancel the job with 'scancel JOBID'
+
+7. When the job has completed, copy the Run Record file (*.rec) back to Windows.
+   The results are in the section 'OPTIMISATION RESULTS'
+
+   
+ File copying
+ ------------
+ 
+To use the file copying batch file, pscp.exe must be in the Windows PATH.
+pscp.exe (part of PuTTY) can be used to copy a file from Windows to NeSI, e.g:
+ 
+ pscp -pw PASSWORD test.txt USER@login.uoa.nesi.org.nz:/home/USER/.
+ 
+ copies test.txt to the user's home directory, /home/USER.  pscp.exe must be in the PATH.
