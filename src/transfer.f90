@@ -242,7 +242,7 @@ do ityp = 1,Ncelltypes
 enddo
 
 ! Metabolism state variables
-mp => metabolic(1)
+mp => metabolic
 r_G = mp%G_rate/r_G_norm
 r_P = mp%P_rate/r_P_norm
 r_A = mp%A_rate/r_A_norm

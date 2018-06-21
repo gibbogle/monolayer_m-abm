@@ -125,8 +125,8 @@ enddo
 !write(*,'(a,8e12.3)') 'Cmedium: ',Cmedium(1:ncvars)
 ict = icase
 if (use_metabolism) then
-	mp => metabolic(ict)
-	call get_metab_rates(ict,mp,Cin)
+	mp => metabolic
+	call get_metab_rates(mp,Cin)
 endif
 !write(*,*) 'icase, neqn: ',icase,neqn
 
@@ -359,8 +359,8 @@ Nlivecells = Ncells - (Ncells_dying(1) + Ncells_dying(2))
 Cin(1) = y(1)
 Cin(2) = y(N1D+2)
 Cin(3) = y(2*N1D+3)
-mp => metabolic(ict)
-call get_metab_rates(ict,mp,Cin)
+mp => metabolic
+call get_metab_rates(mp,Cin)
 
 k = 0
 do ichemo = 1,3
@@ -748,7 +748,7 @@ logical :: use_explicit = .false.		! The explicit approach is hopelessly unstabl
 
 !write(nflog,*) 'OGLSolver: ',istep
 ict = selected_celltype ! for now just a single cell type 
-mp => metabolic(ict)
+mp => metabolic
 
 k = 0
 do ichemo = 1,3
@@ -763,7 +763,7 @@ enddo
 !write(nflog,'(a,3e12.3)') 'pre C O2: ',C(1),C(2),C(N1D+1)
 neqn = k
 
-call Set_f_GP(ict,mp,C)		! TRY removing this
+call Set_f_GP(mp,C)		! TRY removing this
 
 !mp%A_fract = f_MM(C(1),ATP_Km(ict),1)
 !write(nflog,'(a,3e12.3)') 'A_fract: ',mp%A_fract
@@ -831,14 +831,14 @@ enddo
 Cin(1) = C(1)
 Cin(2) = C(N1D+2)
 Cin(3) = C(2*N1D+3)
-call get_metab_rates(ict,mp,Cin)
+call get_metab_rates(mp,Cin)
 do kcell = 1,nlist
 	cp => cell_list(kcell)
     if (cp%state == DEAD .or. cp%state == DYING) cycle
 ! First back up cell metabolism parameters that we need to preserve
 !	Itotal = cp%metab%Itotal
 !	I2Divide = cp%metab%I2Divide
-    cp%metab = metabolic(ict)
+    cp%metab = metabolic
 !    cp%metab%Itotal = Itotal
 !    cp%metab%I2Divide = I2Divide
     cp%metab%A_rate = cp%ATP_rate_factor*cp%metab%A_rate
@@ -1233,9 +1233,9 @@ if (.not.chemo(LACTATE)%used) then
 	C_G = C(N1D+2)
 	N_O2 = Hill_N_O2
 	Km_O2 = Hill_Km_O2
-	f_PA = N_PA(ityp)
+	f_PA = N_PA
 	MM_O2 = f_MM(C_O2,Km_O2,N_O2)
-	r_G = MM_O2*get_glycosis_rate(ityp,mp%HIF1,C_G)
+	r_G = MM_O2*get_glycosis_rate(mp%HIF1,C_G)
 	fPDK = mp%PDK1
 
 	r_P = fPDK*2*(1 - f_G)*r_G
@@ -1244,14 +1244,14 @@ if (.not.chemo(LACTATE)%used) then
 	r_GA = r_P
 	r_PA = f_PA*(1 - f_P)*r_P
 	!write(*,'(a,3e12.3)') 'r_GA, r_PA, ATPg(ityp): ',r_GA,r_PA,ATPg(ityp) 
-	if (r_GA + r_PA < ATPg(ityp)) then	! adjust f_P to maintain ATPg
+	if (r_GA + r_PA < ATPg) then	! adjust f_P to maintain ATPg
 		! r_GA+r_PA = r_P*(f_P + f_PA*(1 - f_P)) = ATPg(ityp)
-		f_P = (ATPg(ityp)/r_P - f_PA)/(1 - f_PA)
+		f_P = (ATPg/r_P - f_PA)/(1 - f_PA)
 		f_P = alfa*f_P + (1-alfa)*mp%f_P
 		f_P = min(f_P,1.0)
 		if (f_P < 0) then
 			f_P = 0
-			f_G = 1 - ATPg(ityp)/(fPDK*2*r_G*(1 + f_PA))
+			f_G = 1 - ATPg/(fPDK*2*r_G*(1 + f_PA))
 			f_G = alfa*f_G + (1-alfa)*mp%f_G
 			f_G = min(f_G,1.0)
 			f_G = max(f_G,0.0)
@@ -1264,8 +1264,8 @@ if (.not.chemo(LACTATE)%used) then
 endif
 
 if (use_ATP) then
-	f_ATP_L = f_ATPg(ityp)
-	f_ATP_H = min(f_ATPramp(ityp)*f_ATPg(ityp),1.0)
+	f_ATP_L = f_ATPg
+	f_ATP_H = min(f_ATPramp*f_ATPg,1.0)
 	f = mp%A_rate/r_A_norm
 	if (f > f_ATP_H) then
 		ATPfactor = 1
@@ -1362,20 +1362,20 @@ if (use_ATP) then
 else
 	C_O2 = C(1)
 	C_G = C(N1D+2)
-	CO_L = 0.8*CO_H(ityp)
-	CG_L = 0.8*CG_H(ityp)
+	CO_L = 0.8*CO_H
+	CG_L = 0.8*CG_H
 	Ofactor = 1
 	Gfactor = 1
 
 	if (C_O2 < CO_L) then
 		Ofactor = 0
-	elseif (C_O2 < CO_H(ityp)) then
-		Ofactor = (C_O2 - CO_L)/(CO_H(ityp) - CO_L)
+	elseif (C_O2 < CO_H) then
+		Ofactor = (C_O2 - CO_L)/(CO_H - CO_L)
 	endif
 	if (C_G < CG_L) then
 		Gfactor = 0
-	elseif (C_G < CG_H(ityp)) then
-		Gfactor = (C_G - CG_L)/(CG_H(ityp) - CG_L)
+	elseif (C_G < CG_H) then
+		Gfactor = (C_G - CG_L)/(CG_H - CG_L)
 	endif
 	mp%f_G = Gfactor*Ofactor*f_G_norm
 	mp%f_P = Ofactor*f_P_norm

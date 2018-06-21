@@ -119,7 +119,7 @@ write(nflog,*) 'Vdivide0, max_growthrate: ',Vdivide0, max_growthrate
 !cdrop = 0
 !zmin = 1
 !if (use_metabolism) then	! always call it to set up parameters for glucose_metab()
-	call SetupMetabolism
+	call SetupMetabolism(ok)
 !endif
 call PlaceCells(ok)
 call setTestCell(kcell_test)
@@ -500,7 +500,8 @@ read(nfcell,*) iuse_gd_all
 use_radiation_growth_delay_all = (iuse_gd_all == 1)
 read(nfcell,*) iusecellcycle
 use_cell_cycle = (iusecellcycle == 1)
-call ReadCellCycleParameters(nfcell)
+ccp => cc_parameters
+call ReadCellCycleParameters(nfcell,ccp)
 read(nfcell,*) iusemetabolism
 !use_metabolism = (iusemetabolism == 1)
 use_metabolism = .true.
@@ -752,12 +753,11 @@ end subroutine
 ! and for the associated checkpoint duration limits Tcp(:).
 ! Time unit = hour
 !-----------------------------------------------------------------------------------------
-subroutine ReadCellCycleParameters(nf)
+subroutine ReadCellCycleParameters(nf, ccp)
 integer :: nf
-real(REAL_KIND) :: total
 type(cycle_parameters_type),pointer :: ccp
+real(REAL_KIND) :: total
 
-ccp => cc_parameters
 read(nf,*) ccp%T_G1(1)
 read(nf,*) ccp%T_G1(2)
 read(nf,*) ccp%T_S(1)
@@ -770,8 +770,8 @@ read(nf,*) ccp%G1_mean_delay(1)
 read(nf,*) ccp%G1_mean_delay(2)
 read(nf,*) ccp%G2_mean_delay(1)
 read(nf,*) ccp%G2_mean_delay(2)
-read(nf,*) Apoptosis_rate(1)
-read(nf,*) Apoptosis_rate(2)
+read(nf,*) ccp%Apoptosis_rate(1)
+read(nf,*) ccp%Apoptosis_rate(2)
 read(nf,*) ccp%eta_PL
 read(nf,*) ccp%eta_L(1)
 read(nf,*) ccp%eta_L(2)
@@ -825,30 +825,25 @@ subroutine ReadMetabolismParameters(nf)
 integer :: nf
 integer :: ityp
 
-do ityp = 1,Ncelltypes
-	read(nf,*) N_GA(ityp)
-	read(nf,*) N_PA(ityp)
-	read(nf,*) N_GI(ityp)
-	read(nf,*) N_PI(ityp)
-	read(nf,*) N_PO(ityp)
-	read(nf,*) K_H1(ityp)
-	read(nf,*) K_H2(ityp)
-	read(nf,*) K_HB(ityp)
-	read(nf,*) K_PDK(ityp)
-	read(nf,*) PDKmin(ityp)
-	read(nf,*) C_O2_norm(ityp)
-	read(nf,*) C_G_norm(ityp)
-	read(nf,*) C_L_norm(ityp)
-!	read(nf,*) CO_H(ityp)
-!	read(nf,*) CG_H(ityp)
-	read(nf,*) f_ATPs(ityp)
-	read(nf,*) f_ATPg(ityp)
-	read(nf,*) f_ATPramp(ityp)
-!	read(nf,*) ATP_Km(ityp)
-	read(nf,*) K_PL(ityp)
-	read(nf,*) K_LP(ityp)
-	read(nf,*) Hill_Km_P(ityp)
-enddo
+read(nf,*) N_GA
+read(nf,*) N_PA
+read(nf,*) N_GI
+read(nf,*) N_PI
+read(nf,*) N_PO
+read(nf,*) K_H1
+read(nf,*) K_H2
+read(nf,*) K_HB
+read(nf,*) K_PDK
+read(nf,*) PDKmin
+read(nf,*) C_O2_norm
+read(nf,*) C_G_norm
+read(nf,*) C_L_norm
+read(nf,*) f_ATPs
+read(nf,*) f_ATPg
+read(nf,*) f_ATPramp
+read(nf,*) K_PL
+read(nf,*) K_LP
+read(nf,*) Hill_Km_P
 Hill_N_P = 1
 Hill_Km_P = Hill_Km_P/1000		! uM -> mM
 !ATP_Km = ATP_Km/1000			! uM -> mM
@@ -1238,7 +1233,7 @@ cp%divide_volume = get_divide_volume(ityp, V0, Tdiv, gfactor)
 cp%divide_time = Tdiv
 cp%fg = gfactor
 cp%dVdt = max_growthrate(ityp)
-cp%metab%I_rate = metabolic(ityp)%I_rate_max	! this is just to ensure that initial growth rate is not 0
+cp%metab%I_rate = metabolic%I_rate_max	! this is just to ensure that initial growth rate is not 0
 if (use_volume_method) then
     !cp%divide_volume = Vdivide0
     if (initial_count == 1) then
@@ -1936,12 +1931,12 @@ do idiv = 0,ndiv-1
 	if (dbug) write(nflog,*) 'did Solver'
 	if (use_metabolism) then
 		do ityp = 1,Ncelltypes
-			HIF1 = metabolic(ityp)%HIF1
-			call analyticSetHIF1(ityp,Caverage(OXYGEN),HIF1,DELTA_T)
-			metabolic(ityp)%HIF1 = HIF1
-			PDK1 = metabolic(ityp)%PDK1
-			call analyticSetPDK1(ityp,HIF1,PDK1,dt)
-			metabolic(ityp)%PDK1 = PDK1
+			HIF1 = metabolic%HIF1
+			call analyticSetHIF1(Caverage(OXYGEN),HIF1,DELTA_T)
+			metabolic%HIF1 = HIF1
+			PDK1 = metabolic%PDK1
+			call analyticSetPDK1(HIF1,PDK1,dt)
+			metabolic%PDK1 = PDK1
 		enddo
 	endif
 	!write(nflog,*) 'did Solver'
@@ -2007,7 +2002,7 @@ if (saveFACS%active) then
 endif
 
 if (dbug .or. mod(istep,nthour) == 0) then
-	mp => metabolic(1)
+	mp => metabolic
 	write(logmsg,'(a,i6,i4,a,i8,a,i8)') 'did istep, hour: ',istep,istep/nthour,' Nlive: ',Ncells,'   Nviable: ',sum(Nviable)
 	call logger(logmsg)
 !	write(logmsg,'(a,4e12.3)') 'G_rate, A_rate, PO_rate, O_rate: ',mp%G_rate,mp%A_rate,mp%P_rate,mp%O_rate
@@ -2063,14 +2058,14 @@ cp =>cell_list(kcell)
 mp => cp%metab
 Cin = Caverage(1:MAX_CHEMO)
 !write(*,'(a,3f8.4)') 'O2, glucose, lactate: ',Cin(1:3)
-call get_metab_rates(cp%celltype, mp, Cin)
+call get_metab_rates(mp, Cin)
 return
 
 write(*,'(a,i2,3e12.3)') 'phase, V: ',cp%phase,cp%V		!I2Divide,Itotal,mp%Itotal,mp%I2Divide
 write(*,'(a,3e11.3)') 'G_rate, P_rate, O_rate: ',mp%G_rate, mp%P_rate, mp%O_rate
 write(*,'(a,4e11.3)') 'L_rate, A_rate, I_rate: ',mp%L_rate, mp%A_rate, mp%I_rate
 write(*,'(a,4f8.4)') 'O2, glucose, lactate, H: ',Caverage(OXYGEN),Caverage(GLUCOSE),Caverage(LACTATE),mp%HIF1
-if (mp%A_rate < ATPg(cp%celltype)) then
+if (mp%A_rate < ATPg) then
 	write(*,*) 'Not growing'
 endif
 write(*,*)

@@ -259,8 +259,8 @@ do kcell = 1,nlist
 	call getO2conc(cp,C_O2)
 	if (use_metabolism) then
 !		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
-		if (cp%metab%A_rate < ATPs(ityp)) then
-			if (kcell == 1) write(nflog,'(a,2e12.3)') 'insufficient A_rate: ',cp%metab%A_rate,ATPs(ityp)
+		if (cp%metab%A_rate < ATPs) then
+			if (kcell == 1) write(nflog,'(a,2e12.3)') 'insufficient A_rate: ',cp%metab%A_rate,ATPs
 !			call CellDies(kcell)
 			cp%state = DYING
 			cp%dVdt = 0
@@ -858,7 +858,7 @@ if (use_cell_cycle .and. .not.(cp%phase == G1_phase .or. cp%phase == S_phase .or
 	write(*,*) 'no growth - phase'
 	return
 endif
-if (use_metabolism .and. cp%metab%A_rate < ATPg(cp%celltype)) then
+if (use_metabolism .and. cp%metab%A_rate < ATPg) then
 	cp%dVdt = 0
 !	write(*,*) 'A_rate < ATPg: ', kcell_now
 	return

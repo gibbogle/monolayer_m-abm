@@ -27,15 +27,15 @@ integer :: N_O2, N_P, it
 real(REAL_KIND) :: C_P_max, C_P_limit = 10
 
 N_P = 1
-Km_P = Hill_Km_P(ityp)
+Km_P = Hill_Km_P
 N_O2 = chemo(OXYGEN)%Hill_N
 Km_O2 = chemo(OXYGEN)%MM_C0
 V = Vcell_cm3
 
-f_PO = N_PO(ityp)
-f_PA = N_PA(ityp)
-K1 = K_PL(ityp)
-K2 = K_LP(ityp)
+f_PO = N_PO
+f_PA = N_PA
+K1 = K_PL
+K2 = K_LP
 f_G = f_G_norm
 f_P = f_P_norm
 r_A_target = r_A_norm
@@ -129,29 +129,29 @@ integer :: i_r_G, i_C_L, i_r_Pm
 type(metabolism_type), target :: met
 type(metabolism_type), pointer :: mp
 
-if (allocated(f_G_lookup)) deallocate(f_G_lookup)
-if (allocated(f_P_lookup)) deallocate(f_P_lookup)
-if (allocated(C_P_lookup)) deallocate(C_P_lookup)
-allocate(f_G_lookup(N_r_G,N_C_L,N_r_Pm))
-allocate(f_P_lookup(N_r_G,N_C_L,N_r_Pm))
-allocate(C_P_lookup(N_r_G,N_C_L,N_r_Pm))
+!if (allocated(f_G_lookup)) deallocate(f_G_lookup)
+!if (allocated(f_P_lookup)) deallocate(f_P_lookup)
+!if (allocated(C_P_lookup)) deallocate(C_P_lookup)
+!allocate(f_G_lookup(N_r_G,N_C_L,N_r_Pm))
+!allocate(f_P_lookup(N_r_G,N_C_L,N_r_Pm))
+!allocate(C_P_lookup(N_r_G,N_C_L,N_r_Pm))
 
 mp => met
 V = Vcell_cm3
 ityp = 1
-met = metabolic(ityp)
+met = metabolic
 HIF1 = 0.5
 C_O2 = 0.1
 C_G = 0.0045
 fPDK = 0.5
 N_O2 = chemo(OXYGEN)%Hill_N
 Km_O2 = chemo(OXYGEN)%MM_C0
-K1 = K_PL(ityp)
-K2 = K_LP(ityp)
-f_PO = N_PO(ityp)
-f_PA = N_PA(ityp)
+K1 = K_PL
+K2 = K_LP
+f_PO = N_PO
+f_PA = N_PA
 MM_O2 = f_MM(C_O2,Km_O2,N_O2)
-r_G_max = get_glycosis_rate(ityp,HIF1,C_G)
+r_G_max = get_glycosis_rate(HIF1,C_G)
 !r_Pm_max = fPDK*MM_O2*O2_maxrate/(f_PO*(1-f_P_norm))	! note that MM_P is not here, since it varies it is added in optimiser()
 ! This is the rate of oxidation of pyruvate, i.e. (1-f_P)*r_P, excluding the effect of MM(C_P)
 !r_Pm_base = fPDK*MM_O2*(O2_maxrate-base_O_rate)/f_PO	! note that MM_P is not here, since it varies it is added in optimiser()
@@ -195,9 +195,9 @@ do i_r_Pm = 1,N_r_Pm
 	C_L = C_L_array(i_C_L)
 	r_Pm = r_Pm_array(i_r_Pm)
 	call optimiser(ityp, r_G, C_L, r_Pm, mp, x, y, C_P)
-	f_G_lookup(i_r_G,i_C_L,i_r_Pm) = x
-	f_P_lookup(i_r_G,i_C_L,i_r_Pm) = y
-	C_P_lookup(i_r_G,i_C_L,i_r_Pm) = C_P
+!	f_G_lookup(i_r_G,i_C_L,i_r_Pm) = x
+!	f_P_lookup(i_r_G,i_C_L,i_r_Pm) = y
+!	C_P_lookup(i_r_G,i_C_L,i_r_Pm) = C_P
 !	write(*,'(a,4f8.4,e12.3)') 'x, y, C_L, C_P: ',x,y,C_L,C_P
 !	write(*,'(a,4e12.3)') 'A, I, O, L: ',mp%A_rate, mp%I_rate, mp%O_rate, mp%L_rate
 	r_P = 2*(1-x)*r_G - V*(K1*C_P - K2*C_L)
@@ -224,13 +224,14 @@ write(*,*) 'done: ',ysum
 write(*,*) 'start interpolator:'
 ysum = 0
 do i = 1,50000000
-	call interpolator(r_G, C_L, r_Pm, x, y, C_P)
+!	call interpolator(r_G, C_L, r_Pm, x, y, C_P)
 	ysum = ysum + y
 enddo
 !write(*,'(a,4f8.4)') 'interpolator: x, y, C_P: ',x,y,C_P
 write(*,*) 'done: ',ysum
 end subroutine
 
+#IF 0
 !--------------------------------------------------------------------------
 !--------------------------------------------------------------------------
 subroutine interpolator(r_G, C_L, r_Pm, f_G, f_P, C_P)
@@ -345,5 +346,6 @@ C_P = fac(1)*C_P_lookup(i_r_G1,i_C_L1,i_r_Pm1) &
     + fac(7)*C_P_lookup(i_r_G2,i_C_L1,i_r_Pm2) &
     + fac(8)*C_P_lookup(i_r_G2,i_C_L2,i_r_Pm2) 
 end subroutine
+#ENDIF
 
 end module
