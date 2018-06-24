@@ -233,6 +233,7 @@ logical :: anoxia_death, aglucosia_death
 real(REAL_KIND) :: delayed_death_prob(MAX_CELLTYPES)
 type(drug_type), pointer :: dp
 type(cell_type), pointer :: cp
+type(cycle_parameters_type), pointer :: ccp
 
 !call logger('CellDeath')
 ok = .true.
@@ -243,7 +244,8 @@ endif
 !tnow = istep*DELTA_T	! seconds
 anoxia_death = chemo(OXYGEN)%controls_death
 aglucosia_death = chemo(GLUCOSE)%controls_death
-delayed_death_prob = apoptosis_rate*DELTA_T/3600
+ccp => cc_parameters
+delayed_death_prob = ccp%apoptosis_rate*DELTA_T/3600
 nlist0 = nlist
 first = .true.
 do kcell = 1,nlist
@@ -260,7 +262,8 @@ do kcell = 1,nlist
 	if (use_metabolism) then
 !		if (cp%metab%A_rate*cp%V < cp%ATP_rate_factor*ATPs(ityp)*Vcell_cm3) then
 		if (cp%metab%A_rate < ATPs) then
-			if (kcell == 1) write(nflog,'(a,2e12.3)') 'insufficient A_rate: ',cp%metab%A_rate,ATPs
+!			if (kcell == 1) write(nflog,'(a,2e12.3)') 'insufficient A_rate: ',cp%metab%A_rate,ATPs
+!			write(*,'(a,i8,2e12.3)') 'insufficient A_rate: ',kcell,cp%metab%A_rate,ATPs
 !			call CellDies(kcell)
 			cp%state = DYING
 			cp%dVdt = 0

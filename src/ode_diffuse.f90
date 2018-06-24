@@ -383,7 +383,7 @@ do ichemo = 1,3
 	dydt(k) = dCreact
 !	write(nflog,'(a,i4,e12.3)') 'dydt: ',im,dydt(k)
 	if (isnan(dydt(k))) then
-		write(nflog,*) 'f_rkc_drug: dydt isnan: ',ichemo,dydt(k)
+		write(nflog,*) 'f_rkc_OGL: dydt isnan: ',ichemo,dydt(k)
 		write(*,*) 'f_rkc_drug: dydt isnan: ',ichemo,dydt(k)
 		stop
 	endif
