@@ -939,7 +939,7 @@ integer :: itime, ntimes, kevent, ichemo, idrug, im
 character*(64) :: line
 character*(16) :: drugname
 character*(1)  :: numstr
-real(REAL_KIND) :: t, dt, vol, conc, O2conc, O2flush, dose, O2medium
+real(REAL_KIND) :: t, dt, vol, conc, O2conc, O2flush, dose, O2medium, glumedium
 type(event_type) :: E
 
 write(logmsg,*) 'ReadProtocol'
@@ -1004,7 +1004,8 @@ do itime = 1,ntimes
 		event(kevent)%ichemo = 0
 		event(kevent)%volume = medium_volume0
 		event(kevent)%conc = 0
-		event(kevent)%O2medium = O2flush
+		event(kevent)%O2medium = O2flush		
+		event(kevent)%glumedium = chemo(GLUCOSE)%bdry_conc		
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'MEDIUM') then
@@ -1013,10 +1014,12 @@ do itime = 1,ntimes
 		read(nf,*) t
 		read(nf,*) vol
 		read(nf,*) O2medium
+		read(nf,*) glumedium
 		event(kevent)%time = t
 		event(kevent)%volume = vol	
 		event(kevent)%ichemo = 0
 		event(kevent)%O2medium = O2medium
+		event(kevent)%glumedium = glumedium
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'RADIATION') then
@@ -1633,7 +1636,8 @@ do kevent = 1,Nevents
 			call logger(logmsg)
 			C = 0
 			C(OXYGEN) = E%O2medium
-			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
+!			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
+			C(GLUCOSE) = E%glumedium
 			C(LACTATE) = chemo(LACTATE)%bdry_conc
 			C(DRUG_A:DRUG_A+5) = 0
 			V = E%volume

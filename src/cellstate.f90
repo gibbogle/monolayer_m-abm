@@ -483,7 +483,7 @@ integer :: k, kcell, nlist0, ityp, idrug, prev_phase, kpar=0
 type(cell_type), pointer :: cp
 type(cycle_parameters_type), pointer :: ccp
 real(REAL_KIND) :: rr(3), c(3), rad, d_desired, R, rrsum
-integer, parameter :: MAX_DIVIDE_LIST = 10000
+integer, parameter :: MAX_DIVIDE_LIST = 100000
 integer :: ndivide, divide_list(MAX_DIVIDE_LIST)
 logical :: drugkilled
 logical :: mitosis_entry, in_mitosis, divide, tagged
