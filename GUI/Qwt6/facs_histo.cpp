@@ -20,6 +20,7 @@ LOG_USE();
 
 //--------------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------------
+/*
 void MainWindow::processGroupBoxClick(QString text)
 {
     LOG_QMSG("processGroupBoxClick: " + text);
@@ -51,6 +52,7 @@ void MainWindow::processGroupBoxClick(QString text)
     QwtPlotRenderer renderer;
     renderer.renderDocument(plot,fileName,size,85);
 }
+*/
 
 void MainWindow::createFACSPage()
 {
@@ -210,8 +212,8 @@ void MainWindow::showFACS()
     QRadioButton *rb;
     QTime t;
 
-    if (!videoFACS->record)
-        if (!paused && !exthread->stopped) return;
+//    if (!videoFACS->record)
+//        if (!paused && !exthread->stopped) return;
     LOG_MSG("showFACS");
 
     qpFACS->size();

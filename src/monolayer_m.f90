@@ -447,6 +447,7 @@ read(nfcell,*) chemo(GLUCOSE)%medium_diff_coef
 read(nfcell,*) chemo(GLUCOSE)%membrane_diff_in
 read(nfcell,*) chemo(GLUCOSE)%membrane_diff_out
 read(nfcell,*) chemo(GLUCOSE)%bdry_conc
+chemo(GLUCOSE)%dose_conc = chemo(GLUCOSE)%bdry_conc
 read(nfcell,*) iconstant
 chemo(GLUCOSE)%constant = (iconstant == 1)
 read(nfcell,*) chemo(GLUCOSE)%max_cell_rate
@@ -462,6 +463,7 @@ read(nfcell,*) chemo(LACTATE)%membrane_diff_in
 read(nfcell,*) chemo(LACTATE)%membrane_diff_out
 read(nfcell,*) chemo(LACTATE)%bdry_conc
 chemo(LACTATE)%bdry_conc = max(0.001,chemo(LACTATE)%bdry_conc)
+chemo(LACTATE)%dose_conc = chemo(LACTATE)%bdry_conc
 read(nfcell,*) chemo(LACTATE)%max_cell_rate
 read(nfcell,*) chemo(LACTATE)%MM_C0
 read(nfcell,*) chemo(LACTATE)%Hill_N
@@ -732,7 +734,7 @@ call logger(logmsg)
 !endif
 
 Nsteps = days*24*60*60/DELTA_T		! DELTA_T in seconds
-NT_DISPLAY = 2
+NT_DISPLAY = 2						! This is the updating interval (calls to get_summary) in the GUI version.  Not used by command-line version.
 DT_DISPLAY = NT_DISPLAY*DELTA_T
 write(logmsg,'(a,2i6,f6.0)') 'nsteps, NT_CONC, DELTA_T: ',nsteps,NT_CONC,DELTA_T
 call logger(logmsg)
@@ -1005,7 +1007,8 @@ do itime = 1,ntimes
 		event(kevent)%volume = medium_volume0
 		event(kevent)%conc = 0
 		event(kevent)%O2medium = O2flush		
-		event(kevent)%glumedium = chemo(GLUCOSE)%bdry_conc		
+		event(kevent)%glumedium = chemo(GLUCOSE)%dose_conc		
+		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc		
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'MEDIUM') then
@@ -1020,6 +1023,7 @@ do itime = 1,ntimes
 		event(kevent)%ichemo = 0
 		event(kevent)%O2medium = O2medium
 		event(kevent)%glumedium = glumedium
+		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc		
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'RADIATION') then
@@ -1636,17 +1640,16 @@ do kevent = 1,Nevents
 			call logger(logmsg)
 			C = 0
 			C(OXYGEN) = E%O2medium
-!			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
 			C(GLUCOSE) = E%glumedium
-			C(LACTATE) = chemo(LACTATE)%bdry_conc
+			C(LACTATE) = E%lacmedium
 			C(DRUG_A:DRUG_A+5) = 0
 			V = E%volume
 			call MediumChange(V,C)
 		elseif (E%etype == DRUG_EVENT) then
 			C = 0
 			C(OXYGEN) = E%O2conc
-			C(GLUCOSE) = chemo(GLUCOSE)%bdry_conc
-			C(LACTATE) = chemo(LACTATE)%bdry_conc
+			C(GLUCOSE) = chemo(GLUCOSE)%dose_conc
+			C(LACTATE) = chemo(LACTATE)%dose_conc
 			ichemo = E%ichemo
 			idrug = E%idrug
 			C(ichemo) = E%conc
@@ -1754,7 +1757,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine MediumChange(Ve,Ce)
 real(REAL_KIND) :: Ve, Ce(:)
-real(REAL_KIND) :: R, Vm, Vr, Vcells, mass(MAX_CHEMO)
+real(REAL_KIND) :: R, Vm, Vr, Vcells, mass(MAX_CHEMO), C
 integer :: ichemo, idrug, im, iparent
 
 write(nflog,*) 'MediumChange:'
@@ -1766,19 +1769,15 @@ Vm = total_volume - Vcells
 Vr = min(Vm,Ve)
 !write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr 
 mass = (Vm - Vr)*Caverage(MAX_CHEMO+1:2*MAX_CHEMO) + Ve*Ce(:)
-!chemo(:)%medium_M = ((Vm - Vr)/Vm)*chemo(:)%medium_M + Ve*Ce(:)
 total_volume = Vm - Vr + Ve + Vcells
-!chemo(:)%medium_Cext = chemo(:)%medium_M/(total_volume - Vcells)
-!chemo(:)%medium_Cbnd = chemo(:)%medium_Cext
 Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
-!chemo(OXYGEN+1:)%medium_Cext = chemo(OXYGEN+1:)%medium_M/(total_volume - Vblob)
-!chemo(OXYGEN)%medium_Cext = chemo(OXYGEN)%bdry_conc
-!write(nflog,'(a,13e12.3)')'medium_M: ',chemo(OXYGEN+1:)%medium_M
-!write(nflog,'(a,13f8.4)') 'medium_Cext ',chemo(OXYGEN+1:)%medium_Cext 
 chemo(OXYGEN)%bdry_conc = Ce(OXYGEN)
-!Cglucose = Caverage(MAX_CHEMO+GLUCOSE)
-chemo(GLUCOSE)%Cmedium = Caverage(MAX_CHEMO+GLUCOSE)
-chemo(LACTATE)%Cmedium = Caverage(MAX_CHEMO+LACTATE)
+do ichemo = GLUCOSE,LACTATE
+	C = Caverage(MAX_CHEMO+ichemo)
+	Caverage(ichemo) = C
+	chemo(ichemo)%Cmedium = C
+	chemo(ichemo)%bdry_conc = C
+enddo
 do idrug = 1,2
 	iparent = DRUG_A + 3*(idrug-1)
 	do im = 0,2
@@ -1786,12 +1785,14 @@ do idrug = 1,2
 		chemo(ichemo)%Cmedium = Caverage(MAX_CHEMO+ichemo)
 	enddo
 enddo
-call SetOxygenLevels	! also sets drug levels in cells
+
+call SetConstLevels	
 do ichemo = 1,3
 	C_OGL(ichemo,:) = chemo(ichemo)%Cmedium(:)
 enddo
 write(nflog,'(a,3e12.3)') 'Const Cmedium: ',Caverage(MAX_CHEMO+1:MAX_CHEMO+3)
 write(nflog,'(a,2e12.3)') 'Drug Cmedium:  ',Caverage(MAX_CHEMO+DRUG_A:MAX_CHEMO+DRUG_A+1)
+write(nflog,*) 'glucose bdry_conc: ',chemo(GLUCOSE)%bdry_conc
 t_lastmediumchange = istep*DELTA_T
 medium_change_step = .true.
 end subroutine
@@ -1803,13 +1804,14 @@ end subroutine
 ! Kd.A.(Cbnd - Cex)/d = Ncells.(Kin.Cex - Kout.Cin)
 ! => Cex = (A.Kd.Cbnd/d + Ncells.Kout.Cin)/(A.Kd/d + Ncells.Kin) 
 !-----------------------------------------------------------------------------------------
-subroutine SetOxygenLevels
+subroutine SetConstLevels
 integer :: ichemo, k, kcell, idrug, iparent, im
 real(REAL_KIND) :: Kin, Kout, Kd, Cex, Cin, Cbnd, A, d, flux, Cin_prev, alpha
 real(REAL_KIND) :: tol = 1.0e-6
 
-ichemo = OXYGEN
+!ichemo = OXYGEN
 
+do ichemo = 1,3
 if (chemo(ichemo)%constant .or. fully_mixed) then
     Cex = chemo(ichemo)%bdry_conc
     Cin = getCin(ichemo,Cex)
@@ -1822,20 +1824,22 @@ else
     Kd = chemo(ichemo)%medium_diff_coef
     A = well_area
     d = total_volume/A
-
-    do k = 1,100
-        Cin_prev = Cin
-        Cex = (A*Kd*Cbnd/d + Ncells*Kout*Cin)/(A*Kd/d + Ncells*Kin)
-        Cin = getCin(ichemo,Cex)
-    !    write(*,'(a,i4,2e15.6)') 'SetMediumOxygen: ',k,Cin,Cex
-        if (abs(Cin-Cin_prev)/Cin_prev < tol) exit
-    enddo
+	if (ichemo == OXYGEN) then
+		do k = 1,100
+			Cin_prev = Cin
+			Cex = (A*Kd*Cbnd/d + Ncells*Kout*Cin)/(A*Kd/d + Ncells*Kin)
+			Cin = getCin(ichemo,Cex)
+		!    write(*,'(a,i4,2e15.6)') 'SetMediumOxygen: ',k,Cin,Cex
+			if (abs(Cin-Cin_prev)/Cin_prev < tol) exit
+		enddo
+    endif
 endif
-Caverage(OXYGEN) = Cin
-Caverage(MAX_CHEMO+OXYGEN) = Cex
+write(nflog,'(a,i4,2e12.3)') 'SetConstLevels: Cex, Cin: ',ichemo,Cex,Cin
+Caverage(ichemo) = Cin
+Caverage(MAX_CHEMO+ichemo) = Cex
 do k = 1,N1D
 	alpha = real(k-1)/(N1D-1)
-	chemo(OXYGEN)%Cmedium(k) = alpha*chemo(ichemo)%bdry_conc + (1-alpha)*Cex
+	chemo(ichemo)%Cmedium(k) = alpha*chemo(ichemo)%bdry_conc + (1-alpha)*Cex
 enddo
 do kcell = 1,nlist
     if (cell_list(kcell)%state == DEAD) cycle
@@ -1848,6 +1852,8 @@ do kcell = 1,nlist
 !			cell_list(kcell)%Cin(ichemo) = chemo(ichemo)%Cmedium(1)		! set IC conc to initial medium conc
 !		enddo
 !	enddo
+enddo
+write(nflog,'(a,i4,2e12.3)') 'SetConstLevels: Cex, Cin: ',ichemo,Cex,Cin
 enddo
 end subroutine
 

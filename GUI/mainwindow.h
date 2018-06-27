@@ -199,7 +199,7 @@ public slots:
     void makeDrugPlot(int idrug, int kset, int ictyp, double *maxdose, QString plotStr, QVector<double> *x, QVector<double> *y);
     void makeDrugRadiationPlot1(QString drugTypeStr, QString cellTypeStr, double *maxO2, QString plotStr, QVector<double> *x, QVector<double> *y);
     void makeDrugRadiationPlot(int idrug, int kset, int ictyp, double *maxO2, QString plotStr, QVector<double> *x, QVector<double> *y);
-    void processGroupBoxClick(QString);
+//    void processGroupBoxClick(QString);
 
     void zzzgetFACS();
     void on_pushButton_update_FACS_Histo_clicked();

@@ -247,8 +247,8 @@ void MainWindow::createActions()
     connect(action_save_profile_data, SIGNAL(triggered()), this, SLOT(saveProfileData()));
 //    connect(actionStart_recording_VTK, SIGNAL(triggered()), this, SLOT(startRecorderVTK()));
 //    connect(actionStop_recording_VTK, SIGNAL(triggered()), this, SLOT(stopRecorderVTK()));
-    connect(actionStart_recording_FACS, SIGNAL(triggered()), this, SLOT(startRecorderFACS()));
-    connect(actionStop_recording_FACS, SIGNAL(triggered()), this, SLOT(stopRecorderFACS()));
+//    connect(actionStart_recording_FACS, SIGNAL(triggered()), this, SLOT(startRecorderFACS()));
+//    connect(actionStop_recording_FACS, SIGNAL(triggered()), this, SLOT(stopRecorderFACS()));
 //    LOG_MSG("createActions 6");
 
     connect(field->buttonGroup_cell_constituent, SIGNAL(buttonClicked(QAbstractButton*)), this, SLOT(buttonClick_cell_constituent(QAbstractButton*)));
@@ -499,7 +499,11 @@ void MainWindow:: drawDistPlots()
         qp->setAxisScale(QwtPlot::xBottom, 0.0, xmax, 0.0);
         QwtPlotCurve *curve = new QwtPlotCurve("title");
         curve->attach(qp);
+#ifdef QWT_VER5
         curve->setData(x, prob, n);
+#else
+        curve->setSamples(x, prob, n);
+#endif
         curve_list[j] = curve;
 		qp->replot();
 	}
@@ -1227,6 +1231,11 @@ void MainWindow::goToVTK()
 //-------------------------------------------------------------
 void MainWindow::goToFACS()
 {
+    if (!paused && !exthread->stopped) {
+        goToOutputs();
+        QMessageBox::information(this,"Notice!","To display a FACS plot the execution must be paused or stopped");
+        return;
+    }
     stackedWidget->setCurrentIndex(4);
     action_outputs->setEnabled(true);
     action_inputs->setEnabled(true);
@@ -1430,6 +1439,7 @@ void MainWindow::saveProfileData()
 //--------------------------------------------------------------------------------------------------------
 void MainWindow::runServer()
 {
+    goToOutputs();
 	if (paused) {
 //		if (vtk->playing) {
 //			vtk->playon();
@@ -1455,17 +1465,6 @@ void MainWindow::runServer()
             Global::i_growth_cutoff = 3;
     }
 
-	if (!paramSaved) {
-		int response = QMessageBox::critical(this, tr("ABM Model GUI"), \
-					tr("The document has been modified.\nPlease save changes before continuing."), \
-					QMessageBox::Save | QMessageBox::Cancel); // | Qt.QMessageBox.Discard
-		if (response == QMessageBox::Save) {
-            save();
-		} else if (response == QMessageBox::Cancel) {
-            return;
-		}
-	}
-	
 	if (!first) {
 		int response = QMessageBox::question(this, tr("ABM Model GUI"),
 						tr("Would you like to clear the graphs from the previous run?"),
@@ -1507,6 +1506,17 @@ void MainWindow::runServer()
 	    box_outputData = new QTextBrowser();
 	else
 		box_outputData = 0;
+
+    if (!paramSaved) {
+        int response = QMessageBox::critical(this, tr("ABM Model GUI"), \
+                    tr("The document has been modified.\nPlease save changes before continuing."), \
+                    QMessageBox::Save | QMessageBox::Cancel); // | Qt.QMessageBox.Discard
+        if (response == QMessageBox::Save) {
+            save();
+        } else if (response == QMessageBox::Cancel) {
+            return;
+        }
+    }
 
 	if (use_CPORT1) {
 
@@ -2478,7 +2488,11 @@ void MainWindow::redrawDistPlot()
             create_lognorm_dist(median,shape,nDistPts,x,prob);
             int n = dist_limit(prob,nDistPts);
             double xmax = x[n];
+#ifdef QWT_VER5
             curve_list[k]->setData(x, prob, n);
+#else
+            curve_list[k]->setSamples(x, prob, n);
+#endif
             qp->setAxisScale(QwtPlot::xBottom, 0.0, xmax, 0.0);
             qp->replot();
 			delete [] x;
@@ -2884,52 +2898,6 @@ void MainWindow::setupGraphSelector()
     groupBox_graphselect->setGeometry(rect);
 }
 
-//--------------------------------------------------------------------------------------------------------
-//--------------------------------------------------------------------------------------------------------
-void MainWindow::processGroupBoxClick(QString text)
-{
-    LOG_QMSG("processGroupBoxClick: " + text);
-    QwtPlot *plot;
-
-    if (text.compare("Histo") == 0) {
-        LOG_MSG("save Histo plot");
-//        bool use_HistoBar = radioButton_histotype_1->isChecked();
-        bool use_HistoBar = (buttonGroup_histotype->checkedId() == 1);
-        if (use_HistoBar) {
-            plot = qpHistoBar;
-            qpHistoLine->hide();
-        } else {
-            plot = qpHistoLine;
-            qpHistoBar->hide();
-        }
-    } else if (text.compare("FACS") == 0) {
-        LOG_MSG("save FACS plot");
-        plot = qpFACS;
-    } else {
-        return;
-    }
-
-    int w = plot->width();
-    int h = plot->height();
-    QPixmap pixmap(w, h);
-    pixmap.fill(Qt::white); // Qt::transparent ?
-
-    QwtPlotPrintFilter filter;
-    int options = QwtPlotPrintFilter::PrintAll;
-    options &= ~QwtPlotPrintFilter::PrintBackground;
-    options |= QwtPlotPrintFilter::PrintFrameWithScales;
-    filter.setOptions(options);
-
-    plot->print(pixmap, filter);
-
-//		QString fileName = getImageFile();
-    QString fileName = QFileDialog::getSaveFileName(0,"Select image file", ".",
-        "Image files (*.png *.jpg *.tif *.bmp)");
-    if (fileName.isEmpty()) {
-        return;
-    }
-    pixmap.save(fileName,0,-1);
-}
 
 //--------------------------------------------------------------------------------------------------------
 // Note that the initial selection of active graphs is now set in params.cpp

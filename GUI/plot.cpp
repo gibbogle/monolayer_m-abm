@@ -54,24 +54,28 @@ Plot::~Plot()
 void Plot::mousePressEvent (QMouseEvent *event) {
 	event->accept();
 	if (event->button() == Qt::RightButton) {
-		int w = this->width();
+
+        QString fileName = getImageFile();
+        if (fileName.isEmpty()) {
+            return;
+        }
+#ifdef QWT_VER5
+        int w = this->width();
 		int h = this->height();
 		QPixmap pixmap(w, h);
 		pixmap.fill(Qt::white); // Qt::transparent ?
-
 		QwtPlotPrintFilter filter;
 		int options = QwtPlotPrintFilter::PrintAll;
 		options &= ~QwtPlotPrintFilter::PrintBackground;
 		options |= QwtPlotPrintFilter::PrintFrameWithScales;
 		filter.setOptions(options);
-
 		this->print(pixmap, filter);
-
-		QString fileName = getImageFile();
-		if (fileName.isEmpty()) {
-			return;
-		}
-		pixmap.save(fileName,0,-1);
+        pixmap.save(fileName,0,-1);
+#else
+        QSizeF size(120,120);
+        QwtPlotRenderer renderer;
+        renderer.renderDocument(this,fileName,size,85);
+#endif
 	}
 }
 
@@ -149,6 +153,7 @@ double Plot::calc_yscale(double yval)
 //-----------------------------------------------------------------------------------------
 void Plot::redraw(double *x, double *y, int n, QString name, QString tag, double fixed_yscale, bool profile)
 {
+#ifdef QWT_VER5
     QwtLegend *legend;
         if (USE_LEGEND){
             legend = this->legend();
@@ -157,12 +162,13 @@ void Plot::redraw(double *x, double *y, int n, QString name, QString tag, double
                 this->insertLegend(legend, QwtPlot::RightLegend);
             }
         }
+#endif
     // Note: Number of pen colors should match ncmax
     QColor pencolor[] = {Qt::black, Qt::red, Qt::blue, Qt::darkGreen, Qt::magenta, Qt::darkCyan };
     QPen *pen = new QPen();
     for (int k=0; k<ncmax; k++) {
         if (curve[k] == 0) continue;
-//        if (profile) LOG_QMSG("profile redraw "+name);
+//        if (profile) LOG_QMSG("profile redraw " + name);
         if (name.compare(curve[k]->title().text()) == 0) {
 //            LOG_QMSG("redraw " + tag);
             // Just in case someone set ncmax > # of pen colors (currently = 6)
@@ -172,7 +178,11 @@ void Plot::redraw(double *x, double *y, int n, QString name, QString tag, double
                 pen->setColor(pencolor[0]);
             }
             curve[k]->setPen(*pen);
+#ifdef QWT_VER5
             curve[k]->setData(x, y, n);
+#else
+            curve[k]->setSamples(x, y, n);
+#endif
             if (fixed_yscale == 0) {
                 double ylast = y[n-1];
                 if (ylast > yscale) {

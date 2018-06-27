@@ -29,6 +29,7 @@ type chemokine_type
 	logical :: controls_growth
 	logical :: controls_death
 	real(REAL_KIND) :: bdry_conc
+	real(REAL_KIND) :: dose_conc
 	real(REAL_KIND) :: diff_coef
 	real(REAL_KIND) :: membrane_diff_in
 	real(REAL_KIND) :: membrane_diff_out

@@ -318,6 +318,8 @@ void MainWindow::setField(QTableWidget *table, int row, int col, QString entry)
 
 void MainWindow::ProtocolChanged(int row, int col)
 {
+    LOG_MSG("ProtocolChanged");
+//    QMessageBox::information(this,"Changed","Changed");
     paramSaved = false;
     if (col == 1) {
         QTableWidgetItem *item;

@@ -39,7 +39,7 @@ if (.not.ok) return
 call CellDeath(dt,ok)
 if (.not.ok) return
 cp => cell_list(kcell_test)
-write(nflog,'(a,2i6,2f8.3,e12.3)') 'kcell_test: ',kcell_test,cp%phase,tnow/3600,cp%mitosis,cp%dVdt
+!write(nflog,'(a,2i6,2f8.3,e12.3)') 'kcell_test: ',kcell_test,cp%phase,tnow/3600,cp%mitosis,cp%dVdt
 end subroutine
 
 !-----------------------------------------------------------------------------------------
