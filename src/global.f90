@@ -287,6 +287,7 @@ type event_type
 	real(REAL_KIND) :: O2medium		! MEDIUM
 	real(REAL_KIND) :: glumedium	! MEDIUM
 	real(REAL_KIND) :: lacmedium	! MEDIUM
+	logical :: full
 	logical :: done
 end type	
 

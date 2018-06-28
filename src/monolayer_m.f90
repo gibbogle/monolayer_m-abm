@@ -941,6 +941,7 @@ integer :: itime, ntimes, kevent, ichemo, idrug, im
 character*(64) :: line
 character*(16) :: drugname
 character*(1)  :: numstr
+character*(1) :: fullstr
 real(REAL_KIND) :: t, dt, vol, conc, O2conc, O2flush, dose, O2medium, glumedium
 type(event_type) :: E
 
@@ -992,6 +993,7 @@ do itime = 1,ntimes
 		event(kevent)%conc = conc
 		event(kevent)%O2conc = O2conc
 		event(kevent)%dose = 0
+		event(kevent)%full = .false.	
 		chemo(ichemo)%used = .true.
 		write(nflog,'(a,i3,2f8.3)') 'define DRUG_EVENT: volume, O2conc: ',kevent,event(kevent)%volume,event(kevent)%O2conc
 		if (drug(idrug)%use_metabolites) then
@@ -1004,11 +1006,13 @@ do itime = 1,ntimes
 		event(kevent)%etype = MEDIUM_EVENT
 		event(kevent)%time = t + dt
 		event(kevent)%ichemo = 0
-		event(kevent)%volume = medium_volume0
+!		event(kevent)%volume = medium_volume0
+		event(kevent)%volume = total_volume
 		event(kevent)%conc = 0
 		event(kevent)%O2medium = O2flush		
 		event(kevent)%glumedium = chemo(GLUCOSE)%dose_conc		
-		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc		
+		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc	
+		event(kevent)%full = .false.	
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'MEDIUM') then
@@ -1016,6 +1020,7 @@ do itime = 1,ntimes
 		event(kevent)%etype = MEDIUM_EVENT
 		read(nf,*) t
 		read(nf,*) vol
+		read(nf,*) fullstr
 		read(nf,*) O2medium
 		read(nf,*) glumedium
 		event(kevent)%time = t
@@ -1023,7 +1028,8 @@ do itime = 1,ntimes
 		event(kevent)%ichemo = 0
 		event(kevent)%O2medium = O2medium
 		event(kevent)%glumedium = glumedium
-		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc		
+		event(kevent)%lacmedium = chemo(LACTATE)%dose_conc
+		event(kevent)%full = (trim(fullstr) == 'Y' .or. trim(fullstr) == 'y')
 		event(kevent)%dose = 0
 		write(nflog,'(a,i3,2f8.3)') 'define MEDIUM_EVENT: volume: ',kevent,event(kevent)%volume,event(kevent)%O2medium
 	elseif (trim(line) == 'RADIATION') then
@@ -1623,6 +1629,7 @@ real(REAL_KIND) :: radiation_dose
 integer :: kevent, ichemo, idrug, im, nmetab
 real(REAL_KIND) :: V, C(MAX_CHEMO)
 type(event_type) :: E
+logical :: full
 
 !write(logmsg,*) 'ProcessEvent'
 !call logger(logmsg)
@@ -1644,7 +1651,8 @@ do kevent = 1,Nevents
 			C(LACTATE) = E%lacmedium
 			C(DRUG_A:DRUG_A+5) = 0
 			V = E%volume
-			call MediumChange(V,C)
+			full = E%full
+			call MediumChange(V,C,full)
 		elseif (E%etype == DRUG_EVENT) then
 			C = 0
 			C(OXYGEN) = E%O2conc
@@ -1666,7 +1674,8 @@ do kevent = 1,Nevents
 					chemo(ichemo + im)%bdry_conc = 0
 				endif
 			enddo
-			call MediumChange(V,C)
+			full = E%full
+			call MediumChange(V,C,full)
 			call UpdateChemomap
 !			call UpdateCbnd(0.0d0)
 		endif
@@ -1755,8 +1764,9 @@ end subroutine
 ! Now only medium concentrations are stored, in Caverage(MAX_CHEMO+1:2*MAX_CHEMO)
 ! (oxygen is a special case, Caverage is actually conc at well bottom)
 !-----------------------------------------------------------------------------------------
-subroutine MediumChange(Ve,Ce)
+subroutine MediumChange(Ve,Ce,full)
 real(REAL_KIND) :: Ve, Ce(:)
+logical :: full
 real(REAL_KIND) :: R, Vm, Vr, Vcells, mass(MAX_CHEMO), C
 integer :: ichemo, idrug, im, iparent
 
@@ -1764,13 +1774,18 @@ write(nflog,*) 'MediumChange:'
 write(nflog,'(a,f8.4)') 'Ve: ',Ve
 write(nflog,'(a,13f8.4)') 'Ce: ',Ce
 write(nflog,'(a,13e12.3)')'medium_M: ',chemo(OXYGEN+1:)%medium_M
-Vcells = Ncells*Vcell_cm3
-Vm = total_volume - Vcells
-Vr = min(Vm,Ve)
-!write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr 
-mass = (Vm - Vr)*Caverage(MAX_CHEMO+1:2*MAX_CHEMO) + Ve*Ce(:)
-total_volume = Vm - Vr + Ve + Vcells
-Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
+if (full) then
+	total_volume = Ve
+	Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = Ce
+else
+	Vcells = Ncells*Vcell_cm3
+	Vm = total_volume - Vcells
+	Vr = min(Vm,Ve)
+	!write(nflog,'(a,4f8.4)') 'total_volume, Vcells, Vm, Vr: ',total_volume, Vcells, Vm, Vr 
+	mass = (Vm - Vr)*Caverage(MAX_CHEMO+1:2*MAX_CHEMO) + Ve*Ce(:)
+	total_volume = Vm - Vr + Ve + Vcells
+	Caverage(MAX_CHEMO+1:2*MAX_CHEMO) = mass/(total_volume - Vcells)
+endif
 chemo(OXYGEN)%bdry_conc = Ce(OXYGEN)
 do ichemo = GLUCOSE,LACTATE
 	C = Caverage(MAX_CHEMO+ichemo)
@@ -1834,7 +1849,6 @@ else
 		enddo
     endif
 endif
-write(nflog,'(a,i4,2e12.3)') 'SetConstLevels: Cex, Cin: ',ichemo,Cex,Cin
 Caverage(ichemo) = Cin
 Caverage(MAX_CHEMO+ichemo) = Cex
 do k = 1,N1D

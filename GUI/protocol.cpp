@@ -8,8 +8,8 @@ void MainWindow::SetupProtocol()
     QStringList tableHeader;
 
     tableWidget->setRowCount(64);
-    tableWidget->setColumnCount(11);
-    tableHeader<<"Hour"<<"Drug"<<"Duration"<<"Volume"<<"O2 conc"<<"O2 flush"<<"Conc"<<"Radiation"<<"Medium vol"<<"Medium O2"<<"Medium glu";
+    tableWidget->setColumnCount(12);
+    tableHeader<<"Hour"<<"Drug"<<"Duration"<<"Volume"<<"O2 conc"<<"O2 flush"<<"Conc"<<"Radiation"<<"Medium vol"<<"Full? (Y/N)"<<"Medium O2"<<"Medium glu";
     tableWidget->setHorizontalHeaderLabels(tableHeader);
 
     connect(tableWidget, SIGNAL(cellChanged(int, int)  ),this, SLOT(ProtocolChanged(int, int)) );
@@ -86,12 +86,15 @@ void MainWindow::LoadProtocol(QString fileName)
             QString volume = in.readLine();
 //            qDebug() << volume;
             setField(table, row, 8, volume);
+            QString full = in.readLine();
+//            qDebug() << full;
+            setField(table, row, 9, full);
             QString O2level = in.readLine();
 //            qDebug() << O2level;
-            setField(table, row, 9, O2level);
+            setField(table, row, 10, O2level);
             QString glulevel = in.readLine();
 //            qDebug() << glulevel;
-            setField(table, row, 10, glulevel);
+            setField(table, row, 11, glulevel);
         }
     }
     paramSaved = false;
@@ -254,6 +257,9 @@ void MainWindow::SaveProtocol(QTextStream *out, int ndrugs)
                     *out << hour << "\n";
                     *out << mediumEntry << "\n";    // volume
                     err = getField(table,row,9,&entry);
+                    if (!entry.compare("")) entry = "N";
+                    *out << entry << "\n";          // full
+                    err = getField(table,row,10,&entry);
                     if (entry.compare("")) {   // Entry in Medium O2conc column
                         *out << entry << "\n";
                     } else {
@@ -262,7 +268,7 @@ void MainWindow::SaveProtocol(QTextStream *out, int ndrugs)
                         qDebug() << "Missing entry in Medium O2conc column";
                         return;
                     }
-                    err = getField(table,row,10,&entry);
+                    err = getField(table,row,11,&entry);
                     if (entry.compare("")) {   // Entry in Medium gluconc column
                         *out << entry << "\n";
                     } else {
