@@ -663,6 +663,7 @@ t_aglucosia_limit = 60*60*aglucosia_tag_hours		! hours -> seconds
 aglucosia_death_delay = 60*60*aglucosia_death_hours	! hours -> seconds
 Vcell_cm3 = 1.0e-9*Vcell_pL							! nominal cell volume in cm3
 Vdivide0 = Vdivide0*Vcell_cm3
+dVdivide = dVdivide*Vcell_cm3
 total_volume = medium_volume0
 
 !write(logmsg,'(a,3e12.4)') 'DELTA_X, cell_radius: ',DELTA_X,cell_radius
@@ -1264,7 +1265,7 @@ else	! use cell cycle
     cp%NL1 = 0
     cp%NL2 = 0
     ! Need to assign phase, volume to complete phase, current volume
-    call SetInitialCellCycleStatus(cp)
+    call SetInitialCellCycleStatus(kcell,cp)
 #if 0
 ! THIS MUST BE REPLACED-------------------------------------------------------------------------------------
     ! Simplest way to assign phase fractions is in proportion to phase durations
@@ -1368,7 +1369,8 @@ end subroutine
 !	%t_divide_last
 ! Note: no cells start in mitosis - set all phase=6 cells at the end of G2 checkpoint
 !--------------------------------------------------------------------------------
-subroutine SetInitialCellCycleStatus(cp)
+subroutine SetInitialCellCycleStatus(kcell,cp)
+integer :: kcell
 type(cell_type), pointer :: cp
 type(cycle_parameters_type),pointer :: ccp
 integer :: ityp, iphase
@@ -1394,6 +1396,13 @@ phase_time(5) = ccp%G2_mean_delay(ityp)
 phase_time(6) = ccp%T_M(ityp)
 phase_fraction = phase_time/Tdiv
 ! These fractions must sum to 1 because of get_divide_volume (check)
+!if (kcell == 1) then
+!	write(nflog,*) 'SetInitialCellCycleStatus:'
+!	write(nflog,'(a,e12.3)') 'cp%fg: ',cp%fg
+!	write(nflog,'(a,5e12.3)') 'T_G1,... ',ccp%T_G1(ityp),ccp%G1_mean_delay(ityp),ccp%T_S(ityp),ccp%T_G2(ityp),ccp%G2_mean_delay(ityp)
+!	write(nflog,'(a,6e11.3)') 'phase_time: ',phase_time(1:6)
+!	write(nflog,'(a,6e11.3)') 'phase_fraction: ',phase_fraction(1:6)
+!endif
 fsum = 0
 do iphase = 1,6
 	if (fsum + phase_fraction(iphase) > x) then	! this is the phase
@@ -1444,6 +1453,11 @@ do iphase = 1,6
 	endif
 	fsum = fsum + phase_fraction(iphase)
 enddo
+if (kcell < 100) then
+	cp => cell_list(kcell)
+	write(nflog,'(a,i8,f8.0)') 't_divide_last: ',kcell, cp%t_divide_last
+endif
+
 !write(*,*)
 !write(*,'(a,3f8.3)') 'Tdiv, Tmean, fg: ',Tdiv/3600,Tmean/3600,fg
 !write(*,'(a,6f8.3)') 'phase_time: ',phase_time/3600
@@ -1973,13 +1987,13 @@ do idiv = 0,ndiv-1
 		return
 	endif
 enddo	! end idiv loop
-write(nflog,*) 'istep,tnow: ',istep,tnow	
 
 DELTA_T = DELTA_T_save
 medium_change_step = .false.
 
 !istep = istep + 1
 t_simulation = (istep-1)*DELTA_T	! seconds
+write(nflog,*) 'istep,tnow: ',istep,t_simulation	
 
 !!write(nflog,*) 'GrowCells'
 !call GrowCells(DELTA_T,t_simulation,ok)

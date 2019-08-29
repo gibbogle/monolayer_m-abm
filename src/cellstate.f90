@@ -1107,7 +1107,10 @@ cp1%phase = G1_phase
 
 ndoublings = ndoublings + 1
 doubling_time_sum = doubling_time_sum + tnow - cp1%t_divide_last
-cp1%t_divide_last = tnow
+if (kcell1 < 100) then
+	write(nflog,'(a,2i6,3e12.3)') 'kcell1, ndoublings, doubling_time_sum, tnow, cp1%t_divide_last: ',kcell1,ndoublings,doubling_time_sum, tnow, cp1%t_divide_last
+endif
+cp1%t_divide_last = tnow 
 
 ! Second cell
 cp2 = cp1

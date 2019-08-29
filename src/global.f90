@@ -792,8 +792,12 @@ else
 		Tdiv = Tgrowth + Tfixed
 	endif
 endif
-!write(*,'(a,4e11.3)') 'get_divide_volume: rVmax,Vdiv,Tdiv, Tmean: ',rVmax,Vdiv,Tdiv/3600,divide_time_mean(ityp)/3600
-
+if (fg > 2) then
+	write(nflog,'(a,5e11.3)') 'get_divide_volume: rVmax,Vdiv,V0,Tdiv, Tmean: ',rVmax,Vdiv,V0,Tdiv/3600,divide_time_mean(ityp)/3600
+	write(nflog,'(a,2e12.3)') 'Vdivide0, dVdivide: ',Vdivide0,dVdivide
+	write(nflog,'(a,3e12.3)') 'fg: ',fg,Tgrowth,Tgrowth0
+	stop
+endif
 end function	
 
 !-----------------------------------------------------------------------------------------

@@ -409,6 +409,7 @@ endif
 ! Add base rate correction
 mp%O_rate = mp%O_rate + O2_baserate
 mp%G_rate = mp%G_rate + G_baserate
+!write(nflog,'(a,i8,2e12.3)') 'G_rate: ',istep,mp%HIF1,mp%G_rate
 end subroutine
 
 
